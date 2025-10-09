@@ -6,10 +6,14 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from apps.users.models import UserProfile
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 import requests
 import json
 
 from .serializers import LoginSerializer, GoogleAuthSerializer, GitHubAuthSerializer
+from .oauth_serializers import OAuthAuthorizeSerializer, OAuthTokenSerializer
+from .models import OAuthClient, AuthorizationCode
 
 def get_tokens_for_user(user):
     """Generate JWT tokens for user"""
@@ -441,14 +445,8 @@ def profile(request):
 def logout_view(request):
     """Logout user"""
     return Response({'status': 'success'})
-# apps/authentication/views.py - PRIDAJ NA KONIEC
 
-from django.utils import timezone
-from datetime import timedelta
-from .models import OAuthClient, AuthorizationCode
-import json
-
-# OAuth Server Endpoints
+# OAuth Server Endpoints s VYLEPŠENOU VALIDÁCIOU
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def oauth_authorize(request):
@@ -456,27 +454,26 @@ def oauth_authorize(request):
     OAuth 2.0 Authorization Endpoint
     GET /oauth/authorize?client_id=xxx&redirect_uri=xxx&response_type=code&state=xxx
     """
-    client_id = request.GET.get('client_id')
-    redirect_uri = request.GET.get('redirect_uri')
-    response_type = request.GET.get('response_type')
-    state = request.GET.get('state', '')
-    scope = request.GET.get('scope', 'read profile')
+    serializer = OAuthAuthorizeSerializer(data=request.GET)
     
-    # Validácia povinných parametrov
-    if not all([client_id, redirect_uri, response_type]):
-        return Response({'error': 'Missing required parameters'}, status=400)
+    if not serializer.is_valid():
+        return Response({'error': 'invalid_request', 'error_description': serializer.errors}, status=400)
     
-    if response_type != 'code':
-        return Response({'error': 'Unsupported response_type'}, status=400)
+    validated_data = serializer.validated_data
+    client_id = validated_data['client_id']
+    redirect_uri = validated_data['redirect_uri']
+    response_type = validated_data['response_type']
+    state = validated_data.get('state', '')
+    scope = validated_data.get('scope', 'read profile')
     
     # Validácia clienta
     try:
         client = OAuthClient.objects.get(client_id=client_id, is_active=True)
         allowed_uris = client.get_redirect_uris_list()
         if redirect_uri not in allowed_uris:
-            return Response({'error': 'Invalid redirect_uri'}, status=400)
+            return Response({'error': 'invalid_request', 'error_description': 'Invalid redirect_uri'}, status=400)
     except OAuthClient.DoesNotExist:
-        return Response({'error': 'Invalid client'}, status=400)
+        return Response({'error': 'invalid_client', 'error_description': 'Invalid client'}, status=400)
     
     # Ak užívateľ nie je prihlásený, vráť chybu (frontend ho musí najprv prihlásiť)
     if not request.user.is_authenticated:
@@ -516,11 +513,17 @@ def oauth_token(request):
     OAuth 2.0 Token Endpoint
     POST /oauth/token
     """
-    grant_type = request.data.get('grant_type')
-    client_id = request.data.get('client_id')
-    client_secret = request.data.get('client_secret')
-    code = request.data.get('code')
-    redirect_uri = request.data.get('redirect_uri')
+    serializer = OAuthTokenSerializer(data=request.data)
+    
+    if not serializer.is_valid():
+        return Response({'error': 'invalid_request', 'error_description': serializer.errors}, status=400)
+    
+    validated_data = serializer.validated_data
+    grant_type = validated_data['grant_type']
+    client_id = validated_data['client_id']
+    client_secret = validated_data['client_secret']
+    code = validated_data.get('code')
+    redirect_uri = validated_data.get('redirect_uri')
     
     # Validácia client credentials
     try:
@@ -562,6 +565,10 @@ def oauth_token(request):
             'refresh_token': tokens['refresh'],
             'scope': auth_code.scope
         })
+    
+    elif grant_type == 'refresh_token':
+        # TODO: Implement refresh token flow
+        return Response({'error': 'refresh_token_not_implemented'}, status=400)
     
     return Response({'error': 'unsupported_grant_type'}, status=400)
 
