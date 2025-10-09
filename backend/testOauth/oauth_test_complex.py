@@ -1,6 +1,6 @@
-# backend/test_oauth_comprehensive.py
+# backend/testOauth/oauth_test_updated.py
 import requests
-import json
+import time
 
 BASE_URL = "http://localhost:8000/api/auth"
 
@@ -11,6 +11,13 @@ class OAuthTester:
         
     def test_complete_flow(self):
         print("🚀 Testing Complete OAuth Flow...")
+        
+        # Počkaj 60 sekúnd kým sa resetne rate limit
+        print("⏳ Waiting 60 seconds for rate limit reset...")
+        for i in range(60, 0, -1):
+            print(f"   {i} seconds remaining...", end='\r')
+            time.sleep(1)
+        print("\n✅ Rate limit should be reset now")
         
         # 1. Najprv sa prihlás normálne
         if not self._login():

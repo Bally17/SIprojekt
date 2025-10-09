@@ -15,6 +15,38 @@ from .serializers import LoginSerializer, GoogleAuthSerializer, GitHubAuthSerial
 from .oauth_serializers import OAuthAuthorizeSerializer, OAuthTokenSerializer
 from .models import OAuthClient, AuthorizationCode
 
+# Custom Rate Limiting
+from django.core.cache import cache
+
+def custom_rate_limit(key, limit=10, window=60):
+    """Simple custom rate limiting using Django cache"""
+    count = cache.get(key, 0)
+    if count >= limit:
+        return True
+    cache.set(key, count + 1, window)
+    return False
+
+def oauth_rate_limit_check(request, endpoint_type):
+    """Rate limiting check for OAuth endpoints"""
+    client_id = request.data.get('client_id') if request.method == 'POST' else request.GET.get('client_id')
+    ip = request.META.get('REMOTE_ADDR', 'unknown')
+    
+    if endpoint_type == 'authorize':
+        # Limit: 20 requests per minute per client, 100 per IP
+        if client_id and custom_rate_limit(f"oauth_auth_client_{client_id}", 20, 60):
+            return True
+        if custom_rate_limit(f"oauth_auth_ip_{ip}", 100, 60):
+            return True
+            
+    elif endpoint_type == 'token':
+        # Limit: 10 requests per minute per client, 50 per IP  
+        if client_id and custom_rate_limit(f"oauth_token_client_{client_id}", 10, 60):
+            return True
+        if custom_rate_limit(f"oauth_token_ip_{ip}", 50, 60):
+            return True
+            
+    return False
+
 def get_tokens_for_user(user):
     """Generate JWT tokens for user"""
     from rest_framework_simplejwt.tokens import RefreshToken
@@ -446,7 +478,7 @@ def logout_view(request):
     """Logout user"""
     return Response({'status': 'success'})
 
-# OAuth Server Endpoints s VYLEPŠENOU VALIDÁCIOU
+# OAuth Server Endpoints s CUSTOM RATE LIMITINGOM
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def oauth_authorize(request):
@@ -454,6 +486,13 @@ def oauth_authorize(request):
     OAuth 2.0 Authorization Endpoint
     GET /oauth/authorize?client_id=xxx&redirect_uri=xxx&response_type=code&state=xxx
     """
+    # Custom rate limiting check
+    if oauth_rate_limit_check(request, 'authorize'):
+        return Response({
+            'error': 'rate_limit_exceeded',
+            'error_description': 'Too many authorization requests. Please try again later.'
+        }, status=429)
+    
     serializer = OAuthAuthorizeSerializer(data=request.GET)
     
     if not serializer.is_valid():
@@ -513,6 +552,13 @@ def oauth_token(request):
     OAuth 2.0 Token Endpoint
     POST /oauth/token
     """
+    # Custom rate limiting check
+    if oauth_rate_limit_check(request, 'token'):
+        return Response({
+            'error': 'rate_limit_exceeded',
+            'error_description': 'Too many token requests. Please try again later.'
+        }, status=429)
+    
     serializer = OAuthTokenSerializer(data=request.data)
     
     if not serializer.is_valid():

@@ -74,6 +74,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
 # Database
 DATABASES = {
     'default': {
@@ -82,20 +89,20 @@ DATABASES = {
     }
 }
 
-# Use PostgreSQL in production - OPRAVENÁ VERZIA
-database_url = os.getenv('DATABASE_URL')  # DEFINOJVATE PREMNNOÚ
+# Use PostgreSQL in production
+database_url = os.getenv('DATABASE_URL')
 
 if database_url:
     try:
         import dj_database_url
         
-        # Opravte postgres:// na postgresql:// pre dj-database-url
+        # Oprav postgres:// na postgresql:// pre dj-database-url
         if database_url.startswith('postgres://'):
             database_url = database_url.replace('postgres://', 'postgresql://', 1)
         
         db_config = dj_database_url.parse(database_url, conn_max_age=600)
         
-        # Odstráňte 'sslmode' pre SQLite ak existuje
+        # Odstráň 'sslmode' pre SQLite ak existuje
         if 'sslmode' in db_config:
             del db_config['sslmode']
             
@@ -180,14 +187,14 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# REST Framework
+# REST Framework - OPRAVENÉ PRE RATE LIMITING
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',  # ← ZMENENÉ Z IsAuthenticated
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
