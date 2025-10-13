@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+import dj_database_url
 
 load_dotenv()
 
@@ -81,7 +82,7 @@ CACHES = {
     }
 }
 
-# Database
+# Database Configuration - OPTIMALIZOVANÉ PRE DOCKER
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -89,30 +90,27 @@ DATABASES = {
     }
 }
 
-# Use PostgreSQL in production
-database_url = os.getenv('DATABASE_URL')
-
-if database_url:
+# Docker a PostgreSQL konfigurácia
+if os.getenv('DOCKER_CONTAINER') or os.getenv('DATABASE_URL'):
+    # Použi PostgreSQL v Dockeri alebo keď je DATABASE_URL nastavená
+    database_url = os.getenv('DATABASE_URL', 'postgresql://user:password@db:5432/mydb')
+    
+    # Oprav postgres:// na postgresql:// pre dj-database-url
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
     try:
-        import dj_database_url
-        
-        # Oprav postgres:// na postgresql:// pre dj-database-url
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://', 1)
-        
         db_config = dj_database_url.parse(database_url, conn_max_age=600)
         
-        # Odstráň 'sslmode' pre SQLite ak existuje
+        # Odstráň 'sslmode' ak existuje pre kompatibilitu
         if 'sslmode' in db_config:
             del db_config['sslmode']
             
         DATABASES['default'] = db_config
         print(f"Using PostgreSQL: {db_config['ENGINE']}")
         
-    except ImportError:
-        print("Warning: dj-database-url not installed, using SQLite")
     except Exception as e:
-        print(f"Error configuring database: {e}, using SQLite")
+        print(f"Error configuring PostgreSQL: {e}, falling back to SQLite")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -136,9 +134,16 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Static files - OPTIMALIZOVANÉ PRE DOCKER
+STATIC_URL = '/static/'
+STATIC_ROOT = '/app/static'  # Pre Docker volume
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/app/media'    # Pre Docker volume
+
+# Lokálne vývojové nastavenia
+if not (os.getenv('DOCKER_CONTAINER') or os.getenv('DATABASE_URL')):
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -187,14 +192,14 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# REST Framework - OPRAVENÉ PRE RATE LIMITING
+# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # ← ZMENENÉ Z IsAuthenticated
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -231,6 +236,26 @@ if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only in development
 
+# Docker-specific settings
+if os.getenv('DOCKER_CONTAINER'):
+    # Pridaj Docker host do ALLOWED_HOSTS
+    ALLOWED_HOSTS.extend(['web', 'backend', '0.0.0.0'])
+    
+    # Logovanie pre Docker
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    }
+
 # Security settings for production
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
@@ -239,3 +264,14 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+    # OAuth Configuration - DIRECT SETTINGS
+GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID')
+GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET')
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+
+# Debug OAuth configuration
+print(f"🔧 OAuth Config Loaded:")
+print(f"   GitHub Client ID: {'✅' if GITHUB_CLIENT_ID else '❌'}")
+print(f"   Google Client ID: {'✅' if GOOGLE_CLIENT_ID else '❌'}")
