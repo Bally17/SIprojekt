@@ -2,11 +2,12 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
-import dj_database_url
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+AUTH_USER_MODEL = 'users.User'
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-in-production')
 
@@ -16,6 +17,14 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
+    # Local apps
+    'users',
+    'authentication',
+    'companies',
+    'documents', 
+    'internships',
+    'notifications',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -33,14 +42,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
-    
-    # Local apps
-    'users',
-    'authentication',
-    'companies',
-    'documents', 
-    'internships',
-    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -82,35 +83,19 @@ CACHES = {
     }
 }
 
-# Database Configuration - OPTIMALIZOVANÉ PRE DOCKER
+# Database Configuration
+# Database Configuration - POSTGRESQL v Dockeri
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'praxy_db',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'db',  # Názov služby v docker-compose
+        'PORT': '5432',
     }
 }
-
-# Docker a PostgreSQL konfigurácia
-if os.getenv('DOCKER_CONTAINER') or os.getenv('DATABASE_URL'):
-    # Použi PostgreSQL v Dockeri alebo keď je DATABASE_URL nastavená
-    database_url = os.getenv('DATABASE_URL', 'postgresql://user:password@db:5432/mydb')
-    
-    # Oprav postgres:// na postgresql:// pre dj-database-url
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
-    try:
-        db_config = dj_database_url.parse(database_url, conn_max_age=600)
-        
-        # Odstráň 'sslmode' ak existuje pre kompatibilitu
-        if 'sslmode' in db_config:
-            del db_config['sslmode']
-            
-        DATABASES['default'] = db_config
-        print(f"Using PostgreSQL: {db_config['ENGINE']}")
-        
-    except Exception as e:
-        print(f"Error configuring PostgreSQL: {e}, falling back to SQLite")
+print("✅ Using Docker PostgreSQL")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -134,16 +119,11 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files - OPTIMALIZOVANÉ PRE DOCKER
+# Static files
 STATIC_URL = '/static/'
-STATIC_ROOT = '/app/static'  # Pre Docker volume
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/app/media'    # Pre Docker volume
-
-# Lokálne vývojové nastavenia
-if not (os.getenv('DOCKER_CONTAINER') or os.getenv('DATABASE_URL')):
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -265,7 +245,7 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
-    # OAuth Configuration - DIRECT SETTINGS
+# OAuth Configuration
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET')
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')

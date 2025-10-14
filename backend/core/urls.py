@@ -32,6 +32,10 @@ def health_check(request):
             'user_profile': '/api/auth/profile/',
             'token_refresh': '/api/token/refresh/',
             'token_verify': '/api/token/verify/',
+            'users': '/api/users/',
+            'companies': '/api/companies/',
+            'internships': '/api/internships/',
+            'documents': '/api/documents/',
         }
     })
 
@@ -42,6 +46,13 @@ urlpatterns = [
     
     # API URLs
     path('api/auth/', include('apps.authentication.urls')),
+    
+    # CRUD API URLs - TU PRIDAŤ TYTO RIADKY
+    path('api/users/', include('apps.users.urls')),
+    path('api/companies/', include('apps.companies.urls')),
+    path('api/internships/', include('apps.internships.urls')),
+    path('api/documents/', include('apps.documents.urls')),
+    path('api/notifications/', include('apps.notifications.urls')),
     
     # JWT URLs
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
