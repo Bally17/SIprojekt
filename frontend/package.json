@@ -6,9 +6,10 @@
     "format": "prettier -w .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "dev": "next dev",       
+    "build": "next build",  
+    "serve": "next start",       
+    "start": "npm run dev" 
   },
   "dependencies": {
     "next": "15.5.4",
