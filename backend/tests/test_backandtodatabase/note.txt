@@ -1,0 +1,3 @@
+spustit cez docker v apps
+docker-compose exec web python tests/test.py 
+
