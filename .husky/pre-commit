@@ -1,0 +1,5 @@
+#!/bin/sh
+# Husky v9+ minimal hook
+
+npx --no -- lint-staged --cwd frontend --verbose || exit 1
+npm --prefix frontend run typecheck || exit 1
