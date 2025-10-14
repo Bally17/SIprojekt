@@ -1,9 +1,13 @@
-from django.urls import path
+# apps/users/urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 
-app_name = 'users'
+router = DefaultRouter()
+router.register(r'users', views.UserViewSet)
+router.register(r'student-profiles', views.StudentProfileViewSet)
+router.register(r'garant-profiles', views.GarantProfileViewSet)
 
 urlpatterns = [
-    # Pridajte sem vaše user-related URL patterns
-    # path('profile/', views.user_profile, name='user_profile'),
+    path('', include(router.urls)),
 ]

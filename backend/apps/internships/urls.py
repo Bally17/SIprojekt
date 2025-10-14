@@ -1,7 +1,11 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from . import views
 
-app_name = 'internships'
+router = DefaultRouter()
+router.register(r'internships', views.InternshipViewSet)
+router.register(r'history', views.InternshipHistoryViewSet)
 
 urlpatterns = [
-    # Budúce URL patterns pre internships
+    path('', include(router.urls)),
 ]

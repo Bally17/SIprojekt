@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from apps.users.models import UserProfile
+from apps.users.models import User
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta

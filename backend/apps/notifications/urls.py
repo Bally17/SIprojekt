@@ -1,7 +1,10 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from . import views
 
-app_name = 'notifications'
+router = DefaultRouter()
+router.register(r'notifications', views.NotificationViewSet)
 
 urlpatterns = [
-    # Budúce URL patterns pre notifications
+    path('', include(router.urls)),
 ]
