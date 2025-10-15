@@ -1,28 +1,36 @@
 const fs = require("fs");
 const path = require("path");
+const chalk = require("chalk");
 const { codeFrameColumns } = require("@babel/code-frame");
 
 const LINES_ABOVE = 2;
 const LINES_BELOW = 2;
 
 module.exports = function formatter(results) {
-  let errors = 0,
-    warnings = 0;
+  let errors = 0;
+  let warnings = 0;
   let out = "";
 
   for (const r of results) {
     if (!r.messages.length) continue;
 
-    out += `\n${r.filePath}\n`;
+    out += `\n${chalk.underline(r.filePath)}\n`;
 
     let fileSource = "";
     try {
       fileSource = fs.readFileSync(r.filePath, "utf8");
-    } catch {}
+    } catch {
+      // ak sa súbor nepodarí načítať (napr. zmazaný), len preskočíme
+    }
 
     for (const m of r.messages) {
-      const loc = { start: { line: m.line || 1, column: m.column || 1 } };
+      const loc = {
+        start: { line: m.line || 1, column: m.column || 1 },
+      };
+
       const sev = m.severity === 2 ? "error" : "warn";
+      const sevColor = sev === "error" ? chalk.red : chalk.yellow;
+
       if (m.severity === 2) errors++;
       else warnings++;
 
@@ -31,12 +39,15 @@ module.exports = function formatter(results) {
         frame = codeFrameColumns(fileSource, loc, {
           linesAbove: LINES_ABOVE,
           linesBelow: LINES_BELOW,
-          highlightCode: false,
-          message: `${sev} ${m.ruleId ?? ""} — ${m.message}`,
+          highlightCode: true,
+          message: `${sevColor.bold(sev)} ${chalk.gray(m.ruleId ?? "")} — ${m.message}`,
         });
       }
 
-      out += `  ${m.line}:${m.column}  ${sev}  ${m.ruleId ?? ""}  ${m.message}\n`;
+      out += `  ${chalk.gray(`${m.line}:${m.column}`)}  ${sevColor(sev)}  ${chalk.cyan(
+        m.ruleId ?? ""
+      )}  ${m.message}\n`;
+
       if (frame) {
         out +=
           frame
@@ -49,7 +60,12 @@ module.exports = function formatter(results) {
 
   const total = errors + warnings;
   if (total) {
-    out += `\n✖ ${total} problems (${errors} errors, ${warnings} warnings)\n`;
+    out += `\n${chalk.bold.red("✖")} ${total} problems (${chalk.red(
+      `${errors} errors`
+    )}, ${chalk.yellow(`${warnings} warnings`)})\n`;
+  } else {
+    out += `\n${chalk.green("✔ No ESLint issues found!")}\n`;
   }
+
   return out;
 };
