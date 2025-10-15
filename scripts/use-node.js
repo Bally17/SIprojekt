@@ -35,26 +35,39 @@ function installNvm() {
 }
 
 function useNvmVersion() {
-  const nvmInit =
-    !isWindows &&
-    'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"';
-  const commands = [
-    nvmInit,
-    `nvm install ${requiredNodeVersion}`,
-    `nvm use ${requiredNodeVersion}`,
-  ].filter(Boolean);
+  if (isWindows) {
+    // Windows PowerShell – príkazy sa musia spúšťať zvlášť
+    try {
+      execSync(`nvm install ${requiredNodeVersion}`, { stdio: "inherit", shell });
+      execSync(`nvm use ${requiredNodeVersion}`, { stdio: "inherit", shell });
+      console.log(`✅ Now using Node ${requiredNodeVersion}`);
+    } catch {
+      console.error(`❌ Could not switch Node version automatically.`);
+      console.log(`Please run manually:\n  nvm install ${requiredNodeVersion}\n  nvm use ${requiredNodeVersion}`);
+      process.exit(1);
+    }
+  } else {
+    // macOS/Linux – môže použiť && chaining
+    const nvmInit =
+      'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"';
+    const commands = [
+      nvmInit,
+      `nvm install ${requiredNodeVersion}`,
+      `nvm use ${requiredNodeVersion}`,
+    ].join(" && ");
 
-  try {
-    execSync(commands.join(" && "), { stdio: "inherit", shell });
-    console.log(`✅ Now using Node ${requiredNodeVersion}`);
-  } catch (err) {
-    console.error(`❌ Could not switch Node version automatically.`);
-    console.log(`Please run manually:\n  nvm install ${requiredNodeVersion}\n  nvm use ${requiredNodeVersion}`);
-    process.exit(1);
+    try {
+      execSync(commands, { stdio: "inherit", shell });
+      console.log(`✅ Now using Node ${requiredNodeVersion}`);
+    } catch {
+      console.error(`❌ Could not switch Node version automatically.`);
+      console.log(`Please run manually:\n  nvm install ${requiredNodeVersion}\n  nvm use ${requiredNodeVersion}`);
+      process.exit(1);
+    }
   }
 }
 
-// Main
+// --- Main ---
 if (!currentNodeVersion.startsWith(requiredNodeVersion)) {
   console.log(`⚠️  Wrong Node.js version detected!`);
   console.log(`👉  Required: ${requiredNodeVersion}, but you have: ${currentNodeVersion}\n`);
