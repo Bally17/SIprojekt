@@ -4,9 +4,27 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const huskyBin = path.join(__dirname, "../node_modules/.bin/husky");
 const isWindows = os.platform() === "win32";
 const shell = isWindows ? process.env.ComSpec || "powershell.exe" : "/bin/bash";
+
+const binDir = path.join(__dirname, "../node_modules/.bin");
+const huskyBin = path.join(binDir, "husky");
+
+function fixBinPermissions() {
+  if (isWindows) return;
+  if (!fs.existsSync(binDir)) return;
+
+  const files = fs.readdirSync(binDir);
+  for (const file of files) {
+    const fullPath = path.join(binDir, file);
+    try {
+      fs.chmodSync(fullPath, 0o755);
+    } catch (e) {
+      console.warn(`⚠️  Could not fix permissions for ${file}: ${e.message}`);
+    }
+  }
+  console.log("🔧 Fixed execute permissions in node_modules/.bin (macOS/Linux)");
+}
 
 try {
   if (process.env.CI) {
@@ -14,13 +32,12 @@ try {
     process.exit(0);
   }
 
+  fixBinPermissions();
+
   if (fs.existsSync(huskyBin)) {
     try {
       fs.chmodSync(huskyBin, 0o755);
-      console.log("🔧 Fixed Husky execute permission (cross-platform)");
-    } catch (e) {
-      console.warn("⚠️  Could not fix Husky permissions:", e.message);
-    }
+    } catch {}
   }
 
   console.log("🐶 Installing Husky hooks...");
