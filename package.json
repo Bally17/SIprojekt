@@ -1,9 +1,24 @@
 {
+  "name": "si-projekt",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "prepare": "husky install",
+    "dev": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "start": "npm run start --workspace frontend",
+    "lint": "npm run lint --workspace frontend",
+    "format": "npm run format --workspace frontend"
+  },
   "devDependencies": {
     "husky": "9.1.7",
     "lint-staged": "16.2.4"
   },
-  "scripts": {
-    "prepare": "husky"
-  }
+  "engines": {
+    "node": "22.14.0",
+    "npm": "11.6.1"
+  },
+  "engineStrict": true
 }
