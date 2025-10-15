@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "preinstall": "node scripts/use-node.js",
-    "prepare": "node -e \"if (!process.env.CI) require('child_process').execSync('husky install', {stdio: 'inherit'})\"",
+    "prepare": "node scripts/setup-husky.js",
     "dev": "npm run dev --workspace frontend",
     "build": "npm run build --workspace frontend",
     "start": "npm run start --workspace frontend",
