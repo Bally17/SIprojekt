@@ -1,13 +1,13 @@
-# 1️⃣ Build stage
-FROM node:18 AS builder
+# Build stage
+FROM node:22.14.0 AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
 
-# 2️⃣ Runtime stage
-FROM node:18-alpine AS runner
+# Runtime stage
+FROM node:22.14.0-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/package*.json ./
