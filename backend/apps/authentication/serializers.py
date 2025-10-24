@@ -39,8 +39,9 @@ class GitHubAuthSerializer(serializers.Serializer):
     code = serializers.CharField(required=True)
 
 class StudentRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
-    password_confirm = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=False)
+    password_confirm = serializers.CharField(write_only=True, required=False)
+
     studijny_program = serializers.CharField(write_only=True, required=True)
 
     class Meta:
@@ -63,13 +64,15 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         
         return value
 
-    def validate(self, attrs):
-        """
-        Validácia zhody hesiel
-        """
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({"password_confirm": "Heslá sa nezhodujú."})
-        return attrs
+    def validate(self, data):
+        password = data.get('password')
+        password_confirm = data.get('password_confirm')
+
+    # iba ak boli zadané manuálne (napr. pri testovaní)
+        if password and password_confirm and password != password_confirm:
+            raise serializers.ValidationError("Heslá sa nezhodujú.")
+        return data
+
 
     def create(self, validated_data):
         # Extrahuj údaje pre študentský profil

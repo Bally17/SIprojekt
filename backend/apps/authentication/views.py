@@ -13,28 +13,75 @@ import json
 from .serializers import LoginSerializer, GoogleAuthSerializer, GitHubAuthSerializer, StudentRegistrationSerializer, CompanyRegistrationSerializer
 from .oauth_serializers import OAuthAuthorizeSerializer, OAuthTokenSerializer
 from .models import OAuthClient, AuthorizationCode
+from .utils import generate_random_password, send_password_email, send_activation_email
 
 # Custom Rate Limiting
 from django.core.cache import cache
 
-# Student Registration View
+from django.core.signing import Signer
+from django.core.mail import send_mail
+import secrets
+import string
+
+signer = Signer()
+
 class StudentRegistrationView(generics.CreateAPIView):
     serializer_class = StudentRegistrationSerializer
     permission_classes = [AllowAny]
-    
+
+    def generate_password(self, length=10):
+        """Vygeneruje náhodné heslo"""
+        chars = string.ascii_letters + string.digits + "!@#$%^&*()"
+        return ''.join(secrets.choice(chars) for _ in range(length))
+
+    def send_activation_email(self, user, password):
+        """Odošle aktivačný email so zahashovaným tokenom"""
+        token = signer.sign(user.email)
+        activation_link = f"{settings.FRONTEND_URL}/activate/{token}/"
+
+        subject = "Aktivácia účtu – Študentská prax"
+        message = f"""
+Dobrý deň {user.meno},
+
+váš účet bol úspešne vytvorený.
+
+Pre aktiváciu účtu kliknite na tento odkaz:
+{activation_link}
+
+Prihlasovacie údaje:
+Email: {user.email}
+Heslo: {password}
+
+Po aktivácii sa, prosím, prihláste a zmeňte heslo.
+
+S pozdravom,
+Tím Študentskej praxe
+"""
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        # 🔑 Generovanie hesla
+        generated_password = self.generate_password()
+        serializer.validated_data['password'] = generated_password
+        serializer.validated_data['password_confirm'] = generated_password
+
         user = serializer.save()
-        
-        # TODO: Implementovať odoslanie hesla na email (podľa FR-03)
-        # send_password_email(user.email, request.data['password'])
-        
+        user.aktivny = False
+        user.email_overeny = False
+        user.save()
+
+        # ✉️ Odoslanie emailu s heslom a aktivačným linkom
+        self.send_activation_email(user, generated_password)
+
         return Response({
-            "message": "Študent bol úspešne zaregistrovaný. Heslo bolo odoslané na študentský email.",
+            "message": "Študent bol úspešne zaregistrovaný. Aktivačný email bol odoslaný.",
             "user_id": user.id,
             "email": user.email
         }, status=status.HTTP_201_CREATED)
+
 
 # Company Registration View  
 class CompanyRegistrationView(generics.CreateAPIView):
@@ -45,16 +92,17 @@ class CompanyRegistrationView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        
-        # TODO: Implementovať odoslanie aktivačného emailu (podľa FR-03)
-        # send_activation_email(user.email)
-        
+
+    # Po úspešnej registrácii odošli aktivačný e-mail
+        send_activation_email(user)
+
         return Response({
             "message": "Firma bola úspešne zaregistrovaná. Aktivačný odkaz bol odoslaný na email.",
             "user_id": user.id,
             "email": user.email,
             "status": "neaktívny - vyžaduje aktiváciu"
         }, status=status.HTTP_201_CREATED)
+
 
 def custom_rate_limit(key, limit=10, window=60):
     """Simple custom rate limiting using Django cache"""
@@ -667,3 +715,19 @@ def oauth_clients(request):
             'scope': client.scope
         })
     return Response(data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def activate_account(request, token):
+    """Aktivácia účtu cez token"""
+    from django.core.signing import BadSignature
+
+    try:
+        email = signer.unsign(token)
+        user = User.objects.get(email=email)
+        user.aktivny = True
+        user.email_overeny = True
+        user.save()
+        return Response({"message": "Účet bol úspešne aktivovaný."}, status=200)
+    except (User.DoesNotExist, BadSignature):
+        return Response({"error": "Neplatný alebo expirovaný odkaz."}, status=400)

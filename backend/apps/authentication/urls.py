@@ -28,5 +28,6 @@ urlpatterns = [
     path('register/student/', StudentRegistrationView.as_view(), name='student-registration'),
     path('register/company/', CompanyRegistrationView.as_view(), name='company-registration'),
 
+    path('activate/<str:token>/', views.activate_account, name='activate_account'),
 
 ]
