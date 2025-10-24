@@ -2,7 +2,7 @@
 FROM node:22.14.0 AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install --package-lock-only && npm ci
 COPY . .
 RUN npm run build
 
