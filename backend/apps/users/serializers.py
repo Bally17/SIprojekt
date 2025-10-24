@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
             'is_active',
             'is_staff',
             'is_superuser',
-            'date_joined',
+            'vytvorene_at',
         ]
 
 
@@ -38,4 +38,4 @@ class GarantProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GarantProfil
-        fields = ['id', 'meno', 'priezvisko', 'email', 'katedra']
+        fields = ['id', 'meno', 'priezvisko', 'email', 'pracovisko']
