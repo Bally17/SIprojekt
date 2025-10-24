@@ -19,10 +19,11 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    authentication_classes=[],
 )
 
 
-# Health check endpoint
+# ✅ Health check endpoint
 def health_check(request):
     return JsonResponse({
         'status': 'success',
@@ -39,7 +40,7 @@ def health_check(request):
             'companies': '/api/companies/',
             'internships': '/api/internships/',
             'documents': '/api/documents/',
-            'students_internships': '/api/students/me/internships/',
+            'notifications': '/api/notifications/',
         }
     })
 
@@ -60,12 +61,9 @@ urlpatterns = [
     # ✅ Core APIs
     path('api/users/', include('apps.users.urls')),
     path('api/companies/', include('apps.companies.urls')),
-    path('api/internships/', include('apps.internships.urls')),
+    path('api/internships/', include('apps.internships.urls')),  # 🔥 všetko tu je
     path('api/documents/', include('apps.documents.urls')),
     path('api/notifications/', include('apps.notifications.urls')),
-
-    # ✅ Študentský endpoint (náš nový)
-    path('api/students/', include('apps.internships.urls')),
 
     # ✅ Swagger / Redoc
     path('api/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

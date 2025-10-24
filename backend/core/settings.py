@@ -175,6 +175,21 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': (
+                "Zadaj JWT token vo formáte:\n\n"
+                "**Bearer &lt;tvoj_token&gt;**"
+            ),
+        }
+    },
+    'USE_SESSION_AUTH': False,
+}
+
 # REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
