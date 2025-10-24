@@ -70,6 +70,7 @@ class User(AbstractBaseUser):
     vytvorene_at = models.DateTimeField(auto_now_add=True)
     zmenene_at = models.DateTimeField(auto_now=True)
 
+
     # Alias pre Django ORM (zabraňuje chybe "column password does not exist")
     @property
     def password(self):

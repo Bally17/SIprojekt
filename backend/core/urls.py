@@ -18,6 +18,7 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    authentication_classes=[],
 )
 
 def health_check(request):
@@ -39,6 +40,7 @@ def health_check(request):
         }
     })
 
+from drf_yasg import openapi
 urlpatterns = [
     path('', health_check, name='health_check'),
     path('admin/', admin.site.urls),
