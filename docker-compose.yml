@@ -8,10 +8,10 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./backend:/app
+    env_file:
+      - ./backend/.env  # ← sem daj len cestu k .env súboru
     environment:
       - DOCKER_CONTAINER=True
-    env_file:
-      - ./backend/.env
     depends_on:
       - db
     command: >
