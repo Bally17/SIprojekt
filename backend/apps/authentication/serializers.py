@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
-from apps.users.models import User
+from django.contrib.auth.hashers import make_password
+from apps.users.models import User, StudentProfil, validate_student_email
+from apps.companies.models import Firma  # Ak máš Company model
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -15,7 +16,9 @@ class LoginSerializer(serializers.Serializer):
             # Skúsime nájsť používateľa podľa emailu
             try:
                 user = User.objects.get(email=email)
-                user = authenticate(username=user.username, password=password)
+                # Použijeme vlastnú check_password metódu
+                if not user.check_password(password):
+                    user = None
             except User.DoesNotExist:
                 user = None
 
@@ -34,3 +37,124 @@ class GoogleAuthSerializer(serializers.Serializer):
 
 class GitHubAuthSerializer(serializers.Serializer):
     code = serializers.CharField(required=True)
+
+class StudentRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+    password_confirm = serializers.CharField(write_only=True)
+    studijny_program = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'email', 'password', 'password_confirm', 'meno', 'priezvisko', 
+            'telefon', 'adresa', 'studijny_program', 'alternativny_email'
+        ]
+
+    def validate_email(self, value):
+        """
+        Validácia študentského emailu pre rolu študent
+        """
+        # Validácia študentskej domény
+        validate_student_email(value)
+        
+        # Overenie či email už existuje
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email je už registrovaný.")
+        
+        return value
+
+    def validate(self, attrs):
+        """
+        Validácia zhody hesiel
+        """
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({"password_confirm": "Heslá sa nezhodujú."})
+        return attrs
+
+    def create(self, validated_data):
+        # Extrahuj údaje pre študentský profil
+        studijny_program = validated_data.pop('studijny_program')
+        password_confirm = validated_data.pop('password_confirm')
+        password = validated_data.pop('password')
+        alternativny_email = validated_data.pop('alternativny_email', None)
+        
+        # Vytvor používateľa s rolou študent
+        user = User(
+            email=validated_data['email'],
+            rola='student',
+            meno=validated_data.get('meno'),
+            priezvisko=validated_data.get('priezvisko'),
+            telefon=validated_data.get('telefon'),
+            adresa=validated_data.get('adresa'),
+            alternativny_email=alternativny_email,
+            musi_zmenit_heslo=True,  # Podľa FR-03 - po prvom prihlásení musí zmeniť heslo
+            heslo_hash=make_password(password),  # Hash hesla
+            is_active=True,
+            is_staff=False,
+            is_superuser=False
+        )
+        user.save()
+        
+        # Vytvor študentský profil
+        StudentProfil.objects.create(
+            pouzivatel=user,
+            studijny_program=studijny_program
+        )
+        
+        return user
+
+class CompanyRegistrationSerializer(serializers.ModelSerializer):
+    kontaktna_osoba_meno = serializers.CharField(write_only=True, required=True)
+    kontaktna_osoba_email = serializers.EmailField(write_only=True, required=True)
+    kontaktna_osoba_telefon = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'email', 'kontaktna_osoba_meno', 'kontaktna_osoba_email', 
+            'kontaktna_osoba_telefon', 'adresa'
+        ]
+
+    def validate_email(self, value):
+        """
+        Validácia emailu pre firmu
+        """
+        # Overenie či email už existuje
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email je už registrovaný.")
+        
+        return value
+
+    def create(self, validated_data):
+        # Extrahuj údaje pre kontaktnú osobu
+        kontaktna_osoba_meno = validated_data.pop('kontaktna_osoba_meno')
+        kontaktna_osoba_email = validated_data.pop('kontaktna_osoba_email')
+        kontaktna_osoba_telefon = validated_data.pop('kontaktna_osoba_telefon')
+        
+        # Rozdeľ meno na meno a priezvisko
+        meno_parts = kontaktna_osoba_meno.split(' ', 1)
+        meno = meno_parts[0]
+        priezvisko = meno_parts[1] if len(meno_parts) > 1 else ""
+        
+        # Vytvor používateľa s rolou firma (NEAKTÍVNY - podľa FR-03)
+        user = User(
+            email=validated_data['email'],
+            rola='firma',
+            meno=meno,
+            priezvisko=priezvisko,
+            telefon=kontaktna_osoba_telefon,
+            adresa=validated_data.get('adresa'),
+            alternativny_email=kontaktna_osoba_email,
+            aktivny=False,  # NEAKTÍVNY - vyžaduje aktiváciu cez email
+            email_overeny=False,
+            musi_zmenit_heslo=True,
+            heslo_hash=None,  # Heslo bude generované a odoslané emailom
+            is_active=True,
+            is_staff=False,
+            is_superuser=False
+        )
+        user.save()
+        
+        # TODO: Odoslať aktivačný email s heslom
+        
+        return user
