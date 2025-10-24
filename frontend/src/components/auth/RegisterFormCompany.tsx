@@ -1,7 +1,10 @@
 "use client";
 import { useState } from "react";
+// axiosClient: shared inštancia s baseURL z NEXT_PUBLIC_API_URL (napr. http://localhost:8000/api)
+import axiosClient from "@/lib/axiosClient";
 
 export default function RegisterFormCompany() {
+  // Lokálny stav formulára (controlled inputs)
   const [form, setForm] = useState({
     companyName: "",
     address: "",
@@ -10,36 +13,37 @@ export default function RegisterFormCompany() {
     contactPhone: "",
   });
 
-  // Stavové premené pre načítanie, chybu a úspech
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Aktualizácia hodnôt polí
+  // Aktualizácia vstupov → state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Odoslanie dát na backend
+  // Submit handler: mapovanie na backend field names + POST
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess(false);
     setLoading(true);
 
+    // payload presne podľa API
+    const payload = {
+      company_name: form.companyName,
+      address: form.address,
+      contact_name: form.contactName,
+      contact_email: form.contactEmail,
+      contact_phone: form.contactPhone,
+    };
+
     try {
-      const response = await fetch("http://localhost:8000/api/register/company/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      // baseURL sa doplní z axiosClient
+      const res = await axiosClient.post("/auth/register/company/", payload);
+      console.log("✅ Registrácia firmy:", res.data);
 
-      if (!response.ok) throw new Error("Registrácia zlyhala");
-
-      const data = await response.json();
-      console.log("✅ Registrácia firmy:", data);
-
-      // Reset formulára po úspešnom odoslaní
+      // Reset a info pre používateľa
       setSuccess(true);
       setForm({
         companyName: "",
@@ -48,10 +52,12 @@ export default function RegisterFormCompany() {
         contactEmail: "",
         contactPhone: "",
       });
-    } catch (err) {
-      // Zobrazenie chyby
-      console.error(err);
-      setError("Nepodarilo sa odoslať formulár. Skontrolujte údaje a skúste znova.");
+    } catch (err: any) {
+      console.error("❌ Chyba registrácie:", err);
+      setError(
+        err.response?.data?.message ||
+          "Nepodarilo sa odoslať formulár. Skontrolujte údaje a skúste znova.",
+      );
     } finally {
       setLoading(false);
     }
@@ -66,13 +72,11 @@ export default function RegisterFormCompany() {
     >
       <h2 className="text-2xl font-semibold text-cyan-700 text-center">Registrácia firmy</h2>
 
-      {/* Polia formulára */}
       <input
         name="companyName"
         value={form.companyName}
         onChange={handleChange}
         placeholder="Názov spoločnosti"
-        autoComplete="organization"
         className={input}
         required
       />
@@ -118,6 +122,7 @@ export default function RegisterFormCompany() {
       {error && <p className="text-red-600 text-sm text-center">{error}</p>}
       {success && <p className="text-green-600 text-sm text-center">✅ Registrácia úspešná!</p>}
 
+      {/* Submit */}
       <button
         type="submit"
         disabled={loading}
