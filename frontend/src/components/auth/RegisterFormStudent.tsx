@@ -1,7 +1,10 @@
 "use client";
 import { useState } from "react";
+// axiosClient = centrálna inštancia s baseURL (NEXT_PUBLIC_API_URL)
+import axiosClient from "@/lib/axiosClient";
 
 export default function RegisterFormStudent() {
+  // Lokálny stav formulára
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -12,36 +15,39 @@ export default function RegisterFormStudent() {
     studyField: "",
   });
 
-  // Stavové premené pre načítanie, chybu a úspech
+  // Stav UI (spinner + hlášky)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Aktualizácia poľa pri zmene hodnoty
+  // Aktualizácia vstupov → state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Odoslanie dát na backend (fetch POST request)
+  // Submit handler: mapovanie na backend field names + POST
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess(false);
     setLoading(true);
 
+    const payload = {
+      first_name: form.firstName,
+      last_name: form.lastName,
+      email: form.studentEmail,
+      alt_email: form.altEmail || "",
+      phone: form.phone,
+      studijny_program: form.studyField,
+    };
+
+    console.log("📤 Payload odosielaný na backend:", payload);
+
     try {
-      const response = await fetch("http://localhost:8000/api/register/student/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      // baseURL sa doplní z axiosClient
+      const res = await axiosClient.post("/auth/register/student/", payload);
+      console.log("✅ Registrácia študenta:", res.data);
 
-      if (!response.ok) throw new Error("Registrácia zlyhala");
-
-      const data = await response.json();
-      console.log("✅ Registrácia študenta:", data);
-
-      // Reset formulára po úspechu
       setSuccess(true);
       setForm({
         firstName: "",
@@ -52,10 +58,12 @@ export default function RegisterFormStudent() {
         phone: "",
         studyField: "",
       });
-    } catch (err) {
-      // Zobrazenie chybovej hlášky
-      console.error(err);
-      setError("Nepodarilo sa odoslať formulár. Skontrolujte údaje a skúste znova.");
+    } catch (err: any) {
+      console.error("❌ Chyba pri registrácii:", err.response?.data || err);
+      setError(
+        err.response?.data?.message ||
+          "Nepodarilo sa odoslať formulár. Skontrolujte údaje a skúste znova.",
+      );
     } finally {
       setLoading(false);
     }
@@ -79,7 +87,6 @@ export default function RegisterFormStudent() {
         className={input}
         required
       />
-
       <input
         name="lastName"
         placeholder="Priezvisko"
@@ -88,7 +95,6 @@ export default function RegisterFormStudent() {
         className={input}
         required
       />
-
       <input
         name="address"
         placeholder="Adresa"
@@ -97,7 +103,6 @@ export default function RegisterFormStudent() {
         className={input}
         required
       />
-
       <input
         type="email"
         name="studentEmail"
@@ -107,7 +112,6 @@ export default function RegisterFormStudent() {
         className={input}
         required
       />
-
       <input
         type="email"
         name="altEmail"
@@ -116,7 +120,6 @@ export default function RegisterFormStudent() {
         value={form.altEmail}
         className={input}
       />
-
       <input
         type="tel"
         name="phone"
@@ -126,7 +129,6 @@ export default function RegisterFormStudent() {
         className={input}
         required
       />
-
       <input
         name="studyField"
         placeholder="Študijný odbor"

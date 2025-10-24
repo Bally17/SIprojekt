@@ -1,64 +1,57 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+// axiosClient má baseURL z NEXT_PUBLIC_API_URL
+import axiosClient from "@/lib/axiosClient";
 
 export default function LoginForm() {
-  // Typ používateľa (študent / firma)
+  // Prepínač medzi „študent“ a „firma“ (UI + podmienky nižšie)
   const [userType, setUserType] = useState<"student" | "company">("student");
 
-  // Údaje z formulára
   const [form, setForm] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
 
-  // Stav aplikácie (načítavanie, chyba)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  // Zmena hodnôt inputov
+  // Sync vstupov do state (jednoduchý controlled form)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, type, checked, value } = e.target;
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Odoslanie formulára na backend
+  // Odoslanie loginu – jednotný endpoint /auth/login/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess(false);
     setLoading(true);
 
     try {
-      const endpoint =
-        userType === "student"
-          ? "http://localhost:8000/api/login/student/"
-          : "http://localhost:8000/api/login/company/";
+      const endpoint = "/auth/login/"; // baseURL sa pridá z axiosClient
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const res = await axiosClient.post(endpoint, form);
+      console.log("Login úspešný:", res.data);
 
-      if (!response.ok) throw new Error("Neplatné prihlasovacie údaje");
-      const data = await response.json();
-
-      console.log("Login successful:", data);
+      setSuccess(true);
       alert("Úspešné prihlásenie!");
-    } catch (err) {
-      console.error(err);
-      setError("Prihlásenie zlyhalo, skontrolujte email a heslo.");
+    } catch (err: any) {
+      console.error("Chyba pri prihlásení:", err.response?.data || err.message);
+      setError(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          "Prihlásenie zlyhalo, skontrolujte email a heslo.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // OAuth loginy
+  // OAuth len pre firmy (študenti cez školský login/heslo)
   const handleGoogleLogin = () => {
+    // Pozn: (redirect na backend)
     window.location.href = "http://localhost:8000/auth/google/login/";
   };
   const handleGithubLogin = () => {
@@ -71,7 +64,7 @@ export default function LoginForm() {
     <div className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto">
       <h2 className="text-2xl font-semibold text-cyan-700 text-center">Prihlásenie</h2>
 
-      {/* Prepínač typu používateľa */}
+      {/* Prepínač typu používateľa – ovplyvňuje len placeholder a zobrazenie OAuth blokov */}
       <div className="flex justify-center gap-4 mb-4">
         <button
           type="button"
@@ -97,115 +90,78 @@ export default function LoginForm() {
         </button>
       </div>
 
-      {/* Login pre študenta */}
-      {userType === "student" && (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            name="email"
-            placeholder="Študentský email"
-            value={form.email}
-            onChange={handleChange}
-            className={input}
-            required
-          />
+      {/* Login formulár – jednotný pre oba typy (payload email + password) */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="email"
+          name="email"
+          placeholder={userType === "student" ? "Študentský e-mail" : "Firemný e-mail"}
+          value={form.email}
+          onChange={handleChange}
+          className={input}
+          required
+        />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Heslo"
-            value={form.password}
-            onChange={handleChange}
-            className={input}
-            required
-          />
+        <input
+          type="password"
+          name="password"
+          placeholder="Heslo"
+          value={form.password}
+          onChange={handleChange}
+          className={input}
+          required
+        />
 
-          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+        {/* Stavové hlášky */}
+        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+        {success && <p className="text-green-600 text-sm text-center">✅ Prihlásenie úspešné!</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
+        >
+          {loading ? "Prihlasujem..." : "Prihlásiť sa"}
+        </button>
+      </form>
+
+      {/* OAuth blok – zobraziť len pre firmy */}
+      {userType === "company" && (
+        <div className="text-center mt-6 space-y-2">
+          <p className="text-gray-500 mb-2">alebo prihlásenie cez:</p>
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
+            type="button"
+            onClick={handleGoogleLogin}
+            className="bg-gray-100 border px-3 py-2 rounded w-full hover:bg-gray-200 flex items-center justify-center gap-2"
           >
-            {loading ? "Prihlasujem..." : "Prihlásiť sa"}
+            <Image
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google"
+              className="w-5 h-5"
+              width={20}
+              height={20}
+            />
+            Pokračovať cez Google
           </button>
-        </form>
-      )}
 
-      {/* Login pre firmu */}
-      {userType === "company" && (
-        <div className="space-y-4">
-          {/* Klasické prihlasenie */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              type="email"
-              name="email"
-              placeholder="Firemný email"
-              value={form.email}
-              onChange={handleChange}
-              className={input}
-              required
+          <button
+            type="button"
+            onClick={handleGithubLogin}
+            className="bg-gray-100 border px-3 py-2 rounded w-full hover:bg-gray-200 flex items-center justify-center gap-2"
+          >
+            <Image
+              src="https://www.svgrepo.com/show/512317/github-142.svg"
+              alt="GitHub"
+              className="w-5 h-5"
+              width={20}
+              height={20}
             />
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Heslo"
-              value={form.password}
-              onChange={handleChange}
-              className={input}
-              required
-            />
-
-            {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
-            >
-              {loading ? "Prihlasujem..." : "Prihlásiť sa"}
-            </button>
-          </form>
-
-          {/* OAuth sekcia */}
-          <div className="text-center mt-6 space-y-2">
-            <p className="text-gray-500 mb-2">alebo prihlásenie cez:</p>
-
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="bg-gray-100 border px-3 py-2 rounded w-full hover:bg-gray-200 flex items-center justify-center gap-2"
-            >
-              <Image
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-                className="w-5 h-5"
-                width={20}
-                height={20}
-              />
-              Pokračovať cez Google
-            </button>
-
-            <button
-              type="button"
-              onClick={handleGithubLogin}
-              className="bg-gray-100 border px-3 py-2 rounded w-full hover:bg-gray-200 flex items-center justify-center gap-2"
-            >
-              <Image
-                src="https://www.svgrepo.com/show/512317/github-142.svg"
-                alt="GitHub"
-                className="w-5 h-5"
-                width={20}
-                height={20}
-              />
-              Pokračovať cez GitHub
-            </button>
-          </div>
+            Pokračovať cez GitHub
+          </button>
         </div>
       )}
 
-      {/* Odkazy na registráciu */}
       <div className="text-center text-sm text-gray-600 mt-4">
         <p>
           Nemáte účet?{" "}
