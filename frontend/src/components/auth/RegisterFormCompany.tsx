@@ -4,12 +4,10 @@ import { useState } from "react";
 export default function RegisterFormCompany() {
   const [form, setForm] = useState({
     companyName: "",
-    ico: "",
-    dic: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    contactPerson: "",
+    address: "",
+    contactName: "",
+    contactEmail: "",
+    contactPhone: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,17 +16,6 @@ export default function RegisterFormCompany() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Základná validácia
-    if (form.password !== form.confirmPassword) {
-      alert("Heslá sa nezhodujú");
-      return;
-    }
-    if (!/^\d{8}$/.test(form.ico)) {
-      alert("IČO musí mať 8 číslic");
-      return;
-    }
-
     console.log("Company registration:", form);
   };
 
@@ -52,75 +39,48 @@ export default function RegisterFormCompany() {
       />
 
       <input
-        name="ico"
-        value={form.ico}
+        name="address"
+        value={form.address}
         onChange={handleChange}
-        placeholder="IČO (8 číslic)"
-        pattern="\d{8}"
-        title="IČO musí mať 8 číslic"
-        inputMode="numeric"
+        placeholder="Adresa spoločnosti"
         className={input}
         required
       />
 
       <input
-        name="dic"
-        value={form.dic}
+        name="contactName"
+        value={form.contactName}
         onChange={handleChange}
-        placeholder="DIČ (voliteľné)"
-        autoComplete="off"
+        placeholder="Kontaktná osoba – meno"
         className={input}
+        required
       />
 
       <input
         type="email"
-        name="email"
-        value={form.email}
+        name="contactEmail"
+        value={form.contactEmail}
         onChange={handleChange}
-        placeholder="Firemný email"
-        autoComplete="email"
+        placeholder="Kontaktná osoba – e-mail"
         className={input}
         required
       />
 
       <input
-        type="password"
-        name="password"
-        value={form.password}
+        type="tel"
+        name="contactPhone"
+        value={form.contactPhone}
         onChange={handleChange}
-        placeholder="Heslo (min. 8 znakov)"
-        minLength={8}
-        autoComplete="new-password"
+        placeholder="Kontaktná osoba – telefón"
         className={input}
         required
-      />
-
-      <input
-        type="password"
-        name="confirmPassword"
-        value={form.confirmPassword}
-        onChange={handleChange}
-        placeholder="Zopakuj heslo"
-        minLength={8}
-        autoComplete="new-password"
-        className={input}
-        required
-      />
-
-      <input
-        name="contactPerson"
-        value={form.contactPerson}
-        onChange={handleChange}
-        placeholder="Kontaktná osoba"
-        autoComplete="name"
-        className={input}
       />
 
       <button
         type="submit"
         className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800"
       >
-        Registrovať firmu
+        Registrovať ako firma
       </button>
     </form>
   );
