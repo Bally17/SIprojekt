@@ -5,10 +5,11 @@ export default function RegisterFormStudent() {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    university: "",
+    address: "",
+    studentEmail: "",
+    altEmail: "",
+    phone: "",
+    studyField: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,6 +20,8 @@ export default function RegisterFormStudent() {
     e.preventDefault();
     console.log("Student registration:", form);
   };
+
+  const input = "w-full border rounded px-3 py-2";
 
   return (
     <form
@@ -31,52 +34,65 @@ export default function RegisterFormStudent() {
         name="firstName"
         placeholder="Meno"
         onChange={handleChange}
-        className="w-full border rounded px-3 py-2"
+        className={input}
         required
       />
+
       <input
         name="lastName"
         placeholder="Priezvisko"
         onChange={handleChange}
-        className="w-full border rounded px-3 py-2"
+        className={input}
         required
       />
+
+      <input
+        name="address"
+        placeholder="Adresa"
+        onChange={handleChange}
+        className={input}
+        required
+      />
+
       <input
         type="email"
-        name="email"
-        placeholder="Študentský email"
+        name="studentEmail"
+        placeholder="Študentský e-mail"
         onChange={handleChange}
-        className="w-full border rounded px-3 py-2"
+        className={input}
         required
       />
+
       <input
-        type="password"
-        name="password"
-        placeholder="Heslo"
+        type="email"
+        name="altEmail"
+        placeholder="Alternatívny e-mail (voliteľný)"
         onChange={handleChange}
-        className="w-full border rounded px-3 py-2"
+        className={input}
+      />
+
+      <input
+        type="tel"
+        name="phone"
+        placeholder="Telefón"
+        onChange={handleChange}
+        className={input}
         required
       />
+
       <input
-        type="password"
-        name="confirmPassword"
-        placeholder="Zopakuj heslo"
+        name="studyField"
+        placeholder="Študijný odbor"
         onChange={handleChange}
-        className="w-full border rounded px-3 py-2"
+        className={input}
         required
-      />
-      <input
-        name="university"
-        placeholder="Univerzita"
-        onChange={handleChange}
-        className="w-full border rounded px-3 py-2"
       />
 
       <button
         type="submit"
         className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800"
       >
-        Registrovať sa
+        Registrovať ako študent
       </button>
     </form>
   );
