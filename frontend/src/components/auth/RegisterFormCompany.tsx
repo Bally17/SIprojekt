@@ -10,13 +10,51 @@ export default function RegisterFormCompany() {
     contactPhone: "",
   });
 
+  // Stavové premené pre načítanie, chybu a úspech
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  // Aktualizácia hodnôt polí
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Odoslanie dát na backend
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Company registration:", form);
+    setError("");
+    setSuccess(false);
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/api/register/company/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) throw new Error("Registrácia zlyhala");
+
+      const data = await response.json();
+      console.log("✅ Registrácia firmy:", data);
+
+      // Reset formulára po úspešnom odoslaní
+      setSuccess(true);
+      setForm({
+        companyName: "",
+        address: "",
+        contactName: "",
+        contactEmail: "",
+        contactPhone: "",
+      });
+    } catch (err) {
+      // Zobrazenie chyby
+      console.error(err);
+      setError("Nepodarilo sa odoslať formulár. Skontrolujte údaje a skúste znova.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const input = "w-full border rounded px-3 py-2";
@@ -28,6 +66,7 @@ export default function RegisterFormCompany() {
     >
       <h2 className="text-2xl font-semibold text-cyan-700 text-center">Registrácia firmy</h2>
 
+      {/* Polia formulára */}
       <input
         name="companyName"
         value={form.companyName}
@@ -76,11 +115,15 @@ export default function RegisterFormCompany() {
         required
       />
 
+      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+      {success && <p className="text-green-600 text-sm text-center">✅ Registrácia úspešná!</p>}
+
       <button
         type="submit"
-        className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800"
+        disabled={loading}
+        className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
       >
-        Registrovať ako firma
+        {loading ? "Odosielam..." : "Registrovať ako firma"}
       </button>
     </form>
   );

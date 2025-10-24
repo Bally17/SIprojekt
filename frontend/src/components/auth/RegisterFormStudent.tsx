@@ -12,13 +12,53 @@ export default function RegisterFormStudent() {
     studyField: "",
   });
 
+  // Stavové premené pre načítanie, chybu a úspech
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  // Aktualizácia poľa pri zmene hodnoty
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Odoslanie dát na backend (fetch POST request)
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Student registration:", form);
+    setError("");
+    setSuccess(false);
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/api/register/student/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) throw new Error("Registrácia zlyhala");
+
+      const data = await response.json();
+      console.log("✅ Registrácia študenta:", data);
+
+      // Reset formulára po úspechu
+      setSuccess(true);
+      setForm({
+        firstName: "",
+        lastName: "",
+        address: "",
+        studentEmail: "",
+        altEmail: "",
+        phone: "",
+        studyField: "",
+      });
+    } catch (err) {
+      // Zobrazenie chybovej hlášky
+      console.error(err);
+      setError("Nepodarilo sa odoslať formulár. Skontrolujte údaje a skúste znova.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const input = "w-full border rounded px-3 py-2";
@@ -30,10 +70,12 @@ export default function RegisterFormStudent() {
     >
       <h2 className="text-2xl font-semibold text-cyan-700 text-center">Registrácia študenta</h2>
 
+      {/* Polia formulára */}
       <input
         name="firstName"
         placeholder="Meno"
         onChange={handleChange}
+        value={form.firstName}
         className={input}
         required
       />
@@ -42,6 +84,7 @@ export default function RegisterFormStudent() {
         name="lastName"
         placeholder="Priezvisko"
         onChange={handleChange}
+        value={form.lastName}
         className={input}
         required
       />
@@ -50,6 +93,7 @@ export default function RegisterFormStudent() {
         name="address"
         placeholder="Adresa"
         onChange={handleChange}
+        value={form.address}
         className={input}
         required
       />
@@ -59,6 +103,7 @@ export default function RegisterFormStudent() {
         name="studentEmail"
         placeholder="Študentský e-mail"
         onChange={handleChange}
+        value={form.studentEmail}
         className={input}
         required
       />
@@ -68,6 +113,7 @@ export default function RegisterFormStudent() {
         name="altEmail"
         placeholder="Alternatívny e-mail (voliteľný)"
         onChange={handleChange}
+        value={form.altEmail}
         className={input}
       />
 
@@ -76,6 +122,7 @@ export default function RegisterFormStudent() {
         name="phone"
         placeholder="Telefón"
         onChange={handleChange}
+        value={form.phone}
         className={input}
         required
       />
@@ -84,15 +131,20 @@ export default function RegisterFormStudent() {
         name="studyField"
         placeholder="Študijný odbor"
         onChange={handleChange}
+        value={form.studyField}
         className={input}
         required
       />
 
+      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+      {success && <p className="text-green-600 text-sm text-center">✅ Registrácia úspešná!</p>}
+
       <button
         type="submit"
-        className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800"
+        disabled={loading}
+        className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
       >
-        Registrovať ako študent
+        {loading ? "Odosielam..." : "Registrovať ako študent"}
       </button>
     </form>
   );
