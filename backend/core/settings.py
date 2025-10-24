@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     
     # Third party apps
     'rest_framework',
+    'drf_yasg',
     'corsheaders',
     'django_filters',
     'allauth',
@@ -57,6 +58,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
+
+import drf_yasg
 
 TEMPLATES = [
     {
