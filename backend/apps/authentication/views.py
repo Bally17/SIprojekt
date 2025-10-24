@@ -1,9 +1,8 @@
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
 from apps.users.models import User
 from django.conf import settings
 from django.utils import timezone
@@ -11,12 +10,51 @@ from datetime import timedelta
 import requests
 import json
 
-from .serializers import LoginSerializer, GoogleAuthSerializer, GitHubAuthSerializer
+from .serializers import LoginSerializer, GoogleAuthSerializer, GitHubAuthSerializer, StudentRegistrationSerializer, CompanyRegistrationSerializer
 from .oauth_serializers import OAuthAuthorizeSerializer, OAuthTokenSerializer
 from .models import OAuthClient, AuthorizationCode
 
 # Custom Rate Limiting
 from django.core.cache import cache
+
+# Student Registration View
+class StudentRegistrationView(generics.CreateAPIView):
+    serializer_class = StudentRegistrationSerializer
+    permission_classes = [AllowAny]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        # TODO: Implementovať odoslanie hesla na email (podľa FR-03)
+        # send_password_email(user.email, request.data['password'])
+        
+        return Response({
+            "message": "Študent bol úspešne zaregistrovaný. Heslo bolo odoslané na študentský email.",
+            "user_id": user.id,
+            "email": user.email
+        }, status=status.HTTP_201_CREATED)
+
+# Company Registration View  
+class CompanyRegistrationView(generics.CreateAPIView):
+    serializer_class = CompanyRegistrationSerializer
+    permission_classes = [AllowAny]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        # TODO: Implementovať odoslanie aktivačného emailu (podľa FR-03)
+        # send_activation_email(user.email)
+        
+        return Response({
+            "message": "Firma bola úspešne zaregistrovaná. Aktivačný odkaz bol odoslaný na email.",
+            "user_id": user.id,
+            "email": user.email,
+            "status": "neaktívny - vyžaduje aktiváciu"
+        }, status=status.HTTP_201_CREATED)
 
 def custom_rate_limit(key, limit=10, window=60):
     """Simple custom rate limiting using Django cache"""
@@ -61,56 +99,42 @@ def create_or_update_oauth_user(email, first_name, last_name, avatar, provider):
     """Create or update user from OAuth provider"""
     try:
         user = User.objects.get(email=email)
-        # Aktualizujeme UserProfile
-        profile = user.profile
-        profile.oauth_provider = provider
-        if avatar:
-            profile.avatar_url = avatar
-        profile.save()
+        # Aktualizujeme základné údaje
+        if first_name and not user.meno:
+            user.meno = first_name
+        if last_name and not user.priezvisko:
+            user.priezvisko = last_name
+        user.save()
         created = False
     except User.DoesNotExist:
-        # Create new user
-        username = email.split('@')[0]
-        # Ensure unique username
-        base_username = username
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
-        
-        user = User.objects.create(
+        # Create new user - pre OAuth vytvoríme štandardného používateľa
+        user = User.objects.create_user(
             email=email,
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            is_active=True
+            password=None,  # OAuth users don't need password
+            rola='student',  # Default role pre OAuth
+            meno=first_name,
+            priezvisko=last_name,
+            musi_zmenit_heslo=False  # OAuth users don't need to change password
         )
-        user.set_unusable_password()  # User can only login via OAuth
-        user.save()
-        
-        # Aktualizujeme profile
-        profile = user.profile
-        profile.oauth_provider = provider
-        if avatar:
-            profile.avatar_url = avatar
-        profile.save()
         created = True
     
     return user, created
 
 def get_user_data(user):
     """Get user data for response"""
-    profile = user.profile
     return {
         'id': user.id,
         'email': user.email,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'avatar': profile.avatar_url,
-        'oauth_provider': profile.oauth_provider,
-        'phone': profile.phone,
-        'created_at': profile.created_at.isoformat() if profile.created_at else None
+        'meno': user.meno,
+        'priezvisko': user.priezvisko,
+        'rola': user.rola,
+        'telefon': user.telefon,
+        'adresa': user.adresa,
+        'aktivny': user.aktivny,
+        'vytvorene_at': user.vytvorene_at.isoformat() if user.vytvorene_at else None
     }
+
+# ... zvyšok tvojho pôvodného kódu (login_view, google_auth, github_auth, atď.) ...
 
 def handle_github_access_token(access_token):
     """Process GitHub access token"""
