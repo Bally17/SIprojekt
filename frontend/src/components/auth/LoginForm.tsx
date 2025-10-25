@@ -112,6 +112,12 @@ export default function LoginForm() {
           required
         />
 
+        <div className="text-right text-sm">
+          <a href="/forgot-password" className="text-cyan-700 hover:underline">
+            Zabudli ste heslo?
+          </a>
+        </div>
+
         {/* Stavové hlášky */}
         {error && <p className="text-red-600 text-sm text-center">{error}</p>}
         {success && <p className="text-green-600 text-sm text-center">✅ Prihlásenie úspešné!</p>}
