@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from apps.internships.models import HistoriaStavovPraxe  # 🔥 pridaj model histórie
+from apps.companies.models import Firma
+from django.db import transaction
 
 from .models import Prax, HistoriaStavovPraxe
 from .serializers import InternshipSerializer, InternshipHistorySerializer
@@ -45,45 +48,94 @@ class InternshipHistoryViewSet(viewsets.ModelViewSet):
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def student_my_internships(request):
-    """🔹 Študent získa prehľad o svojich praxiach (len svoje vlastné)."""
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Zoznam praxí prihláseného študenta (rozšírený + stránkovanie)",
+    operation_description="""
+    Tento endpoint vráti všetky praxe prihláseného študenta
+    spolu s detailmi o firme, garantovi a históriou stavov.
+    Výsledok je stránkovaný po 10 položkách.
+    """,
+    responses={200: "Zoznam praxí s detailmi (stránkovaný)"}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me_internships(request):
+    """
+    🧑‍🎓 Vráti všetky praxe prihláseného študenta s detailnými informáciami a stránkovaním.
+    """
     user = request.user
 
-    # Overíme, či používateľ má študentský profil
-    if not hasattr(user, 'studentprofil'):
-        return Response({"error": "Používateľ nemá študentský profil."}, status=status.HTTP_403_FORBIDDEN)
+    if user.rola != "student":
+        return Response({"error": "Len študent môže pristupovať k tomuto endpointu."},
+                        status=status.HTTP_403_FORBIDDEN)
 
-    student = user.studentprofil
-    internships = Prax.objects.filter(student=student.pouzivatel).select_related('firma', 'garant')
+    # Základný queryset
+    praxe = Prax.objects.filter(student=user).select_related("firma", "garant").order_by("-vytvorene_at")
 
-    # Voliteľné filtre
-    rok = request.query_params.get('rok')
-    stav = request.query_params.get('stav')
-    semester = request.query_params.get('semester')
+    if not praxe.exists():
+        return Response({"message": "Študent zatiaľ nemá žiadne praxe."}, status=200)
 
-    if rok:
-        internships = internships.filter(rok=rok)
-    if stav:
-        internships = internships.filter(stav__iexact=stav)
-    if semester:
-        internships = internships.filter(semester__iexact=semester)
-
-    # Triedenie
-    ordering = request.query_params.get('ordering')
-    if ordering:
-        internships = internships.order_by(ordering)
-
-    # Stránkovanie
+    # 🧩 Stránkovanie
     paginator = PageNumberPagination()
     paginator.page_size = 10
-    result_page = paginator.paginate_queryset(internships, request)
+    result_page = paginator.paginate_queryset(praxe, request)
 
-    data = {
-        "student": StudentProfileSerializer(student).data,
-        "internships": InternshipSerializer(result_page, many=True).data,
+    # Informácie o študentovi
+    student_data = {
+        "id": user.id,
+        "meno": user.meno,
+        "priezvisko": user.priezvisko,
+        "email": user.email,
+        "studijny_program": getattr(user.studentprofil, "studijny_program", None),
     }
 
-    return paginator.get_paginated_response(data)
+    # Zoznam praxí (detailne)
+    result = []
+    for p in result_page:
+        historia = HistoriaStavovPraxe.objects.filter(prax=p).order_by("zmena_at").values(
+            "stary_stav", "novy_stav", "poznamka", "zmena_at"
+        )
+
+        firma_data = None
+        if p.firma:
+            firma_data = {
+                "id": p.firma.id,
+                "nazov": p.firma.nazov,
+                "adresa": p.firma.adresa,
+                "kontakt_meno": p.firma.kontakt_meno,
+                "kontakt_email": p.firma.kontakt_email,
+                "kontakt_telefon": p.firma.kontakt_telefon,
+            }
+
+        garant_data = None
+        if p.garant:
+            garant_data = {
+                "id": p.garant.id,
+                "meno": p.garant.meno,
+                "priezvisko": p.garant.priezvisko,
+                "email": p.garant.email,
+            }
+
+        result.append({
+            "id": p.id,
+            "rok": p.rok,
+            "semester": p.semester,
+            "datum_zaciatku": p.datum_zaciatku,
+            "datum_konca": p.datum_konca,
+            "stav": p.stav,
+            "firma": firma_data,
+            "garant": garant_data,
+            "historia": list(historia),
+        })
+
+    # 🧾 Výsledok s meta údajmi o stránkovaní
+    response_data = {
+        "student": student_data,
+        "internships": result,
+    }
+
+    return paginator.get_paginated_response(response_data)
 
 
 # 🔹 Firma získa prehľad o svojich praxiach
@@ -167,3 +219,72 @@ def company_pending_internships(request):
     }
 
     return paginator.get_paginated_response(data)
+
+
+@swagger_auto_schema(
+    method="post",
+    operation_summary="🎓 Študent vytvorí novú prax (s históriou)",
+    operation_description="""
+    Tento endpoint umožňuje študentovi vytvoriť **novú prax** vo vybratej firme.  
+    Automaticky nastaví `stav = vytvorena` a zapíše záznam do `historia_stavov_praxe`.
+    """,
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "firma_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="ID firmy"),
+            "rok": openapi.Schema(type=openapi.TYPE_INTEGER, description="Rok praxe"),
+            "semester": openapi.Schema(type=openapi.TYPE_STRING, description="Zimný alebo letný"),
+            "datum_zaciatku": openapi.Schema(type=openapi.TYPE_STRING, format="date"),
+            "datum_konca": openapi.Schema(type=openapi.TYPE_STRING, format="date"),
+        },
+        required=["firma_id", "rok", "semester", "datum_zaciatku", "datum_konca"],
+    ),
+    responses={201: "Prax vytvorená", 403: "Len študent môže vytvárať prax"},
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_internship(request):
+    user = request.user
+
+    # ✅ Povolené len pre študentov
+    if user.rola != "student":
+        return Response({"error": "Len študent môže vytvoriť prax."}, status=status.HTTP_403_FORBIDDEN)
+
+    firma_id = request.data.get("firma_id")
+    rok = request.data.get("rok")
+    semester = request.data.get("semester")
+    datum_zaciatku = request.data.get("datum_zaciatku")
+    datum_konca = request.data.get("datum_konca")
+
+    # ✅ Validácia vstupov
+    if not all([firma_id, rok, semester, datum_zaciatku, datum_konca]):
+        return Response({"error": "Všetky polia sú povinné."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        firma = Firma.objects.get(id=firma_id)
+    except Firma.DoesNotExist:
+        return Response({"error": "Firma so zadaným ID neexistuje."}, status=status.HTTP_404_NOT_FOUND)
+
+    # 🔒 Transakcia: prax + história
+    with transaction.atomic():
+        # 🧱 Vytvor novú prax
+        prax = Prax.objects.create(
+            student_id=user.id,
+            firma_id=firma.id,
+            rok=rok,
+            semester=semester,
+            datum_zaciatku=datum_zaciatku,
+            datum_konca=datum_konca,
+            stav="vytvorena",
+        )
+
+        # 🕓 Zapíš históriu
+        HistoriaStavovPraxe.objects.create(
+            prax_id=prax.id,
+            stary_stav=None,
+            novy_stav="vytvorena",
+            zmenil_id=user.id,
+            poznamka="Prax bola vytvorená študentom.",
+        )
+
+    return Response(InternshipSerializer(prax).data, status=status.HTTP_201_CREATED)
