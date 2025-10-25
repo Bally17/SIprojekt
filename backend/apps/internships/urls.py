@@ -18,4 +18,7 @@ urlpatterns = [
 
     # 🔹 Vytvorenie praxe
     path('create/', views.create_internship, name='create_internship'),
+    path('company/confirm/<int:prax_id>/', views.company_confirm_internship, name='company_confirm_internship'),
+    path('company/reject/<int:prax_id>/', views.company_reject_internship, name='company_reject_internship'),
+
 ]
