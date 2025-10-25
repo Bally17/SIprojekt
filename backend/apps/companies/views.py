@@ -1,10 +1,12 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes  # 🔥 musí byť tu hore
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db.models import Q
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 from .models import Firma
 from .serializers import CompanySerializer
@@ -95,3 +97,54 @@ def company_internships_overview(request, company_id):
     }
 
     return Response(data, status=status.HTTP_200_OK)
+
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Fulltextové vyhľadávanie firiem",
+    operation_description="""
+    Vyhľadáva firmy podľa názvu, adresy alebo kontaktných údajov pomocou PostgreSQL fulltext search.
+
+    ✅ Príklad použitia:
+    ```
+    /api/companies/search/?q=tech
+    ```
+    """,
+    manual_parameters=[
+        openapi.Parameter('q', openapi.IN_QUERY, description="Hľadaný text (napr. 'TechCorp')", type=openapi.TYPE_STRING),
+    ],
+    responses={
+        200: openapi.Response(
+            description="Zoznam firiem zodpovedajúcich fulltext hľadaniu",
+            examples={
+                "application/json": {
+                    "results": [
+                        {"id": 1, "nazov": "TechCorp", "adresa": "Bratislava", "kontakt_meno": "Peter Novak"},
+                        {"id": 2, "nazov": "TechWorld", "adresa": "Nitra", "kontakt_meno": "Eva Hricová"}
+                    ]
+                }
+            }
+        ),
+        400: "Chýba parameter ?q",
+        401: "Neautorizovaný prístup"
+    }
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def search_companies(request):
+    """
+    🔍 Vyhľadávanie firiem (čiastočné aj úplné, vhodné pre autocomplete).
+    """
+    query = request.query_params.get('q', '').strip()
+    if not query:
+        return Response({"results": []}, status=status.HTTP_200_OK)
+
+    firms = Firma.objects.filter(
+        Q(nazov__icontains=query) |
+        Q(adresa__icontains=query) |
+        Q(kontakt_meno__icontains=query) |
+        Q(kontakt_email__icontains=query)
+    )[:10]
+
+    return Response({"results": CompanySerializer(firms, many=True).data})
