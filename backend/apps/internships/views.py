@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+ # ak existuje
+
 from apps.internships.models import HistoriaStavovPraxe  # 🔥 pridaj model histórie
 from apps.companies.models import Firma
 from django.db import transaction
@@ -288,3 +290,83 @@ def create_internship(request):
         )
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_201_CREATED)
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def company_confirm_internship(request, prax_id):
+    """✅ Firma potvrdí prax (stav -> potvrdena)."""
+    from apps.notifications.models import Notifikacie 
+    user = request.user
+
+    if user.rola != "firma":
+        return Response({"error": "Len firma môže potvrdiť prax."}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        prax = Prax.objects.get(id=prax_id, firma_id=user.id)
+    except Prax.DoesNotExist:
+        return Response({"error": "Prax neexistuje alebo nepatrí tejto firme."}, status=status.HTTP_404_NOT_FOUND)
+
+    if prax.stav.lower() != "vytvorena":
+        return Response({"error": "Prax už nie je v stave 'vytvorena'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        prax.stav = "potvrdena"
+        prax.save()
+
+        HistoriaStavovPraxe.objects.create(
+            prax=prax,
+            stary_stav="vytvorena",
+            novy_stav="potvrdena",
+            zmenil_id=user.id,
+            poznamka="Prax bola potvrdená firmou."
+        )
+
+        # 🔔 voliteľne: vytvoriť notifikáciu pre študenta
+        # Notifikacia.objects.create(
+        #     prijemca_id=prax.student_id,
+        #     typ="info",
+        #     sprava=f"Vaša prax vo firme {user.meno} bola potvrdená."
+        # )
+
+    return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
+
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def company_reject_internship(request, prax_id):
+    """❌ Firma zamietne prax (stav -> zamietnuta)."""
+    from apps.notifications.models import Notifikacie 
+    user = request.user
+
+    if user.rola != "firma":
+        return Response({"error": "Len firma môže zamietnuť prax."}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        prax = Prax.objects.get(id=prax_id, firma_id=user.id)
+    except Prax.DoesNotExist:
+        return Response({"error": "Prax neexistuje alebo nepatrí tejto firme."}, status=status.HTTP_404_NOT_FOUND)
+
+    if prax.stav.lower() != "vytvorena":
+        return Response({"error": "Prax už nie je v stave 'vytvorena'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        prax.stav = "zamietnuta"
+        prax.save()
+
+        HistoriaStavovPraxe.objects.create(
+            prax=prax,
+            stary_stav="vytvorena",
+            novy_stav="zamietnuta",
+            zmenil_id=user.id,
+            poznamka="Prax bola zamietnutá firmou."
+        )
+
+        # 🔔 voliteľne: notifikácia študentovi
+        # Notifikacia.objects.create(
+        #     prijemca_id=prax.student_id,
+        #     typ="warning",
+        #     sprava=f"Vaša prax vo firme {user.meno} bola zamietnutá."
+        # )
+
+    return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
