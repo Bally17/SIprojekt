@@ -45,3 +45,17 @@ def send_activation_email(user):
 
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
 
+
+def send_password_reset_email(user, reset_link):
+    """Odošle používateľovi link na obnovenie hesla."""
+    greeting = user.meno or user.email
+    subject = "Obnovenie hesla – Študentská prax"
+    message = (
+        f"Dobrý deň {greeting},\n\n"
+        f"Dostali sme požiadavku na obnovu Vášho hesla. Pokračujte kliknutím na odkaz:\n\n"
+        f"{reset_link}\n\n"
+        f"Ak ste o reset nepožiadali, tento email môžete ignorovať.\n\n"
+        f"Tím Študentskej praxe"
+    )
+
+    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)

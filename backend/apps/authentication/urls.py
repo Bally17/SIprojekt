@@ -24,9 +24,13 @@ urlpatterns = [
     path('oauth/userinfo/', views.oauth_userinfo, name='oauth-userinfo'),
     path('oauth/clients/', views.oauth_clients, name='oauth-clients'),
 
-    #Student and Company registeration
+    # Student and Company registeration
     path('register/student/', StudentRegistrationView.as_view(), name='student-registration'),
     path('register/company/', CompanyRegistrationView.as_view(), name='company-registration'),
+
+    # Reset password added urls
+    path('password/reset/', views.password_reset_request, name='password-reset'),
+    path('password/reset/confirm/', views.password_reset_confirm, name='password-reset-confirm'),
 
     path('activate/<str:token>/', views.activate_account, name='activate_account'),
 

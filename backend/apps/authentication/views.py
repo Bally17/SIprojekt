@@ -10,20 +10,35 @@ from datetime import timedelta
 import requests
 import json
 
-from .serializers import LoginSerializer, GoogleAuthSerializer, GitHubAuthSerializer, StudentRegistrationSerializer, CompanyRegistrationSerializer
+from .serializers import (
+    LoginSerializer,
+    GoogleAuthSerializer,
+    GitHubAuthSerializer,
+    StudentRegistrationSerializer,
+    CompanyRegistrationSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
+)
 from .oauth_serializers import OAuthAuthorizeSerializer, OAuthTokenSerializer
 from .models import OAuthClient, AuthorizationCode
-from .utils import generate_random_password, send_password_email, send_activation_email
+from .utils import (
+    generate_random_password,
+    send_password_email,
+    send_activation_email,
+    send_password_reset_email,
+)
 
 # Custom Rate Limiting
 from django.core.cache import cache
 
-from django.core.signing import Signer
+from django.core.signing import Signer, TimestampSigner, BadSignature, SignatureExpired
 from django.core.mail import send_mail
 import secrets
 import string
 
 signer = Signer()
+password_reset_signer = TimestampSigner()
+PASSWORD_RESET_TOKEN_MAX_AGE = 3600  # seconds
 
 class StudentRegistrationView(generics.CreateAPIView):
     serializer_class = StudentRegistrationSerializer
@@ -102,6 +117,55 @@ class CompanyRegistrationView(generics.CreateAPIView):
             "email": user.email,
             "status": "neaktívny - vyžaduje aktiváciu"
         }, status=status.HTTP_201_CREATED)
+
+# Password reset request, spracuje mail, vygeneruje token, pošle reset link
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_request(request):
+    """Prijme email a odošle reset link, ak používateľ existuje."""
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    email = serializer.validated_data['email'].lower()
+    user = User.objects.filter(email__iexact=email).first()
+
+    if user:
+        token = password_reset_signer.sign(user.email)
+        reset_link = f"{settings.FRONTEND_URL}/reset-password/{token}/"
+        send_password_reset_email(user, reset_link)
+
+    return Response({
+        "message": "Ak účet existuje, poslali sme resetovací odkaz na email."
+    }, status=status.HTTP_200_OK)
+
+# Posle nový password + token, ovrí ho a zemní heslo v databze
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    """Overí token a nastaví nové heslo."""
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    token = serializer.validated_data['token']
+
+    try:
+        email = password_reset_signer.unsign(token, max_age=PASSWORD_RESET_TOKEN_MAX_AGE)
+    except SignatureExpired:
+        return Response({"error": "Resetovací odkaz expiroval."}, status=status.HTTP_400_BAD_REQUEST)
+    except BadSignature:
+        return Response({"error": "Resetovací odkaz je neplatný."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({"error": "Resetovací odkaz je neplatný."}, status=status.HTTP_400_BAD_REQUEST)
+
+    new_password = serializer.validated_data['new_password']
+    user.set_password(new_password)
+    user.musi_zmenit_heslo = False
+    user.save()
+
+    return Response({"message": "Heslo bolo úspešne zresetované."}, status=status.HTTP_200_OK)
 
 
 def custom_rate_limit(key, limit=10, window=60):
