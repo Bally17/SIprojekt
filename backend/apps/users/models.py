@@ -1,40 +1,35 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.contrib.auth.hashers import check_password, make_password
-import re
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
+import re
 
 
 def validate_student_email(value):
-    """
-    Validácia študentského emailu - overenie formátu a domény
-    """
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(email_pattern, value):
         raise ValidationError('Neplatný formát emailu.')
-    
-    allowed_student_domains = [
-        'student.ukf.sk',
-        'ukf.sk',
-    ]
-    
-    email_domain = value.split('@')[1].lower()
-    if email_domain not in allowed_student_domains:
-        raise ValidationError(
-            f'Povolené sú len študentské emaily z domén: {", ".join(allowed_student_domains)}'
-        )
-    
+
+    allowed_domains = ['student.ukf.sk', 'ukf.sk']
+    domain = value.split('@')[1].lower()
+    if domain not in allowed_domains:
+        raise ValidationError(f"Povolené sú len domény: {', '.join(allowed_domains)}")
     return value
 
 
+# ==============================================
+#               USER MANAGER
+# ==============================================
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('Email musí byť zadaný')
+            raise ValueError("Email musí byť zadaný")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         if password:
             user.set_password(password)
+        else:
+            user.set_password(BaseUserManager().make_random_password())
         user.save(using=self._db)
         return user
 
@@ -44,79 +39,37 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser):
+# ==============================================
+#               USER MODEL
+# ==============================================
+class User(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = [
         ('student', 'Študent'),
-        ('garant', 'Garant'), 
+        ('garant', 'Garant'),
         ('firma', 'Firma'),
         ('externy', 'Externý'),
         ('admin', 'Admin'),
     ]
-    
+
     id = models.BigAutoField(primary_key=True)
     rola = models.CharField(max_length=20, choices=ROLE_CHOICES)
     email = models.EmailField(unique=True, max_length=255)
     alternativny_email = models.EmailField(blank=True, null=True)
-    heslo_hash = models.TextField(blank=True, null=True)
+    heslo_hash = models.TextField(blank=True, null=True, db_column='heslo_hash')  # ✅ reálne DB pole
+
     meno = models.CharField(max_length=100, blank=True, null=True)
     priezvisko = models.CharField(max_length=100, blank=True, null=True)
     telefon = models.CharField(max_length=30, blank=True, null=True)
     adresa = models.TextField(blank=True, null=True)
     firma_id = models.BigIntegerField(blank=True, null=True)
+
     aktivny = models.BooleanField(default=True)
     email_overeny = models.BooleanField(default=False)
     musi_zmenit_heslo = models.BooleanField(default=True)
-    posledne_prihlasenie = models.DateTimeField(blank=True, null=True)
+
+    posledne_prihlasenie = models.DateTimeField(blank=True, null=True, db_column='posledne_prihlasenie')
     vytvorene_at = models.DateTimeField(auto_now_add=True)
     zmenene_at = models.DateTimeField(auto_now=True)
-
-
-    # Alias pre Django ORM (zabraňuje chybe "column password does not exist")
-    @property
-    def password(self):
-        return self.heslo_hash
-
-    @password.setter
-    def password(self, raw_password):
-        self.heslo_hash = make_password(raw_password)
-
-    # Pre mapovanie Django polí
-    @property
-    def is_staff(self):
-        return self.rola == 'admin'
-
-    @is_staff.setter
-    def is_staff(self, value):
-    # ignorujeme, Django ho občas volá pri init
-        pass
-
-
-    @property
-    def is_active(self):
-        return self.aktivny
-
-    @is_active.setter
-    def is_active(self, value):
-        self.aktivny = value
-
-
-    @property
-    def is_superuser(self):
-        return self.rola == 'admin'
-
-    @is_superuser.setter
-    def is_superuser(self, value):
-    # ignorujeme, Django ho občas volá
-        pass
-
-
-    @property
-    def last_login(self):
-        return self.posledne_prihlasenie
-
-    @last_login.setter
-    def last_login(self, value):
-        self.posledne_prihlasenie = value
 
     objects = CustomUserManager()
 
@@ -124,42 +77,75 @@ class User(AbstractBaseUser):
     REQUIRED_FIELDS = ['meno', 'priezvisko']
 
     class Meta:
-        managed = False
         db_table = 'pouzivatelia'
+        managed = False  # 🔥 zachovávaš pôvodnú DB, Django nič nemení
 
     def __str__(self):
         return self.email
 
-    def get_full_name(self):
-        return f"{self.meno} {self.priezvisko}".strip()
+    # =========================================
+    #             PROPERTY ALIASY
+    # =========================================
+    @property
+    def password(self):
+        """Django alias pre heslo"""
+        return self.heslo_hash
 
-    def get_short_name(self):
-        return self.meno
+    @password.setter
+    def password(self, raw_password):
+        self.heslo_hash = make_password(raw_password)
+
+    @property
+    def last_login(self):
+        """Django alias pre posledné prihlásenie"""
+        return self.posledne_prihlasenie
+
+    @last_login.setter
+    def last_login(self, value):
+        self.posledne_prihlasenie = value
+
+    # =========================================
+    #             AUTH FLAGS
+    # =========================================
+    @property
+    def is_active(self):
+        return self.aktivny
+
+    @property
+    def is_staff(self):
+        return self.rola == 'admin'
+
+    @property
+    def is_superuser(self):
+        return self.rola == 'admin'
+
+    # =========================================
+    #             PASSWORD LOGIC
+    # =========================================
+    def set_password(self, raw_password):
+        self.heslo_hash = make_password(raw_password)
 
     def check_password(self, raw_password):
         if not self.heslo_hash:
             return False
         return check_password(raw_password, self.heslo_hash)
 
-    def set_password(self, raw_password):
-        self.heslo_hash = make_password(raw_password)
 
-    def has_perm(self, perm, obj=None):
-        return self.is_superuser
-
-    def has_module_perms(self, app_label):
-        return self.is_superuser
-
-
+# ==============================================
+#              STUDENT PROFIL
+# ==============================================
 class StudentProfil(models.Model):
     pouzivatel = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, db_column='pouzivatel_id')
     studijny_program = models.CharField(max_length=150)
 
     class Meta:
-        managed = False
         db_table = 'student_profil'
+        managed = False
 
 
+# ==============================================
+#               GARANT PROFIL
+# ==============================================
 class GarantProfil(models.Model):
     pouzivatel = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, db_column='pouzivatel_id')
     titul_pred = models.CharField(max_length=50, blank=True, null=True)
@@ -170,5 +156,5 @@ class GarantProfil(models.Model):
     poznamka = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'garant_profil'
+        managed = False
