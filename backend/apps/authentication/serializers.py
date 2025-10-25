@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
 from apps.users.models import User, StudentProfil, validate_student_email
 from apps.companies.models import Firma  # Ak máš Company model
 
@@ -161,3 +162,23 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
         # TODO: Odoslať aktivačný email s heslom
         
         return user
+
+# Čaká presne jeden email, overí správnosť podla formátu ale nekuká do db či tam je
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+# Tu čaká tri veci - token, new_password, new_password_confirm, overí zhodu hesiel, zavolá validate password
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
+    #ak ok uložia sa nove data
+    def validate(self, data):
+        password = data.get('new_password')
+        password_confirm = data.get('new_password_confirm')
+
+        if password != password_confirm:
+            raise serializers.ValidationError("Heslá sa nezhodujú.")
+
+        validate_password(password)
+        return data
