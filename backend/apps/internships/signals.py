@@ -1,0 +1,77 @@
+from django.db.models.signals import pre_save, post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from apps.internships.models import Prax, HistoriaStavovPraxe
+from apps.notifications.models import Notifikacie
+
+@receiver(pre_save, sender=Prax)
+def cache_old_state(sender, instance, **kwargs):
+    """Pred uložením si zapamätáme starý stav, aby sme ho vedeli porovnať"""
+    if instance.pk:
+        try:
+            old_instance = Prax.objects.get(pk=instance.pk)
+            instance._old_stav = old_instance.stav
+        except Prax.DoesNotExist:
+            instance._old_stav = None
+
+
+@receiver(post_save, sender=Prax)
+def create_notification_on_status_change(sender, instance, created, **kwargs):
+    """Po uložení praxe vytvoríme históriu + notifikácie pri zmene stavu"""
+    if created:
+        return  # pri vytvorení nič neposielame
+
+    old_stav = getattr(instance, "_old_stav", None)
+    new_stav = instance.stav
+
+    # ak sa stav nezmenil, nič nerobíme
+    if old_stav == new_stav:
+        return
+
+    # 🔹 zapíšeme históriu zmeny
+    HistoriaStavovPraxe.objects.create(
+        prax=instance,
+        stary_stav=old_stav,
+        novy_stav=new_stav,
+        zmenil=getattr(instance, "garant", None),
+        poznamka=f"Automatická zmena stavu z {old_stav} na {new_stav}",
+    )
+
+    predmet = f"Zmena stavu praxe: {new_stav.capitalize()}"
+    sablona_kluc = "prax_zmena_stavu"
+    payload = {"old": old_stav, "new": new_stav, "prax_id": instance.id}
+
+    # 🔹 notifikácia pre študenta
+    if instance.student and instance.student.email:
+        Notifikacie.objects.create(
+            prax_id=instance.id,
+            prijemca_id=instance.student.id,
+            prijemca_email=instance.student.email,
+            predmet=predmet,
+            sablona_kluc=sablona_kluc,
+            payload_json=payload,
+            stav="nove",
+        )
+
+    # 🔹 notifikácia pre firmu
+    if instance.firma and hasattr(instance.firma, "kontakt_email"):
+        Notifikacie.objects.create(
+            prax_id=instance.id,
+            prijemca_email=instance.firma.kontakt_email,
+            predmet=predmet,
+            sablona_kluc=sablona_kluc,
+            payload_json=payload,
+            stav="nove",
+        )
+
+    # 🔹 notifikácia pre garanta (len ak existuje)
+    if instance.garant and instance.garant.email:
+        Notifikacie.objects.create(
+            prax_id=instance.id,
+            prijemca_id=instance.garant.id,
+            prijemca_email=instance.garant.email,
+            predmet=predmet,
+            sablona_kluc=sablona_kluc,
+            payload_json=payload,
+            stav="nove",
+        )

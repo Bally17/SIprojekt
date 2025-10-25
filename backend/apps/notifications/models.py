@@ -1,4 +1,3 @@
-# apps/notifications/models.py
 from django.db import models
 
 class Notifikacie(models.Model):
@@ -8,7 +7,11 @@ class Notifikacie(models.Model):
     predmet = models.CharField(max_length=255)
     sablona_kluc = models.CharField(max_length=100)
     payload_json = models.JSONField(blank=True, null=True)
-    stav = models.CharField(max_length=20, blank=True)
+    stav = models.CharField(
+        max_length=20,
+        blank=True,
+        default="nove",  # možné hodnoty: nove, odoslane, zlyhalo
+    )
     odoslane_at = models.DateTimeField(null=True, blank=True)
     vytvorene_at = models.DateTimeField(auto_now_add=True)
 
@@ -16,4 +19,4 @@ class Notifikacie(models.Model):
         db_table = 'notifikacie'
 
     def __str__(self):
-        return f"Notifikacia {self.id} - {self.predmet}"
+        return f"{self.predmet} [{self.stav}]"
