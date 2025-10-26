@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   return (
     <header className="fixed w-full top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
@@ -13,48 +15,73 @@ export default function Navbar() {
         </div>
 
         <nav className="hidden md:flex gap-8 text-gray-700 text-sm">
-          {["Ako to funguje", "Funkcie", "FAQ", "Kontakt"].map((link) => (
-            <a
-              key={link}
-              href="#"
-              className="hover:text-blue-800 transition-colors duration-200"
-            >
-              {link}
-            </a>
-          ))}
+          <a href="#how-it-works" className="hover:text-blue-800 transition-colors duration-200">
+            Ako to funguje
+          </a>
+          <a href="#features" className="hover:text-blue-800 transition-colors duration-200">
+            Funkcie
+          </a>
+          <a href="#faq" className="hover:text-blue-800 transition-colors duration-200">
+            FAQ
+          </a>
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
-          <button className="border px-4 py-2 rounded-md text-sm hover:bg-gray-100">
+        <div className="hidden md:flex items-center gap-3 relative">
+          <Link href="/login" className="border px-4 py-2 rounded-md text-sm hover:bg-gray-100">
             Prihlásiť sa
+          </Link>
+          <button
+            onClick={() => setRegisterOpen((prev) => !prev)}
+            className="bg-blue-900 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-800 transition-all flex items-center gap-1"
+          >
+            Registrácia ▾
           </button>
-          <button className="bg-blue-900 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-800 transition-all">
-            Registrácia
-          </button>
+          {registerOpen && (
+            <div className="absolute right-0 top-14 bg-white border border-gray-200 rounded-md shadow-lg w-48 py-2 text-sm text-left">
+              <Link href="/register/student" className="block px-4 py-2 hover:bg-gray-50">
+                Registrácia študenta
+              </Link>
+              <Link href="/register/company" className="block px-4 py-2 hover:bg-gray-50">
+                Registrácia firmy
+              </Link>
+            </div>
+          )}
         </div>
 
-        {/* Mobilné menu */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden text-gray-700 text-2xl"
-        >
+        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-700 text-2xl">
           ☰
         </button>
       </div>
 
       {menuOpen && (
         <div className="md:hidden bg-white shadow-md flex flex-col text-center py-4 space-y-4 border-t">
-          {["Ako to funguje", "Funkcie", "FAQ", "Kontakt"].map((item) => (
-            <a key={item} href="#" className="text-gray-700 hover:text-blue-800">
-              {item}
-            </a>
-          ))}
-          <button className="border mx-auto px-4 py-2 rounded-md w-40">
+          <a href="#how-it-works" className="text-gray-700 hover:text-blue-800">
+            Ako to funguje
+          </a>
+          <a href="#features" className="text-gray-700 hover:text-blue-800">
+            Funkcie
+          </a>
+          <a href="#faq" className="text-gray-700 hover:text-blue-800">
+            FAQ
+          </a>
+          <Link href="/login" className="border mx-auto px-4 py-2 rounded-md w-40">
             Prihlásiť sa
-          </button>
-          <button className="bg-blue-900 text-white mx-auto px-4 py-2 rounded-md w-40">
-            Registrácia
-          </button>
+          </Link>
+          <div className="space-y-2">
+            <p className="text-gray-600 text-sm">Registrácia</p>
+            <Link
+              href="/register/student"
+              className="block border mx-auto px-4 py-2 rounded-md w-40"
+            >
+              Ako študent
+            </Link>
+            <Link
+              href="/register/company"
+              className="block bg-blue-900 text-white mx-auto px-4 py-2 rounded-md w-40"
+            >
+              Ako firma
+            </Link>
+          </div>
         </div>
       )}
     </header>
