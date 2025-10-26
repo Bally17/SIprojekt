@@ -10,16 +10,23 @@ export default function HeroSection() {
             Praxy, správa odbornej praxe jednoducho...
           </h1>
           <p className="text-gray-600">
-            CRM systém pre študentov, firmy a garantov. Správa praxí, dokumentov a stavov – bez papierovačiek.
+            CRM systém pre študentov, firmy a garantov. Správa praxí, dokumentov a stavov – bez
+            papierovačiek.
           </p>
 
           <div className="flex justify-center md:justify-start gap-4">
-            <button className="bg-blue-900 text-white px-6 py-3 rounded-md shadow-md hover:bg-blue-800 transition">
+            <a
+              href="/register/company"
+              className="bg-blue-900 text-white px-6 py-3 rounded-md shadow-md hover:bg-blue-800 transition"
+            >
               Registrácia firmy
-            </button>
-            <button className="border border-blue-900 px-6 py-3 rounded-md text-blue-900 hover:bg-blue-50 transition">
+            </a>
+            <a
+              href="/register/student"
+              className="border border-blue-900 px-6 py-3 rounded-md text-blue-900 hover:bg-blue-50 transition"
+            >
               Registrácia študenta
-            </button>
+            </a>
           </div>
         </div>
 
