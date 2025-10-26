@@ -7,8 +7,11 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
  # ak existuje
 
-from apps.internships.models import HistoriaStavovPraxe  # 🔥 pridaj model histórie
+from apps.internships.models import HistoriaStavovPraxe  # pridaj model histórie
 from apps.companies.models import Firma
+from apps.documents.models import Dokument
+from apps.documents.utils.pdf_generator import generate_dohoda_pdf
+from apps.documents.serializers import DocumentSerializer
 from django.db import transaction
 
 from .models import Prax, HistoriaStavovPraxe
@@ -34,8 +37,7 @@ class InternshipHistoryViewSet(viewsets.ModelViewSet):
     operation_summary="Zoznam praxí prihláseného študenta",
     operation_description="""
     Tento endpoint vráti všetky praxe, ktoré patria **aktuálne prihlásenému študentovi**.
-    
-    Podporuje:
+    \n    Podporuje:
     - 🔍 Filtrovanie podľa `rok`, `semester`, `stav`
     - 📄 Stránkovanie (10 záznamov na stránku)
     - ↕️ Triedenie pomocou parametra `ordering`
@@ -47,18 +49,6 @@ class InternshipHistoryViewSet(viewsets.ModelViewSet):
         openapi.Parameter('ordering', openapi.IN_QUERY, description="Triedenie podľa poľa (napr. -rok, stav, datum_zaciatku)", type=openapi.TYPE_STRING),
     ],
     responses={200: "Zoznam praxí prihláseného študenta"}
-)
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@swagger_auto_schema(
-    method='get',
-    operation_summary="Zoznam praxí prihláseného študenta (rozšírený + stránkovanie)",
-    operation_description="""
-    Tento endpoint vráti všetky praxe prihláseného študenta
-    spolu s detailmi o firme, garantovi a históriou stavov.
-    Výsledok je stránkovaný po 10 položkách.
-    """,
-    responses={200: "Zoznam praxí s detailmi (stránkovaný)"}
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -129,6 +119,7 @@ def me_internships(request):
             "firma": firma_data,
             "garant": garant_data,
             "historia": list(historia),
+            "documents": DocumentSerializer(Dokument.objects.filter(prax=p), many=True).data,
         })
 
     # 🧾 Výsledok s meta údajmi o stránkovaní
@@ -280,7 +271,7 @@ def create_internship(request):
             stav="vytvorena",
         )
 
-        # 🕓 Zapíš históriu
+        # Zapíš históriu
         HistoriaStavovPraxe.objects.create(
             prax_id=prax.id,
             stary_stav=None,
@@ -288,6 +279,21 @@ def create_internship(request):
             zmenil_id=user.id,
             poznamka="Prax bola vytvorená študentom.",
         )
+
+        # Auto-generovanie dohody
+        document, _ = Dokument.objects.get_or_create(
+            prax=prax,
+            typ_dokumentu="dohoda",
+            defaults={
+                "nahrane_pouzivatel": user,
+                "subor_url": "",
+            },
+        )
+
+        pdf_buffer, relative_path = generate_dohoda_pdf(prax)
+        document.subor_url = relative_path
+        document.stav_dokumentu = "potvrdeny"
+        document.save(update_fields=["subor_url", "stav_dokumentu"])
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_201_CREATED)
 
