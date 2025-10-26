@@ -77,4 +77,6 @@ def generate_dohoda_pdf(prax):
     output.write(buffer)
     buffer.seek(0)
 
-    return buffer, output_path
+    relative_path = os.path.relpath(output_path, settings.MEDIA_ROOT)
+
+    return buffer, relative_path.replace("\\", "/")

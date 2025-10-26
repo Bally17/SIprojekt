@@ -92,11 +92,8 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             telefon=validated_data.get('telefon'),
             adresa=validated_data.get('adresa'),
             alternativny_email=alternativny_email,
-            musi_zmenit_heslo=True,  # Podľa FR-03 - po prvom prihlásení musí zmeniť heslo
-            heslo_hash=make_password(password),  # Hash hesla
-            is_active=True,
-            is_staff=False,
-            is_superuser=False
+            musi_zmenit_heslo=True,
+            heslo_hash=make_password(password),
         )
         user.save()
         

@@ -47,10 +47,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 )
 
             # 4️⃣ Vygeneruj PDF
-            pdf_buffer, pdf_path = generate_dohoda_pdf(prax)
+            pdf_buffer, relative_path = generate_dohoda_pdf(prax)
 
             # 5️⃣ Ulož informácie o dokumente
-            document.subor_url = pdf_path
+            document.subor_url = relative_path
             document.stav_dokumentu = "potvrdeny"
             document.save()
 
