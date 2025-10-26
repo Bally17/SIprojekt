@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from apps.users.models import User, StudentProfil, validate_student_email
+from apps.companies.models import Firma
 from apps.companies.models import Firma  # Ak máš Company model
 
 class LoginSerializer(serializers.Serializer):
@@ -108,6 +109,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 class CompanyRegistrationSerializer(serializers.ModelSerializer):
+    nazov = serializers.CharField(write_only=True, required=True)
     kontaktna_osoba_meno = serializers.CharField(write_only=True, required=True)
     kontaktna_osoba_email = serializers.EmailField(write_only=True, required=True)
     kontaktna_osoba_telefon = serializers.CharField(write_only=True, required=True)
@@ -115,7 +117,7 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'kontaktna_osoba_meno', 'kontaktna_osoba_email', 
+            'email', 'nazov', 'kontaktna_osoba_meno', 'kontaktna_osoba_email', 
             'kontaktna_osoba_telefon', 'adresa'
         ]
 
@@ -129,8 +131,14 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
         
         return value
 
+    def validate_nazov(self, value):
+        if Firma.objects.filter(nazov__iexact=value).exists():
+            raise serializers.ValidationError("Firma s týmto názvom už existuje.")
+        return value
+
     def create(self, validated_data):
         # Extrahuj údaje pre kontaktnú osobu
+        nazov = validated_data.pop('nazov')
         kontaktna_osoba_meno = validated_data.pop('kontaktna_osoba_meno')
         kontaktna_osoba_email = validated_data.pop('kontaktna_osoba_email')
         kontaktna_osoba_telefon = validated_data.pop('kontaktna_osoba_telefon')
@@ -153,14 +161,20 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
             email_overeny=False,
             musi_zmenit_heslo=True,
             heslo_hash=None,  # Heslo bude generované a odoslané emailom
-            is_active=True,
-            is_staff=False,
-            is_superuser=False
         )
         user.save()
-        
-        # TODO: Odoslať aktivačný email s heslom
-        
+
+        firma = Firma.objects.create(
+            nazov=nazov,
+            adresa=user.adresa,
+            kontakt_meno=kontaktna_osoba_meno,
+            kontakt_email=kontaktna_osoba_email,
+            kontakt_telefon=kontaktna_osoba_telefon,
+        )
+
+        user.firma_id = firma.id
+        user.save(update_fields=['firma_id'])
+
         return user
 
 # Čaká presne jeden email, overí správnosť podla formátu ale nekuká do db či tam je

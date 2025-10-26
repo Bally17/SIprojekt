@@ -1,11 +1,14 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+
 // axiosClient má baseURL z NEXT_PUBLIC_API_URL
 import axiosClient from "@/lib/axiosClient";
 
 export default function LoginForm() {
-  // Prepínač medzi „študent“ a „firma“ (UI + podmienky nižšie)
+  const router = useRouter();
+  // Prepínač medzi „študent“ a firma
   const [userType, setUserType] = useState<"student" | "company">("student");
 
   const [form, setForm] = useState({
@@ -17,7 +20,7 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Sync vstupov do state (jednoduchý controlled form)
+  // Sync vstupov do state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -30,13 +33,27 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const endpoint = "/auth/login/"; // baseURL sa pridá z axiosClient
-
+      const endpoint = "/auth/login/";
       const res = await axiosClient.post(endpoint, form);
+
       console.log("Login úspešný:", res.data);
 
+      // Uloženie tokenov
+      const { access, refresh } = res.data.tokens;
+      localStorage.setItem("access_token", access);
+      localStorage.setItem("refresh_token", refresh);
+
+      // Uloženie používateľa na localStorage
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
       setSuccess(true);
-      alert("Úspešné prihlásenie!");
+
+      // Redirect podľa roly
+      if (res.data.user.rola === "firma") {
+        router.push("/company/internships");
+      } else {
+        router.push("/student/dashboard");
+      }
     } catch (err: any) {
       console.error("Chyba pri prihlásení:", err.response?.data || err.message);
       setError(

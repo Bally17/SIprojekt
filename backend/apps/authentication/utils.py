@@ -3,8 +3,9 @@ import secrets
 import string
 from django.core.mail import send_mail
 from django.conf import settings
-from django.urls import reverse
+from django.core.signing import Signer
 
+signer = Signer()
 
 def generate_random_password(length=10):
     """Vygeneruje náhodné bezpečné heslo (kombinácia písmen, čísiel a symbolov)."""
@@ -31,7 +32,8 @@ def send_password_email(email, password):
 
 def send_activation_email(user):
     """Odošle firme aktivačný e-mail s odkazom."""
-    activation_link = f"{settings.FRONTEND_URL}/activate/{user.id}/"  # Frontend route
+    token = signer.sign(user.email)
+    activation_link = f"{settings.FRONTEND_URL}/activate/{token}/"  # Frontend route
     subject = "Aktivácia firemného účtu – Študentská prax"
     message = (
         f"Dobrý deň,\n\n"

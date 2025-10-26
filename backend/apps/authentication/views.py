@@ -243,7 +243,8 @@ def get_user_data(user):
         'telefon': user.telefon,
         'adresa': user.adresa,
         'aktivny': user.aktivny,
-        'vytvorene_at': user.vytvorene_at.isoformat() if user.vytvorene_at else None
+        'vytvorene_at': user.vytvorene_at.isoformat() if user.vytvorene_at else None,
+        'firma_id': user.firma_id,
     }
 
 # ... zvyšok tvojho pôvodného kódu (login_view, google_auth, github_auth, atď.) ...

@@ -7,6 +7,7 @@ export default function RegisterFormCompany() {
   // Lokálny stav formulára (controlled inputs)
   const [form, setForm] = useState({
     companyName: "",
+    companyEmail: "",
     address: "",
     contactName: "",
     contactEmail: "",
@@ -31,11 +32,12 @@ export default function RegisterFormCompany() {
 
     // payload presne podľa API
     const payload = {
-      company_name: form.companyName,
-      address: form.address,
-      contact_name: form.contactName,
-      contact_email: form.contactEmail,
-      contact_phone: form.contactPhone,
+      email: form.companyEmail,
+      nazov: form.companyName,
+      adresa: form.address,
+      kontaktna_osoba_meno: form.contactName,
+      kontaktna_osoba_email: form.contactEmail,
+      kontaktna_osoba_telefon: form.contactPhone,
     };
 
     try {
@@ -47,6 +49,7 @@ export default function RegisterFormCompany() {
       setSuccess(true);
       setForm({
         companyName: "",
+        companyEmail: "",
         address: "",
         contactName: "",
         contactEmail: "",
@@ -77,6 +80,16 @@ export default function RegisterFormCompany() {
         value={form.companyName}
         onChange={handleChange}
         placeholder="Názov spoločnosti"
+        className={input}
+        required
+      />
+
+      <input
+        type="email"
+        name="companyEmail"
+        value={form.companyEmail}
+        onChange={handleChange}
+        placeholder="Firemný prihlasovací e-mail"
         className={input}
         required
       />
