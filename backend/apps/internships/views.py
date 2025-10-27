@@ -37,7 +37,7 @@ class InternshipHistoryViewSet(viewsets.ModelViewSet):
     operation_summary="Zoznam praxí prihláseného študenta",
     operation_description="""
     Tento endpoint vráti všetky praxe, ktoré patria **aktuálne prihlásenému študentovi**.
-    \n    Podporuje:
+    Podporuje:
     - 🔍 Filtrovanie podľa `rok`, `semester`, `stav`
     - 📄 Stránkovanie (10 záznamov na stránku)
     - ↕️ Triedenie pomocou parametra `ordering`
@@ -49,18 +49,6 @@ class InternshipHistoryViewSet(viewsets.ModelViewSet):
         openapi.Parameter('ordering', openapi.IN_QUERY, description="Triedenie podľa poľa (napr. -rok, stav, datum_zaciatku)", type=openapi.TYPE_STRING),
     ],
     responses={200: "Zoznam praxí prihláseného študenta"}
-)
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@swagger_auto_schema(
-    method='get',
-    operation_summary="Zoznam praxí prihláseného študenta (rozšírený + stránkovanie)",
-    operation_description="""
-    Tento endpoint vráti všetky praxe prihláseného študenta
-    spolu s detailmi o firme, garantovi a históriou stavov.
-    Výsledok je stránkovaný po 10 položkách.
-    """,
-    responses={200: "Zoznam praxí s detailmi (stránkovaný)"}
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

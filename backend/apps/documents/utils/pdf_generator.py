@@ -1,6 +1,6 @@
 import io
 import os
-from datetime import datetime
+from datetime import datetime, date
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -9,20 +9,39 @@ from django.conf import settings
 
 
 def generate_dohoda_pdf(prax):
-    import io, os
-    from datetime import datetime
-    from PyPDF2 import PdfReader, PdfWriter
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import mm
-    from django.conf import settings
+    """
+    Vygeneruje PDF dohodu o odbornej praxi pre danú prax.
+    Automaticky konvertuje dátumy z reťazcov a ošetrí None hodnoty v textoch.
+    """
 
     firma = prax.firma
     student = prax.student
-    garant = prax.garant
-    datum_zaciatku = prax.datum_zaciatku.strftime('%d.%m.%Y')
-    datum_konca = prax.datum_konca.strftime('%d.%m.%Y')
-    datum_dnes = datetime.now().strftime('%d.%m.%Y')
+    garant = getattr(prax, "garant", None)
+
+    # 🔹 Pomocná funkcia – bezpečne vráti reťazec
+    def safe_str(value):
+        return str(value) if value is not None else ""
+
+    # 🔹 Bezpečné spracovanie dátumov
+    def to_date_safe(value):
+        if isinstance(value, (datetime, date)):
+            return value
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value).date()
+            except ValueError:
+                try:
+                    return datetime.strptime(value, "%d.%m.%Y").date()
+                except ValueError:
+                    raise ValueError(f"❌ Neplatný formát dátumu: {value}")
+        raise TypeError(f"❌ Neočakávaný typ dátumu: {type(value)}")
+
+    datum_zaciatku = to_date_safe(prax.datum_zaciatku)
+    datum_konca = to_date_safe(prax.datum_konca)
+    datum_dnes = datetime.now().strftime("%d.%m.%Y")
+
+    zaciatok_str = datum_zaciatku.strftime("%d.%m.%Y")
+    koniec_str = datum_konca.strftime("%d.%m.%Y")
 
     template_path = os.path.join(settings.BASE_DIR, "apps/documents/templates/Dohoda_o_odbornej_praxi.pdf")
     existing_pdf = PdfReader(open(template_path, "rb"))
@@ -32,28 +51,26 @@ def generate_dohoda_pdf(prax):
     can = canvas.Canvas(packet, pagesize=A4)
     can.setFont("Helvetica", 10.5)
 
-    # 🔹 Firma (presne do poľa)
-    can.drawString(130 * mm, 197 * mm, firma.nazov)
-    can.drawString(130 * mm, 191 * mm, firma.adresa)
+    # 🔹 Firma
+    can.drawString(130 * mm, 197 * mm, safe_str(firma.nazov))
+    can.drawString(130 * mm, 191 * mm, safe_str(firma.adresa))
 
     # 🔹 Študent
-    can.drawString(125 * mm, 177 * mm, f"{student.meno} {student.priezvisko}")
-    can.drawString(125 * mm, 172 * mm, student.adresa)
-    can.drawString(125 * mm, 167 * mm, student.email)
+    can.drawString(125 * mm, 177 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
+    can.drawString(125 * mm, 172 * mm, safe_str(student.adresa))
+    can.drawString(125 * mm, 167 * mm, safe_str(student.email))
 
     # 🔹 Garant
     if garant:
-        can.drawString(125 * mm, 158 * mm, f"Garant: {garant.meno} {garant.priezvisko}")
+        can.drawString(125 * mm, 158 * mm, safe_str(f"Garant: {garant.meno} {garant.priezvisko}"))
 
-    # 🔹 Termíny
-    can.drawString(120 * mm, 142 * mm, datum_zaciatku)
-    can.drawString(160 * mm, 142 * mm, datum_konca)
+    # 🔹 Termíny praxe
+    can.drawString(120 * mm, 142 * mm, safe_str(zaciatok_str))
+    can.drawString(160 * mm, 142 * mm, safe_str(koniec_str))
 
-    # 🔹 V Nitre, dňa…
-    can.drawString(72 * mm, 112 * mm, f"V Nitre, dňa {datum_dnes}")
-
-    # 🔹 Meno študenta do podpisovej časti
-    can.drawString(145 * mm, 70 * mm, f"{student.meno} {student.priezvisko}")
+    # 🔹 Dátum a podpis
+    can.drawString(72 * mm, 112 * mm, safe_str(f"V Nitre, dňa {datum_dnes}"))
+    can.drawString(145 * mm, 70 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
 
     can.save()
     packet.seek(0)
@@ -78,5 +95,4 @@ def generate_dohoda_pdf(prax):
     buffer.seek(0)
 
     relative_path = os.path.relpath(output_path, settings.MEDIA_ROOT)
-
     return buffer, relative_path.replace("\\", "/")
