@@ -10,7 +10,7 @@ jobs:
   frontend-ci:
     name: Frontend Build & Tests
     runs-on: ubuntu-latest
-
+    
     defaults:
       run:
         working-directory: frontend

@@ -2,15 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --radius: 0.75rem;
-  }
-  html,
-  body {
-    height: 100%;
-  }
-  body {
-    @apply bg-slate-50 text-slate-900 antialiased;
-  }
+/* jemné defaulty */
+html,
+body {
+  @apply bg-white text-ink-700;
+}
+.container-wide {
+  @apply max-w-6xl mx-auto px-4;
+}
+.btn {
+  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium transition shadow-soft;
+}
+.btn-primary {
+  @apply bg-primary-600 text-white hover:bg-primary-700;
+}
+.btn-ghost {
+  @apply border border-slate-300 hover:bg-slate-50;
+}
+.section {
+  @apply py-16 md:py-20;
+}
+.card {
+  @apply bg-white rounded-2xl shadow-soft p-5;
+}
+.badge {
+  @apply inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-50 text-primary-700 text-sm font-semibold;
 }
