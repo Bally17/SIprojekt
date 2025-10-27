@@ -52,6 +52,18 @@ class InternshipHistoryViewSet(viewsets.ModelViewSet):
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Zoznam praxí prihláseného študenta (rozšírený + stránkovanie)",
+    operation_description="""
+    Tento endpoint vráti všetky praxe prihláseného študenta
+    spolu s detailmi o firme, garantovi a históriou stavov.
+    Výsledok je stránkovaný po 10 položkách.
+    """,
+    responses={200: "Zoznam praxí s detailmi (stránkovaný)"}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def me_internships(request):
     """
     🧑‍🎓 Vráti všetky praxe prihláseného študenta s detailnými informáciami a stránkovaním.
