@@ -3,6 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.http import FileResponse
+from django.conf import settings
+import os
+
 from apps.internships.models import Prax
 from .models import Dokument
 from .serializers import DocumentSerializer
@@ -18,58 +21,78 @@ class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
     permission_classes = [IsAuthenticated]
 
-    @action(detail=True, methods=['get'], url_path='generate_dohoda')
+    @action(detail=True, methods=["get"], url_path="generate_dohoda")
     def generate_dohoda(self, request, pk=None):
         try:
-            # 1️⃣ Získaj dokument a súvisiacu prax
+            # 1️⃣ Načítaj dokument a jeho prax
             document = self.get_object()
-            prax = Prax.objects.get(id=document.prax_id)
+            if not document.prax_id:
+                return Response(
+                    {"detail": "Dokument nemá priradenú prax."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            # 2️⃣ Over, že používateľ je študent a vlastní danú prax
+            prax = Prax.objects.select_related("firma", "student", "garant").get(id=document.prax_id)
+
+            # 2️⃣ Over oprávnenia
             user = request.user
             if getattr(user, "rola", None) != "student":
                 return Response(
-                    {"detail": "Iba študent môže generovať dokument."},
-                    status=status.HTTP_403_FORBIDDEN
+                    {"detail": "Iba študent môže generovať PDF dokument."},
+                    status=status.HTTP_403_FORBIDDEN,
                 )
 
             if prax.student_id != user.id:
                 return Response(
-                    {"detail": "Nemáš oprávnenie pre túto prax."},
-                    status=status.HTTP_403_FORBIDDEN
+                    {"detail": "Nemáš oprávnenie generovať dokument pre túto prax."},
+                    status=status.HTTP_403_FORBIDDEN,
                 )
 
-            # 3️⃣ Povolené len ak je prax v stave 'vytvorena'
-            if prax.stav != "vytvorena":
+            # 3️⃣ Povolené pre tieto stavy (možno rozšíriť)
+            if prax.stav.lower() not in ["vytvorena", "potvrdena"]:
                 return Response(
-                    {"detail": "PDF možno generovať len pre prax v stave 'vytvorena'."},
-                    status=status.HTTP_403_FORBIDDEN
+                    {"detail": f"PDF možno generovať len pre prax v stave 'vytvorena' alebo 'potvrdena'. Aktuálny stav: {prax.stav}"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # 4️⃣ Vygeneruj PDF
+            # 4️⃣ Generovanie PDF
             pdf_buffer, relative_path = generate_dohoda_pdf(prax)
 
-            # 5️⃣ Ulož informácie o dokumente
+            # 5️⃣ Uloženie informácií o dokumente
             document.subor_url = relative_path
             document.stav_dokumentu = "potvrdeny"
-            document.save()
+            document.save(update_fields=["subor_url", "stav_dokumentu"])
 
-            # 6️⃣ Vráť PDF ako prílohu na stiahnutie
+            # 6️⃣ Návrat PDF
+            pdf_buffer.seek(0)
+
             return FileResponse(
                 pdf_buffer,
                 as_attachment=True,
                 filename=f"Dohoda_praxe_{prax.id}.pdf",
-                content_type="application/pdf"
+                content_type="application/pdf",
             )
 
         except Prax.DoesNotExist:
             return Response(
-                {"detail": "Prax neexistuje."},
-                status=status.HTTP_404_NOT_FOUND
+                {"detail": "Súvisiaca prax neexistuje."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        except Dokument.DoesNotExist:
+            return Response(
+                {"detail": "Dokument neexistuje."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        except FileNotFoundError as e:
+            return Response(
+                {"detail": f"Šablóna PDF sa nenašla: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         except Exception as e:
             return Response(
-                {"detail": f"Chyba pri generovaní PDF: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"detail": f"❌ Chyba pri generovaní PDF: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
