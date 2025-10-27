@@ -24,7 +24,11 @@ type PendingResponse = {
   };
 };
 
-export default function PendingInternships() {
+type PendingInternshipsProps = {
+  onChange?: () => void;
+};
+
+export default function PendingInternships({ onChange }: PendingInternshipsProps) {
   const [internships, setInternships] = useState<Internship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
@@ -71,6 +75,7 @@ export default function PendingInternships() {
       await axiosClient.patch(endpoint, {}, { headers: getAuthHeaders() });
       setInternships((prev) => prev.filter((item) => item.id !== id));
       setActionMessage(action === "confirm" ? "Prax bola potvrdená." : "Prax bola zamietnutá.");
+      onChange?.();
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || "Akcia zlyhala.");
     }

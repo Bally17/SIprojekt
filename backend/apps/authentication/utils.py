@@ -30,24 +30,26 @@ def send_password_email(email, password):
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
 
 
-def send_activation_email(user):
-    """Odošle firme aktivačný e-mail s odkazom."""
+def send_activation_email(user, password=None):
+    """Odošle firme aktivačný e-mail s odkazom a voliteľným heslom."""
     token = signer.sign(user.email)
-    activation_link = f"{settings.FRONTEND_URL}/activate/{token}/"  # Frontend route
+    activation_link = f"{settings.FRONTEND_URL}/activate/{token}/"
     subject = "Aktivácia firemného účtu – Študentská prax"
     message = (
-        f"Dobrý deň,\n\n"
-        f"Váš firemný účet bol úspešne vytvorený, ale je zatiaľ neaktívny.\n"
-        f"Pre aktiváciu účtu kliknite na nasledujúci odkaz:\n\n"
+        "Dobrý deň,\n\n"
+        "Váš firemný účet bol úspešne vytvorený, ale je zatiaľ neaktívny.\n"
+        "Pre aktiváciu účtu kliknite na nasledujúci odkaz:\n\n"
         f"{activation_link}\n\n"
-        f"Po aktivácii Vám bude umožnené prihlásenie.\n\n"
-        f"S pozdravom,\n"
-        f"Tím Študentskej praxe"
     )
+    if password:
+        message += (
+            "Po aktivácii Vám bude umožnené prihlásenie s dočasným heslom, ktoré si následne zmeňte.\n\n"
+            f"Email: {user.email}\n"
+            f"Heslo: {password}\n\n"
+        )
+    message += "S pozdravom,\nTím Študentskej praxe"
 
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
-
-
 def send_password_reset_email(user, reset_link):
     """Odošle používateľovi link na obnovenie hesla."""
     greeting = user.meno or user.email

@@ -4,7 +4,6 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from apps.users.models import User, StudentProfil, validate_student_email
 from apps.companies.models import Firma
-from apps.companies.models import Firma  # Ak máš Company model
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -77,13 +76,11 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
-        # Extrahuj údaje pre študentský profil
         studijny_program = validated_data.pop('studijny_program')
         password_confirm = validated_data.pop('password_confirm')
         password = validated_data.pop('password')
         alternativny_email = validated_data.pop('alternativny_email', None)
-        
-        # Vytvor používateľa s rolou študent
+
         user = User(
             email=validated_data['email'],
             rola='student',
@@ -96,14 +93,14 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             heslo_hash=make_password(password),
         )
         user.save()
-        
-        # Vytvor študentský profil
+
         StudentProfil.objects.create(
             pouzivatel=user,
             studijny_program=studijny_program
         )
-        
+
         return user
+
 
 class CompanyRegistrationSerializer(serializers.ModelSerializer):
     nazov = serializers.CharField(write_only=True, required=True)
@@ -114,18 +111,13 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'nazov', 'kontaktna_osoba_meno', 'kontaktna_osoba_email', 
+            'email', 'nazov', 'kontaktna_osoba_meno', 'kontaktna_osoba_email',
             'kontaktna_osoba_telefon', 'adresa'
         ]
 
     def validate_email(self, value):
-        """
-        Validácia emailu pre firmu
-        """
-        # Overenie či email už existuje
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email je už registrovaný.")
-        
         return value
 
     def validate_nazov(self, value):
@@ -134,18 +126,16 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        # Extrahuj údaje pre kontaktnú osobu
+        password = validated_data.pop('password', None)
         nazov = validated_data.pop('nazov')
         kontaktna_osoba_meno = validated_data.pop('kontaktna_osoba_meno')
         kontaktna_osoba_email = validated_data.pop('kontaktna_osoba_email')
         kontaktna_osoba_telefon = validated_data.pop('kontaktna_osoba_telefon')
-        
-        # Rozdeľ meno na meno a priezvisko
+
         meno_parts = kontaktna_osoba_meno.split(' ', 1)
         meno = meno_parts[0]
         priezvisko = meno_parts[1] if len(meno_parts) > 1 else ""
-        
-        # Vytvor používateľa s rolou firma (NEAKTÍVNY - podľa FR-03)
+
         user = User(
             email=validated_data['email'],
             rola='firma',
@@ -154,11 +144,15 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
             telefon=kontaktna_osoba_telefon,
             adresa=validated_data.get('adresa'),
             alternativny_email=kontaktna_osoba_email,
-            aktivny=False,  # NEAKTÍVNY - vyžaduje aktiváciu cez email
+            aktivny=False,
             email_overeny=False,
             musi_zmenit_heslo=True,
-            heslo_hash=None,  # Heslo bude generované a odoslané emailom
         )
+
+        if password:
+            user.set_password(password)
+        else:
+            user.heslo_hash = None
         user.save()
 
         firma = Firma.objects.create(
