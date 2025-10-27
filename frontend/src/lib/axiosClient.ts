@@ -2,6 +2,21 @@ import axios from "axios";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
+const AUTH_WHITELIST = [
+  "/auth/login/",
+  "/auth/register/student/",
+  "/auth/register/company/",
+  "/auth/password/reset/",
+  "/auth/password/reset/confirm/",
+  "/auth/token/",
+  "/auth/token/refresh/",
+];
+
+const isWhitelisted = (url?: string) => {
+  if (!url) return false;
+  return AUTH_WHITELIST.some((path) => url.includes(path));
+};
+
 const axiosClient = axios.create({
   baseURL,
   withCredentials: true,
@@ -16,9 +31,11 @@ const getAccessToken = () => {
 // Interceptor – pridá Authorization hlavičku
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = getAccessToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!isWhitelisted(config.url)) {
+      const token = getAccessToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -32,7 +49,11 @@ axiosClient.interceptors.response.use(
     const originalRequest = error.config;
 
     // Ak token expiroval (401) a ešte sme neskúšali refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isWhitelisted(originalRequest.url)
+    ) {
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem("refresh_token");
