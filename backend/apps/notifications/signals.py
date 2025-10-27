@@ -1,9 +1,14 @@
+import logging
+from smtplib import SMTPException
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.utils import timezone
 from apps.notifications.models import Notifikacie
 import time 
+
+logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Notifikacie)
 def send_notification_email(sender, instance, created, **kwargs):
@@ -19,13 +24,20 @@ def send_notification_email(sender, instance, created, **kwargs):
             f"Tím Študentských praxí"
         )
 
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email="noreply@studentpraxe.sk",
-            recipient_list=[instance.prijemca_email],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email="noreply@studentpraxe.sk",
+                recipient_list=[instance.prijemca_email],
+                fail_silently=False,
+            )
+        except (SMTPException, Exception) as exc:
+            logger.warning("Notifikácia %s sa nepodarila odoslať: %s", instance.id, exc)
+            instance.stav = "zlyhalo"
+            instance.save(update_fields=["stav"])
+            return
 
         instance.odoslane_at = timezone.now()
-        instance.save(update_fields=["odoslane_at"])
+        instance.stav = "odoslane"
+        instance.save(update_fields=["odoslane_at", "stav"])
