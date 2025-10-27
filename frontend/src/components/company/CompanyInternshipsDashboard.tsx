@@ -31,6 +31,13 @@ type CompanyInternshipsResponse = {
   internships: Internship[];
 };
 
+type PaginatedCompanyInternshipsResponse = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: CompanyInternshipsResponse;
+};
+
 const SEMESTERS = [
   { label: "Letný", value: "letny" },
   { label: "Zimný", value: "zimny" },
@@ -74,14 +81,19 @@ export default function CompanyInternshipsDashboard() {
       const params = Object.fromEntries(
         Object.entries(filters).filter(([, value]) => value !== ""),
       );
-      const res = await axiosClient.get<CompanyInternshipsResponse>(
-        "/internships/company/me/internships/",
-        {
-          headers: getAuthHeaders(),
-          params,
-        },
-      );
-      setInternships(res.data?.internships || []);
+      const res = await axiosClient.get<
+        CompanyInternshipsResponse | PaginatedCompanyInternshipsResponse
+      >("/internships/company/me/internships/", {
+        headers: getAuthHeaders(),
+        params,
+      });
+
+      const payload =
+        "results" in res.data
+          ? (res.data.results as CompanyInternshipsResponse)
+          : (res.data as CompanyInternshipsResponse);
+
+      setInternships(payload?.internships || []);
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || "Nepodarilo sa načítať praxe.");
     } finally {

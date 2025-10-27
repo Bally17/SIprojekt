@@ -307,8 +307,11 @@ def company_confirm_internship(request, prax_id):
     if user.rola != "firma":
         return Response({"error": "Len firma môže potvrdiť prax."}, status=status.HTTP_403_FORBIDDEN)
 
+    if not user.firma_id:
+        return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        prax = Prax.objects.get(id=prax_id, firma_id=user.id)
+        prax = Prax.objects.get(id=prax_id, firma_id=user.firma_id)
     except Prax.DoesNotExist:
         return Response({"error": "Prax neexistuje alebo nepatrí tejto firme."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -348,8 +351,11 @@ def company_reject_internship(request, prax_id):
     if user.rola != "firma":
         return Response({"error": "Len firma môže zamietnuť prax."}, status=status.HTTP_403_FORBIDDEN)
 
+    if not user.firma_id:
+        return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        prax = Prax.objects.get(id=prax_id, firma_id=user.id)
+        prax = Prax.objects.get(id=prax_id, firma_id=user.firma_id)
     except Prax.DoesNotExist:
         return Response({"error": "Prax neexistuje alebo nepatrí tejto firme."}, status=status.HTTP_404_NOT_FOUND)
 
