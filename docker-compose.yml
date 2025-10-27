@@ -1,15 +1,13 @@
-version: "3.9"
-
 services:
   # Django Backend
   backend:
     build: ./backend
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     volumes:
       - ./backend:/app
     env_file:
-      - ./backend/.env  # ← sem daj len cestu k .env súboru
+      - ./backend/.env
     environment:
       - DOCKER_CONTAINER=True
     depends_on:
@@ -26,7 +24,7 @@ services:
       - POSTGRES_DB=praxy_db
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql\data
       - ./database:/docker-entrypoint-initdb.d
@@ -35,7 +33,6 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     volumes:
@@ -44,9 +41,12 @@ services:
     environment:
       - NODE_ENV=development
       - REACT_APP_API_URL=http://localhost:8000/api
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     command: npm run dev
     depends_on:
       - backend
+
 
 volumes:
   postgres_data:
