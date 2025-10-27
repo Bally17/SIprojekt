@@ -1,28 +1,38 @@
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Filter,
+  KeyRound,
+  MailCheck,
+  Upload,
+  Workflow,
+} from "lucide-react";
+
 export default function Features() {
   const features = [
-    { title: "Evidencia praxí", icon: "🗂️" },
-    { title: "Workflow stavov", icon: "🔄" },
-    { title: "Generovanie PDF", icon: "📄" },
-    { title: "Nahrávanie dokumentov", icon: "📎" },
-    { title: "Export CSV", icon: "📊" },
-    { title: "Notifikácie emailom", icon: "📬" },
-    { title: "API (OAuth 2.0)", icon: "🔑" },
-    { title: "Reporty / Filtre", icon: "📈" },
+    { icon: <FileSpreadsheet className="h-5 w-5" />, title: "Evidencia praxí" },
+    { icon: <Workflow className="h-5 w-5" />, title: "Workflow stavov" },
+    { icon: <FileText className="h-5 w-5" />, title: "Generovanie PDF" },
+    { icon: <Upload className="h-5 w-5" />, title: "Nahrávanie dokumentov" },
+    { icon: <Download className="h-5 w-5" />, title: "Export CSV" },
+    { icon: <MailCheck className="h-5 w-5" />, title: "Notifikácie emailom" },
+    { icon: <KeyRound className="h-5 w-5" />, title: "API (OAuth 2.0)" },
+    { icon: <Filter className="h-5 w-5" />, title: "Reporty / filtre" },
   ];
 
   return (
-    <section className="py-20 bg-white text-center" id="features">
-      <h2 className="text-3xl font-bold text-blue-900 mb-12">Funkcie</h2>
-      <div className="max-w-6xl mx-auto grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6">
-        {features.map((feature, index) => (
-          <div
-            key={index}
-            className="p-6 rounded-xl bg-gray-50 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100"
-          >
-            <div className="text-4xl mb-3">{feature.icon}</div>
-            <h3 className="text-lg font-semibold text-gray-800">{feature.title}</h3>
-          </div>
-        ))}
+    <section id="features" className="section bg-paper">
+      <div className="container-wide">
+        <h2 className="text-3xl font-bold text-ink-900 mb-8">Funkcie</h2>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          {features.map((f) => (
+            <div key={f.title} className="card flex items-center gap-3">
+              <div className="badge">{f.icon}</div>
+              <div className="font-medium">{f.title}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
