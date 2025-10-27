@@ -3,12 +3,8 @@ name: Frontend CI
 on:
   push:
     branches: [main, develop, feature/**]
-    paths:
-      - "frontend/**"
   pull_request:
     branches: [main, develop]
-    paths:
-      - "frontend/**"
 
 jobs:
   frontend-ci:
@@ -23,7 +19,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Zistí, či sa zmenil frontend/
+      - name: Detect changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+
+      # Rýchly exit, ak sa frontend nezmenil (job aj tak skončí SUCCESS)
+      - name: Skip - no frontend changes
+        if: steps.changes.outputs.frontend != 'true'
+        run: |
+          echo "No frontend changes. Skipping build & tests."
+
       - name: Setup Node.js
+        if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
@@ -31,16 +43,19 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Upgrade npm
+        if: steps.changes.outputs.frontend == 'true'
         run: npm install -g npm@11.6.1
 
       - name: Install dependencies
+        if: steps.changes.outputs.frontend == 'true'
         run: npm ci
 
       - name: Lint and Typecheck
+        if: steps.changes.outputs.frontend == 'true'
         run: |
           npm run lint
           npm run typecheck
 
       - name: Run Jest unit tests
-        run: |
-          npm test --if-present
+        if: steps.changes.outputs.frontend == 'true'
+        run: npm test --if-present
