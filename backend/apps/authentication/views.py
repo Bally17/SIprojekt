@@ -106,13 +106,16 @@ class CompanyRegistrationView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
 
-    # Po úspešnej registrácii odošli aktivačný e-mail
-        send_activation_email(user)
+        generated_password = generate_random_password()
+        user = serializer.save(password=generated_password)
+        user.musi_zmenit_heslo = True
+        user.save(update_fields=["musi_zmenit_heslo"])
+
+        send_activation_email(user, generated_password)
 
         return Response({
-            "message": "Firma bola úspešne zaregistrovaná. Aktivačný odkaz bol odoslaný na email.",
+            "message": "Firma bola úspešne zaregistrovaná. Aktivačný email s údajmi bol odoslaný.",
             "user_id": user.id,
             "email": user.email,
             "status": "neaktívny - vyžaduje aktiváciu"
