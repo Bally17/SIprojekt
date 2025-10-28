@@ -8,7 +8,16 @@
       "presets": ["next/babel"]
     }
   },
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "dist/",
+    "build/",
+    "frontend/node_modules/",
+    "backend/",
+    "coverage/"
+  ],
   "rules": {
-    "import/no-cycle": ["error", { "ignoreExternal": true, "maxDepth": "∞" }]
+    "import/no-cycle": ["error", { "ignoreExternal": true, "maxDepth": 10 }]
   }
 }
