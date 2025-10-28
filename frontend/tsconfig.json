@@ -16,8 +16,13 @@
     "incremental": true,
     "types": ["node"],
     "plugins": [{ "name": "next" }],
+    "baseUrl": "src",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["*"],
+      "@features/*": ["features/*"],
+      "@entities/*": ["entities/*"],
+      "@lib/*": ["lib/*"],
+      "@shared/*": ["shared/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

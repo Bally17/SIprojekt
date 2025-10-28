@@ -6,6 +6,7 @@
     "format": "prettier -w .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "typecheck:clean": "rimraf .next && tsc --noEmit",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"

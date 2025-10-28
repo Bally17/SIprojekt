@@ -33,7 +33,7 @@ def send_password_email(email, password):
 def send_activation_email(user, password=None):
     """Odošle firme aktivačný e-mail s odkazom a voliteľným heslom."""
     token = signer.sign(user.email)
-    activation_link = f"{settings.FRONTEND_URL}/activate/{token}/"
+    activation_link = f"{settings.FRONTEND_URL}/auth/activate/{token}/"
     subject = "Aktivácia firemného účtu – Študentská prax"
     message = (
         "Dobrý deň,\n\n"

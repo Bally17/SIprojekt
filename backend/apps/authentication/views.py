@@ -52,7 +52,7 @@ class StudentRegistrationView(generics.CreateAPIView):
     def send_activation_email(self, user, password):
         """Odošle aktivačný email so zahashovaným tokenom"""
         token = signer.sign(user.email)
-        activation_link = f"{settings.FRONTEND_URL}/activate/{token}/"
+        activation_link = f"{settings.FRONTEND_URL}/auth/activate/{token}/"
 
         subject = "Aktivácia účtu – Študentská prax"
         message = f"""
@@ -134,7 +134,7 @@ def password_reset_request(request):
 
     if user:
         token = password_reset_signer.sign(user.email)
-        reset_link = f"{settings.FRONTEND_URL}/reset-password/{token}/"
+        reset_link = f"{settings.FRONTEND_URL}/auth/reset-password/{token}/"
         send_password_reset_email(user, reset_link)
 
     return Response({
