@@ -103,7 +103,7 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-cyan-700">Čakajúce praxe</h1>
+        <h1 className="text-3xl font-semibold text-cyan-700">Čakajúce praxe</h1>
         <p className="text-gray-600">
           Tu vidíte všetky praxe, ktoré čakajú na potvrdenie alebo zamietnutie.
         </p>

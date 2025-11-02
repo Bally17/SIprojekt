@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import axiosClient from "@/lib/axiosClient";
 
-export default function ActivateAccountPage({
-  params,
-}: {
-  readonly params: { readonly token: string };
-}) {
+export default function ActivateAccountPage() {
+  const params = useParams<{ token: string | string[] }>();
+  const tokenParam = params?.token;
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("Overujem aktivačný odkaz...");
 
   useEffect(() => {
     const activate = async () => {
       try {
-        const token = decodeURIComponent(params.token);
+        const rawToken = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
+        if (!rawToken) return;
+        const token = decodeURIComponent(rawToken);
         const res = await axiosClient.get(`/auth/activate/${token}/`);
         setMessage(res.data?.message || "Účet bol úspešne aktivovaný.");
         setStatus("success");
@@ -29,7 +30,7 @@ export default function ActivateAccountPage({
     };
 
     activate();
-  }, [params.token]);
+  }, [tokenParam]);
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
