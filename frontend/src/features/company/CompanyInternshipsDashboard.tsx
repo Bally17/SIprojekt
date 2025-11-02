@@ -117,19 +117,13 @@ export default function CompanyInternshipsDashboard() {
   return (
     <div className="space-y-10">
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-4 border border-gray-100">
-        <div>
-          <h2 className="text-xl font-semibold text-cyan-700">Čakajúce praxe</h2>
-          <p className="text-sm text-gray-600">
-            Zoznam praxí, ktoré čakajú na potvrdenie alebo zamietnutie.
-          </p>
-        </div>
         <PendingInternships onChange={fetchInternships} />
       </section>
 
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-cyan-700">Všetky praxe</h2>
+            <h2 className="text-3xl font-semibold text-cyan-700">Všetky praxe</h2>
             <p className="text-sm text-gray-600">Filtrovanie podľa roka, semestra a stavu.</p>
           </div>
           <form
