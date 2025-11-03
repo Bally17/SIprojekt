@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
+import { useLocalization } from "@/shared/i18n/client";
 
 type Document = {
   id: number;
@@ -40,6 +41,8 @@ export default function StudentInternships() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
+  const { msgs } = useLocalization();
+
   // Po načítaní komponentu sa stiahnu praxe prihláseného študenta
   useEffect(() => {
     fetchInternships();
@@ -67,7 +70,9 @@ export default function StudentInternships() {
       setInternships(res.data?.internships || []);
     } catch (err: any) {
       setError(
-        err.response?.data?.error || err.response?.data?.message || "Nepodarilo sa načítať praxe.",
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          msgs.common.error.errorLoadInternships,
       );
     } finally {
       setLoading(false);
@@ -82,7 +87,7 @@ export default function StudentInternships() {
 
   // Stavy komponentu podľa priebehu načítania
   if (loading) {
-    return <p className="text-center text-gray-500">Načítavam tvoje praxe...</p>;
+    return <p className="text-center text-gray-500">{msgs.common.loading.yours}</p>;
   }
 
   if (error) {
@@ -93,14 +98,14 @@ export default function StudentInternships() {
           onClick={fetchInternships}
           className="mt-4 bg-cyan-700 text-white px-4 py-2 rounded"
         >
-          Skúsiť znova
+          {msgs.common.tryAgain}
         </button>
       </div>
     );
   }
 
   if (!internships.length) {
-    return <p className="text-center text-gray-500">Zatiaľ nemáš žiadne praxe.</p>;
+    return <p className="text-center text-gray-500">{msgs.common.internships.emptyYour}</p>;
   }
 
   // Hlavný výpis zoznamu praxí
@@ -118,14 +123,14 @@ export default function StudentInternships() {
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-lg font-semibold text-cyan-700">
-                  Prax #{internship.id} – {internship.firma?.nazov || "Neznáma firma"}
+                  {internship.id} – {internship.firma?.nazov || "Neznáma firma"}
                 </h3>
                 <p className="text-sm text-gray-600">
                   {internship.semester} {internship.rok} | {internship.datum_zaciatku} –{" "}
                   {internship.datum_konca}
                 </p>
                 <p className="text-sm mt-1">
-                  Stav: <span className="font-medium capitalize">{internship.stav}</span>
+                  <span className="font-medium capitalize">{internship.stav}</span>
                 </p>
               </div>
 

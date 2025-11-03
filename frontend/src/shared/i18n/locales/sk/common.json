@@ -1,0 +1,104 @@
+{
+  "confirm": "Potvrdiť",
+  "reject": "Zamietnuť",
+  "actions": "Akcie",
+  "filter": "Filtrovať",
+  "filterBy": "Filtrovanie podľa roka, semestra a stavu.",
+  "reset": "Reset",
+  "tryAgain": "Skúsiť znova",
+  "documents": "Dokumenty",
+  "state": "Stav",
+  "stateOpt": "Stav: ",
+  "questionMark": "?",
+
+  "action": {
+    "createPlacement": "+ Vytvoriť prax",
+    "generatePdf": "Generovať PDF",
+    "downloadAgreement": "Stiahnuť dohodu (PDF)",
+    "company": "Zadaj názov firmy..."
+  },
+
+  "page": {
+    "howItWorks": "Ako to funguje",
+    "features": "Funkcie",
+    "faq": "FAQ",
+    "faqTitle": "Často kladené otázky",
+    "menu": "Menu",
+    "contact": "Kontakt",
+    "mobile": "Mobil",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
+
+  "role": {
+    "title": "Role a prístupy",
+    "subtitle": "Prepínaj roly a pozri ich oprávnenia a náhľad.",
+    "note": "Pozn.: Garant a Firma majú odlišné oprávnenia.",
+    "permissions": "Oprávnenia roly",
+    "previewTitle": "Náhľad rozhrania",
+    "preview": "Náhľad",
+    "action": "Akcia"
+  },
+
+  "hero": {
+    "title": "Praxy, správa odbornej praxe jednoducho...",
+    "subtitle": "CRM systém pre študentov, firmy a garantov. Správa praxí, dokumentov a stavov — bez papierovačiek."
+  },
+
+  "loading": {
+    "loading": "Načítavam...",
+    "companies": "Hľadám firmy...",
+    "internships": "Načítavam praxe...",
+    "pending": "Načítavam čakajúce praxe...",
+    "yours": "Načítavam tvoje praxe..."
+  },
+
+  "entities": {
+    "id": "ID",
+    "company": "Firma",
+    "student": "Študent",
+    "studentId": "Študent (ID)"
+  },
+
+  "error": {
+    "errorLoadInternships": "Nepodarilo sa načítať praxe.",
+    "errorFilterLoad": "Žiadne praxe nezodpovedajú zadaným filtrom.",
+    "errorAction": "Akcia zlyhala."
+  },
+
+  "internships": {
+    "id": "ID praxe",
+    "waiting": "Čakajúce praxe",
+    "list": "Zoznam praxí, ktoré čakajú na potvrdenie alebo zamietnutie.",
+    "all": "Všetky praxe",
+    "state": "Stav praxe",
+    "confirm": "Prax bola potvrdená.",
+    "denied": "Prax bola zamietnutá.",
+    "empty": "Momentálne nemáte žiadne nové žiadosti.",
+    "emptyYour": "Zatiaľ nemáš žiadne praxe.",
+    "nonExist": "Žiadne praxe zatiaľ neexistujú.",
+    "management": "Správa praxí",
+    "show": "Pozrite si čakajúce žiadosti, potvrďte alebo zamietnite praxe a filtrujte ich podľa roka, semestra a stavu.",
+    "my": "Moje praxe",
+    "manage": "Spravuj svoje praxe, vytváraj nové a sťahuj dohody o odbornej praxi.",
+    "new": "Nová prax"
+  },
+
+  "date": {
+    "from": "Od",
+    "to": "Do",
+    "year": "Rok",
+    "semester": "Semester",
+    "winter": "Zimný",
+    "summer": "Letný",
+    "startDate": "Dátum začiatku",
+    "endDate": "Dátum konca"
+  },
+
+  "brand": {
+    "brand": "Praxy.sk",
+    "copyright": "© {year}. Všetky práva vyhradené.",
+    "logoText": "Praxy",
+    "logoLetter": "P"
+  }
+}

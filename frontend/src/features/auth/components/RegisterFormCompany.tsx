@@ -2,6 +2,7 @@
 import { useState } from "react";
 // axiosClient: shared inštancia s baseURL z NEXT_PUBLIC_API_URL (napr. http://localhost:8000/api)
 import axiosClient from "@/lib/axiosClient";
+import { useLocalization } from "@/shared/i18n/client";
 
 export default function RegisterFormCompany() {
   // Lokálny stav formulára (controlled inputs)
@@ -17,6 +18,8 @@ export default function RegisterFormCompany() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const { msgs } = useLocalization();
 
   // Aktualizácia vstupov → state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,10 +60,7 @@ export default function RegisterFormCompany() {
       });
     } catch (err: any) {
       console.error("❌ Chyba registrácie:", err);
-      setError(
-        err.response?.data?.message ||
-          "Nepodarilo sa odoslať formulár. Skontrolujte údaje a skúste znova.",
-      );
+      setError(err.response?.data?.message || msgs.auth.errorSubmit);
     } finally {
       setLoading(false);
     }
@@ -73,13 +73,15 @@ export default function RegisterFormCompany() {
       onSubmit={handleSubmit}
       className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto"
     >
-      <h2 className="text-2xl font-semibold text-cyan-700 text-center">Registrácia firmy</h2>
+      <h2 className="text-2xl font-semibold text-cyan-700 text-center">
+        {msgs.auth.registerCompany}
+      </h2>
 
       <input
         name="companyName"
         value={form.companyName}
         onChange={handleChange}
-        placeholder="Názov spoločnosti"
+        placeholder={msgs.auth.companyName}
         className={input}
         required
       />
@@ -89,7 +91,7 @@ export default function RegisterFormCompany() {
         name="companyEmail"
         value={form.companyEmail}
         onChange={handleChange}
-        placeholder="Firemný prihlasovací e-mail"
+        placeholder={msgs.auth.companyLoginEmail}
         className={input}
         required
       />
@@ -98,7 +100,7 @@ export default function RegisterFormCompany() {
         name="address"
         value={form.address}
         onChange={handleChange}
-        placeholder="Adresa spoločnosti"
+        placeholder={msgs.auth.companyAddress}
         className={input}
         required
       />
@@ -107,7 +109,7 @@ export default function RegisterFormCompany() {
         name="contactName"
         value={form.contactName}
         onChange={handleChange}
-        placeholder="Kontaktná osoba – meno"
+        placeholder={msgs.auth.contactName}
         className={input}
         required
       />
@@ -117,7 +119,7 @@ export default function RegisterFormCompany() {
         name="contactEmail"
         value={form.contactEmail}
         onChange={handleChange}
-        placeholder="Kontaktná osoba – e-mail"
+        placeholder={msgs.auth.contactEmail}
         className={input}
         required
       />
@@ -127,13 +129,15 @@ export default function RegisterFormCompany() {
         name="contactPhone"
         value={form.contactPhone}
         onChange={handleChange}
-        placeholder="Kontaktná osoba – telefón"
+        placeholder={msgs.auth.contactPhone}
         className={input}
         required
       />
 
       {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-      {success && <p className="text-green-600 text-sm text-center">✅ Registrácia úspešná!</p>}
+      {success && (
+        <p className="text-green-600 text-sm text-center">✅ {msgs.auth.successRegister}</p>
+      )}
 
       {/* Submit */}
       <button
@@ -141,7 +145,7 @@ export default function RegisterFormCompany() {
         disabled={loading}
         className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
       >
-        {loading ? "Odosielam..." : "Registrovať ako firma"}
+        {loading ? msgs.auth.submitting : msgs.auth.registerCompany}
       </button>
     </form>
   );

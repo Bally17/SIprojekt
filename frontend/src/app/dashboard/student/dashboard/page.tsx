@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { Download, Building2, CalendarPlus, Loader2, FileText } from "lucide-react";
+import { useLocalization } from "@/shared/i18n/client";
 
 export default function StudentDashboardPage() {
   const [internships, setInternships] = useState<any[]>([]);
@@ -12,6 +13,8 @@ export default function StudentDashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [companies, setCompanies] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const { msgs } = useLocalization();
 
   const [form, setForm] = useState({
     firma_id: "",
@@ -92,10 +95,10 @@ export default function StudentDashboardPage() {
       <div className="max-w-5xl mx-auto space-y-10">
         {/* 🔹 Header */}
         <header className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-cyan-700 tracking-tight">Moje praxe</h1>
-          <p className="text-gray-600">
-            Spravuj svoje praxe, vytváraj nové a sťahuj dohody o odbornej praxi.
-          </p>
+          <h1 className="text-4xl font-bold text-cyan-700 tracking-tight">
+            {msgs.common.internships.my}
+          </h1>
+          <p className="text-gray-600">{msgs.common.internships.manage}</p>
         </header>
 
         {/* 🔹 Formulár */}
@@ -105,12 +108,14 @@ export default function StudentDashboardPage() {
         >
           <div className="flex items-center gap-2">
             <CalendarPlus className="text-cyan-600" />
-            <h2 className="text-xl font-semibold text-gray-800">Nová prax</h2>
+            <h2 className="text-xl font-semibold text-gray-800">{msgs.common.internships.new}</h2>
           </div>
 
           {/* Firma */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Firma</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {msgs.common.entities.company}
+            </label>
             <input
               type="text"
               value={searchQuery}
@@ -118,10 +123,12 @@ export default function StudentDashboardPage() {
                 setSearchQuery(e.target.value);
                 searchCompanies(e.target.value);
               }}
-              placeholder="Zadaj názov firmy..."
+              placeholder={msgs.common.action.company}
               className="border w-full rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
-            {searchLoading && <p className="text-sm text-gray-500 mt-1">Hľadám firmy...</p>}
+            {searchLoading && (
+              <p className="text-sm text-gray-500 mt-1">{msgs.common.loading.companies}</p>
+            )}
             {companies.length > 0 && (
               <ul className="border mt-2 rounded-lg max-h-40 overflow-y-auto divide-y">
                 {companies.map((c) => (
@@ -145,7 +152,9 @@ export default function StudentDashboardPage() {
           {/* Grid inputs */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Rok</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {msgs.common.date.year}
+              </label>
               <input
                 type="number"
                 value={form.rok}
@@ -154,14 +163,16 @@ export default function StudentDashboardPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Semester</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {msgs.common.date.semester}
+              </label>
               <select
                 value={form.semester}
                 onChange={(e) => setForm((f) => ({ ...f, semester: e.target.value }))}
                 className="border w-full rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                <option value="zimny">Zimný</option>
-                <option value="letny">Letný</option>
+                <option value="zimny">{msgs.common.date.winter}</option>
+                <option value="letny">{msgs.common.date.summer}</option>
               </select>
             </div>
           </div>
@@ -169,7 +180,9 @@ export default function StudentDashboardPage() {
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dátum začiatku</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {msgs.common.date.startDate}
+              </label>
               <input
                 type="date"
                 value={form.datum_zaciatku}
@@ -178,7 +191,9 @@ export default function StudentDashboardPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dátum konca</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {msgs.common.date.endDate}
+              </label>
               <input
                 type="date"
                 value={form.datum_konca}
@@ -202,12 +217,14 @@ export default function StudentDashboardPage() {
 
         {/* 🔹 Zoznam praxí */}
         <section>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">📋 Moje praxe</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            📋 {msgs.common.internships.my}
+          </h2>
 
           {loading ? (
-            <p className="text-gray-600">Načítavam...</p>
+            <p className="text-gray-600">{msgs.common.loading.loading}</p>
           ) : internships.length === 0 ? (
-            <p className="text-gray-500 italic">Zatiaľ nemáš žiadne praxe.</p>
+            <p className="text-gray-500 italic">{msgs.common.internships.emptyYour}</p>
           ) : (
             <div className="grid md:grid-cols-2 gap-5">
               {internships.map((p) => (
@@ -245,7 +262,7 @@ export default function StudentDashboardPage() {
                       className="mt-3 inline-flex items-center gap-2 text-cyan-600 hover:text-cyan-700 text-sm font-medium"
                     >
                       <Download size={16} />
-                      Stiahnuť dohodu (PDF)
+                      {msgs.common.action.downloadAgreement}
                     </a>
                   )}
                 </div>

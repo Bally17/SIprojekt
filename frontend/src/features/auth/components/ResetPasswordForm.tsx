@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import axiosClient from "@/lib/axiosClient";
+import { useLocalization } from "@/shared/i18n/client";
 
 type Props = {
   token: string;
@@ -12,6 +13,7 @@ export default function ResetPasswordForm({ token }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const { msgs } = useLocalization();
 
   // Ukladá zmeny z inputov podľa ich name atribútu
 

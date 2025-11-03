@@ -1,7 +1,9 @@
 "use client";
+import { useLocalization } from "@/shared/i18n/client";
 import { Users, FileText, BadgeCheck, Shield, Upload } from "lucide-react";
 
 export default function HowItWorks() {
+  const { msgs } = useLocalization();
   const steps = [
     { n: 1, title: "Registrácia", text: "Vytvoríš účet", icon: <Users className="h-6 w-6" /> },
     {
@@ -33,7 +35,10 @@ export default function HowItWorks() {
   return (
     <section id="how" className="bg-night text-white py-16">
       <div className="container-wide text-center">
-        <h2 className="text-3xl font-bold mb-12">Ako to funguje?</h2>
+        <h2 className="text-3xl font-bold mb-12">
+          {msgs.common.page.howItWorks}
+          {msgs.common.questionMark}
+        </h2>
 
         <div className="grid md:grid-cols-5 gap-6 relative">
           {steps.map((step, i) => (

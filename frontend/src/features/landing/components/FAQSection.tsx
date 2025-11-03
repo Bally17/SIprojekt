@@ -1,7 +1,9 @@
 "use client";
+import { useLocalization } from "@/shared/i18n/client";
 import { useState } from "react";
 
 export default function FAQSection() {
+  const { msgs } = useLocalization();
   const items = [
     {
       q: "Ako prebieha schvaľovanie praxe?",
@@ -27,8 +29,8 @@ export default function FAQSection() {
     <section id="faq" className="section">
       <div className="container-wide">
         <div className="text-center mb-10">
-          <div className="text-primary-700 font-semibold">FAQ</div>
-          <h2 className="text-3xl font-bold text-ink-900 mt-2">Často kladené otázky</h2>
+          <div className="text-primary-700 font-semibold">{msgs.common.page.faq}</div>
+          <h2 className="text-3xl font-bold text-ink-900 mt-2">{msgs.common.page.faqTitle}</h2>
         </div>
 
         <div className="max-w-3xl mx-auto">
