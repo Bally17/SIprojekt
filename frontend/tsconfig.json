@@ -16,15 +16,16 @@
     "incremental": true,
     "types": ["node"],
     "plugins": [{ "name": "next" }],
-    "baseUrl": "src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["*"],
-      "@features/*": ["features/*"],
-      "@entities/*": ["entities/*"],
-      "@lib/*": ["lib/*"],
-      "@shared/*": ["shared/*"]
+      "@/*": ["src/*"],
+      "@features/*": ["src/features/*"],
+      "@entities/*": ["src/entities/*"],
+      "@lib/*": ["src/lib/*"],
+      "@i18n/*": ["src/shared/i18n/*"],
+      "@shared/*": ["src/shared/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "scripts"]
 }

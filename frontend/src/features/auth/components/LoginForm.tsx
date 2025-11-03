@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 // axiosClient má baseURL z NEXT_PUBLIC_API_URL
 import axiosClient from "@/lib/axiosClient";
+import { useLocalization } from "@/shared/i18n/client";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -19,6 +20,8 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const { msgs } = useLocalization();
 
   // Sync vstupov do state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,12 +58,8 @@ export default function LoginForm() {
         router.push("/dashboard/student/dashboard");
       }
     } catch (err: any) {
-      console.error("Chyba pri prihlásení:", err.response?.data || err.message);
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.message ||
-          "Prihlásenie zlyhalo, skontrolujte email a heslo.",
-      );
+      console.error(msgs.auth.errorTitle, err.response?.data || err.message);
+      setError(err.response?.data?.detail || err.response?.data?.message || msgs.auth.errorMsg);
     } finally {
       setLoading(false);
     }
@@ -79,7 +78,7 @@ export default function LoginForm() {
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto">
-      <h2 className="text-2xl font-semibold text-cyan-700 text-center">Prihlásenie</h2>
+      <h2 className="text-2xl font-semibold text-cyan-700 text-center">{msgs.auth.title}</h2>
 
       {/* Prepínač typu používateľa – ovplyvňuje len placeholder a zobrazenie OAuth blokov */}
       <div className="flex justify-center gap-4 mb-4">
@@ -92,7 +91,7 @@ export default function LoginForm() {
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Študent
+          {msgs.common.entities.student}
         </button>
         <button
           type="button"
@@ -103,7 +102,7 @@ export default function LoginForm() {
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Firma
+          {msgs.common.entities.company}
         </button>
       </div>
 
@@ -112,7 +111,7 @@ export default function LoginForm() {
         <input
           type="email"
           name="email"
-          placeholder={userType === "student" ? "Študentský e-mail" : "Firemný e-mail"}
+          placeholder={userType === "student" ? msgs.auth.studentEmail : msgs.auth.companyEmail}
           value={form.email}
           onChange={handleChange}
           className={input}
@@ -122,7 +121,7 @@ export default function LoginForm() {
         <input
           type="password"
           name="password"
-          placeholder="Heslo"
+          placeholder={msgs.auth.password}
           value={form.password}
           onChange={handleChange}
           className={input}
@@ -131,27 +130,29 @@ export default function LoginForm() {
 
         <div className="text-right text-sm">
           <a href="/auth/forgot-password" className="text-cyan-700 hover:underline">
-            Zabudli ste heslo?
+            {msgs.auth.forgot}
           </a>
         </div>
 
         {/* Stavové hlášky */}
         {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-        {success && <p className="text-green-600 text-sm text-center">✅ Prihlásenie úspešné!</p>}
+        {success && (
+          <p className="text-green-600 text-sm text-center">✅ {msgs.auth.successLogin}</p>
+        )}
 
         <button
           type="submit"
           disabled={loading}
           className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
         >
-          {loading ? "Prihlasujem..." : "Prihlásiť sa"}
+          {loading ? msgs.auth.logining : msgs.auth.login}
         </button>
       </form>
 
       {/* OAuth blok – zobraziť len pre firmy */}
       {userType === "company" && (
         <div className="text-center mt-6 space-y-2">
-          <p className="text-gray-500 mb-2">alebo prihlásenie cez:</p>
+          <p className="text-gray-500 mb-2">{msgs.auth.orWith}</p>
 
           <button
             type="button"
@@ -165,7 +166,7 @@ export default function LoginForm() {
               width={20}
               height={20}
             />
-            Pokračovať cez Google
+            {msgs.auth.google}
           </button>
 
           <button
@@ -180,20 +181,20 @@ export default function LoginForm() {
               width={20}
               height={20}
             />
-            Pokračovať cez GitHub
+            {msgs.auth.github}
           </button>
         </div>
       )}
 
       <div className="text-center text-sm text-gray-600 mt-4">
         <p>
-          Nemáte účet? Registrácia{" "}
+          {msgs.auth.noAccount}
           <a href="/auth/register/student" className="text-cyan-700 hover:underline">
-            študenta
-          </a>{" "}
-          alebo{" "}
+            {msgs.auth.student}
+          </a>
+          {msgs.auth.or}
           <a href="/auth/register/company" className="text-cyan-700 hover:underline">
-            firmy
+            {msgs.auth.company}
           </a>
         </p>
       </div>

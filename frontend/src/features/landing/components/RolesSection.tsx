@@ -1,8 +1,10 @@
 "use client";
+import { useLocalization } from "@/shared/i18n/client";
 import { GraduationCap, Building2, Shield, Puzzle, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 export default function RolesSection() {
+  const { msgs } = useLocalization();
   type Tab = "student" | "firma" | "garant" | "api";
   const [tab, setTab] = useState<Tab>("student");
 
@@ -43,8 +45,8 @@ export default function RolesSection() {
   return (
     <section id="roles" className="section">
       <div className="container-wide">
-        <h2 className="text-3xl font-bold text-ink-900 mb-2">Role a prístupy</h2>
-        <p className="text-ink-500 mb-6">Prepínaj roly a pozri ich oprávnenia a náhľad.</p>
+        <h2 className="text-3xl font-bold text-ink-900 mb-2">{msgs.common.role.title}</h2>
+        <p className="text-ink-500 mb-6">{msgs.common.role.subtitle}</p>
 
         <div className="grid md:grid-cols-[220px,1fr] gap-5">
           <div className="card p-0">
@@ -60,9 +62,7 @@ export default function RolesSection() {
                 {t.label}
               </button>
             ))}
-            <div className="px-4 py-3 text-xs text-slate-500">
-              Pozn.: Garant a Firma majú odlišné oprávnenia.
-            </div>
+            <div className="px-4 py-3 text-xs text-slate-500">{msgs.common.role.note}</div>
           </div>
 
           <div className="card">
@@ -80,7 +80,7 @@ export default function RolesSection() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <div className="text-sm text-slate-500 mb-2">Oprávnenia roly</div>
+                <div className="text-sm text-slate-500 mb-2">{msgs.common.role.permissions}</div>
                 <ul className="space-y-2">
                   {rows[tab].map((r, i) => (
                     <li key={i} className="flex items-start gap-2">
@@ -91,7 +91,7 @@ export default function RolesSection() {
                 </ul>
               </div>
               <div>
-                <div className="text-sm text-slate-500 mb-2">Náhľad rozhrania</div>
+                <div className="text-sm text-slate-500 mb-2">{msgs.common.role.previewTitle}</div>
                 <div className="rounded-xl border bg-white p-4">
                   <div className="grid gap-2">
                     {rows[tab].map((r, i) => (
@@ -100,14 +100,18 @@ export default function RolesSection() {
                         className="flex items-center justify-between rounded-lg border px-3 py-2"
                       >
                         <span className="text-sm">{r.b}</span>
-                        <button className="btn btn-ghost text-xs">Akcia</button>
+                        <button className="btn btn-ghost text-xs">{msgs.common.role.action}</button>
                       </div>
                     ))}
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <button className="btn btn-primary text-sm">+ Vytvoriť prax</button>
-                    <button className="btn btn-ghost text-sm">Generovať PDF</button>
-                    <button className="btn btn-ghost text-sm">Náhľad</button>
+                    <button className="btn btn-primary text-sm">
+                      {msgs.common.action.createPlacement}
+                    </button>
+                    <button className="btn btn-ghost text-sm">
+                      {msgs.common.action.generatePdf}
+                    </button>
+                    <button className="btn btn-ghost text-sm">{msgs.common.role.preview}</button>
                   </div>
                 </div>
               </div>

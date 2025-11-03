@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import PendingInternships from "@features/company/PendingInternships";
+import { useLocalization } from "@/shared/i18n/client";
 
 type Document = {
   id: number;
@@ -66,6 +67,8 @@ export default function CompanyInternshipsDashboard() {
   const [error, setError] = useState<string>("");
   const [filters, setFilters] = useState({ rok: "", semester: "", stav: "" });
 
+  const { msgs } = useLocalization();
+
   const getAuthHeaders = useCallback(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
     if (!token) {
@@ -95,11 +98,11 @@ export default function CompanyInternshipsDashboard() {
 
       setInternships(payload?.internships || []);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || "Nepodarilo sa načítať praxe.");
+      setError(err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships);
     } finally {
       setLoading(false);
     }
-  }, [filters, getAuthHeaders]);
+  }, [filters, getAuthHeaders, msgs.common.error.errorLoadInternships]);
 
   useEffect(() => {
     fetchInternships();
@@ -123,8 +126,8 @@ export default function CompanyInternshipsDashboard() {
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold text-cyan-700">Všetky praxe</h2>
-            <p className="text-sm text-gray-600">Filtrovanie podľa roka, semestra a stavu.</p>
+            <h2 className="text-3xl font-semibold text-cyan-700">{msgs.common.internships.all}</h2>
+            <p className="text-sm text-gray-600">{msgs.common.filterBy}</p>
           </div>
           <form
             className="grid grid-cols-1 sm:grid-cols-4 gap-3 w-full md:w-auto"
@@ -135,7 +138,7 @@ export default function CompanyInternshipsDashboard() {
               name="rok"
               value={filters.rok}
               onChange={handleFilterChange}
-              placeholder="Rok"
+              placeholder={msgs.common.date.year}
               className="border rounded px-3 py-2 text-sm"
             />
             <select
@@ -144,7 +147,7 @@ export default function CompanyInternshipsDashboard() {
               onChange={handleFilterChange}
               className="border rounded px-3 py-2 text-sm"
             >
-              <option value="">Semester</option>
+              <option value="">{msgs.common.date.semester}</option>
               {SEMESTERS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -157,7 +160,7 @@ export default function CompanyInternshipsDashboard() {
               onChange={handleFilterChange}
               className="border rounded px-3 py-2 text-sm"
             >
-              <option value="">Stav praxe</option>
+              <option value="">{msgs.common.internships.state}</option>
               {STATUSES.map((status) => (
                 <option key={status.value} value={status.value}>
                   {status.label}
@@ -170,7 +173,7 @@ export default function CompanyInternshipsDashboard() {
                 onClick={fetchInternships}
                 className="flex-1 bg-cyan-700 text-white px-4 py-2 rounded text-sm hover:bg-cyan-800"
               >
-                Filtrovať
+                {msgs.common.filter}
               </button>
               <button
                 type="button"
@@ -179,14 +182,14 @@ export default function CompanyInternshipsDashboard() {
                 }}
                 className="flex-1 border border-gray-300 text-sm rounded px-4 py-2 hover:bg-gray-100"
               >
-                Reset
+                {msgs.common.reset}
               </button>
             </div>
           </form>
         </div>
 
         {loading ? (
-          <p className="text-center text-gray-500">Načítavam praxe...</p>
+          <p className="text-center text-gray-500">{msgs.common.loading.internships}</p>
         ) : error ? (
           <div className="text-center">
             <p className="text-red-600">{error}</p>
@@ -194,24 +197,24 @@ export default function CompanyInternshipsDashboard() {
               onClick={fetchInternships}
               className="mt-3 bg-cyan-700 text-white px-4 py-2 rounded"
             >
-              Skúsiť znova
+              {msgs.common.tryAgain}
             </button>
           </div>
         ) : displayedInternships.length === 0 ? (
-          <p className="text-gray-500">Žiadne praxe nezodpovedajú zadaným filtrom.</p>
+          <p className="text-gray-500">{msgs.common.error.errorFilterLoad}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-100">
               <thead>
                 <tr className="bg-gray-100 text-left text-sm text-gray-600">
-                  <th className="px-4 py-3">ID</th>
-                  <th className="px-4 py-3">Študent (ID)</th>
-                  <th className="px-4 py-3">Rok</th>
-                  <th className="px-4 py-3">Semester</th>
-                  <th className="px-4 py-3">Od</th>
-                  <th className="px-4 py-3">Do</th>
-                  <th className="px-4 py-3">Stav</th>
-                  <th className="px-4 py-3">Dokumenty</th>
+                  <th className="px-4 py-3">{msgs.common.entities.id}</th>
+                  <th className="px-4 py-3">{msgs.common.entities.studentId}</th>
+                  <th className="px-4 py-3">{msgs.common.date.year}</th>
+                  <th className="px-4 py-3">{msgs.common.date.semester}</th>
+                  <th className="px-4 py-3">{msgs.common.date.from}</th>
+                  <th className="px-4 py-3">{msgs.common.date.to}</th>
+                  <th className="px-4 py-3">{msgs.common.state}</th>
+                  <th className="px-4 py-3">{msgs.common.documents}</th>
                 </tr>
               </thead>
               <tbody>

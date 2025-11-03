@@ -1,0 +1,105 @@
+{
+  "confirm": "Confirm",
+  "reject": "Reject",
+  "actions": "Actions",
+  "filter": "Filter",
+  "filterBy": "Filter by year, semester, and status.",
+  "reset": "Reset",
+  "tryAgain": "Try again",
+  "documents": "Documents",
+  "state": "Status",
+  "stateOpt": "Status: ",
+  "questionMark": "?",
+
+  "action": {
+    "createPlacement": "+ Create internship",
+    "generatePdf": "Generate PDF",
+    "downloadAgreement": "Download agreement (PDF)",
+    "company": "Enter company name..."
+  },
+
+  "page": {
+    "howItWorks": "How it works",
+    "features": "Features",
+    "faq": "FAQ",
+    "faqTitle": "Frequently asked questions",
+    "menu": "Menu",
+    "contact": "Contact",
+    "mobile": "Mobile",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
+
+  "role": {
+    "title": "Roles & access",
+    "subtitle": "Switch roles and see their permissions and preview.",
+    "note": "Note: Supervisor and Company have different permissions.",
+    "permissions": "Role permissions",
+    "previewTitle": "Interface preview",
+    "preview": "Preview",
+    "action": "Action"
+  },
+
+  "hero": {
+    "title": "Praxy, manage internships the easy way...",
+    "subtitle": "A CRM for students, companies, and supervisors. Manage internships, documents, and statuses — without paperwork."
+  },
+
+  "loading": {
+    "loading": "Loading...",
+    "companies": "Searching companies...",
+    "internships": "Loading internships...",
+    "pending": "Loading pending internships...",
+    "yours": "Loading your internships..."
+  },
+
+  "entities": {
+    "id": "ID",
+    "company": "Company",
+    "student": "Student",
+    "studentId": "Student (ID)"
+  },
+
+  "error": {
+    "errorLoadInternships": "Failed to load internships.",
+    "errorFilterLoad": "No internships match the selected filters.",
+    "errorAction": "Action failed."
+  },
+
+  "internships": {
+    "id": "Internship ID",
+    "waiting": "Pending internships",
+    "list": "List of internships waiting for approval or rejection.",
+    "all": "All internships",
+    "state": "Internship status",
+    "confirm": "The internship has been approved.",
+    "denied": "The internship has been rejected.",
+    "empty": "You currently have no new requests.",
+    "emptyYour": "You don't have any internships yet.",
+    "nonExist": "No internships exist yet.",
+    "management": "Internship management",
+    "show": "View pending requests, approve or reject internships, and filter them by year, semester, and status.",
+    "my": "My internships",
+    "manage": "Manage your internships, create new ones, and download internship agreements.",
+    "new": "New internship",
+    "evidence": "Record of internship"
+  },
+
+  "date": {
+    "from": "From",
+    "to": "To",
+    "year": "Year",
+    "semester": "Semester",
+    "winter": "Winter",
+    "summer": "Summer",
+    "startDate": "Start date",
+    "endDate": "End date"
+  },
+
+  "brand": {
+    "brand": "Praxy.sk",
+    "copyright": "© {year}. All rights reserved.",
+    "logoText": "Praxy",
+    "logoLetter": "P"
+  }
+}

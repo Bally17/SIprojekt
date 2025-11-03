@@ -1,3 +1,5 @@
+"use client";
+import { useLocalization } from "@/shared/i18n/client";
 import {
   Download,
   FileSpreadsheet,
@@ -10,6 +12,7 @@ import {
 } from "lucide-react";
 
 export default function Features() {
+  const { msgs } = useLocalization();
   const features = [
     { icon: <FileSpreadsheet className="h-5 w-5" />, title: "Evidencia praxí" },
     { icon: <Workflow className="h-5 w-5" />, title: "Workflow stavov" },
@@ -24,7 +27,7 @@ export default function Features() {
   return (
     <section id="features" className="section bg-paper">
       <div className="container-wide">
-        <h2 className="text-3xl font-bold text-ink-900 mb-8">Funkcie</h2>
+        <h2 className="text-3xl font-bold text-ink-900 mb-8">{msgs.common.page.features}</h2>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {features.map((f) => (
             <div key={f.title} className="card flex items-center gap-3">

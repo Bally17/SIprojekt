@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import axiosClient from "@/lib/axiosClient";
+import { useLocalization } from "@/shared/i18n/client";
 
 type Props = {
   token: string;
@@ -12,6 +13,7 @@ export default function ResetPasswordForm({ token }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const { msgs } = useLocalization();
 
   // Ukladá zmeny z inputov podľa ich name atribútu
 
@@ -37,9 +39,7 @@ export default function ResetPasswordForm({ token }: Props) {
       setForm({ newPassword: "", confirmPassword: "" });
     } catch (err: any) {
       setError(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Nepodarilo sa nastaviť nové heslo.",
+        err.response?.data?.error || err.response?.data?.message || msgs.auth.notNewPassword,
       );
     } finally {
       setLoading(false);
@@ -53,12 +53,14 @@ export default function ResetPasswordForm({ token }: Props) {
       onSubmit={handleSubmit}
       className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto"
     >
-      <h2 className="text-2xl font-semibold text-cyan-700 text-center">Nastaviť nové heslo</h2>
+      <h2 className="text-2xl font-semibold text-cyan-700 text-center">
+        {msgs.auth.setNewPassword}
+      </h2>
 
       <input
         type="password"
         name="newPassword"
-        placeholder="Nové heslo"
+        placeholder={msgs.auth.newPassword}
         value={form.newPassword}
         onChange={handleChange}
         className={input}
@@ -68,7 +70,7 @@ export default function ResetPasswordForm({ token }: Props) {
       <input
         type="password"
         name="confirmPassword"
-        placeholder="Potvrdiť heslo"
+        placeholder={msgs.auth.confirmPassword}
         value={form.confirmPassword}
         onChange={handleChange}
         className={input}
@@ -78,9 +80,7 @@ export default function ResetPasswordForm({ token }: Props) {
 
       {error && <p className="text-red-600 text-sm text-center">{error}</p>}
       {success && (
-        <p className="text-green-600 text-sm text-center">
-          Heslo bolo zmenené. Môžete sa prihlásiť.
-        </p>
+        <p className="text-green-600 text-sm text-center">{msgs.auth.succesResetPassword}</p>
       )}
 
       <button
@@ -88,7 +88,7 @@ export default function ResetPasswordForm({ token }: Props) {
         disabled={loading}
         className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
       >
-        {loading ? "Ukladám..." : "Uložiť nové heslo"}
+        {loading ? msgs.auth.saving : msgs.auth.savePassword}
       </button>
     </form>
   );

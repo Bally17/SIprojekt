@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
+import { useLocalization } from "@/shared/i18n/client";
 
 type Internship = {
   id: number;
@@ -34,6 +35,8 @@ export default function StudentInternshipsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { msgs } = useLocalization();
 
   // 🔹 Načítanie praxí študenta
   const fetchInternships = async () => {
@@ -101,17 +104,17 @@ export default function StudentInternshipsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">📘 Evidencia odbornej praxe</h1>
+      <h1 className="text-2xl font-semibold mb-4">📘 {msgs.common.internships.evidence}</h1>
 
       {/* 🔹 Formulár pre novú prax */}
       <form
         onSubmit={handleCreateInternship}
         className="border rounded-lg p-4 mb-8 bg-white shadow-sm space-y-4"
       >
-        <h2 className="text-lg font-medium">➕ Nová prax</h2>
+        <h2 className="text-lg font-medium">➕ {msgs.common.internships.new}</h2>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Firma</label>
+          <label className="block text-sm font-medium mb-1">{msgs.common.entities.company}</label>
           <input
             type="text"
             value={searchQuery}
@@ -119,10 +122,12 @@ export default function StudentInternshipsPage() {
               setSearchQuery(e.target.value);
               searchCompanies(e.target.value);
             }}
-            placeholder="Zadaj názov firmy..."
+            placeholder={msgs.common.action.company}
             className="border w-full rounded p-2"
           />
-          {searchLoading && <p className="text-sm text-gray-500">Hľadám firmy...</p>}
+          {searchLoading && (
+            <p className="text-sm text-gray-500">{msgs.common.loading.companies}</p>
+          )}
           {companies.length > 0 && (
             <ul className="border mt-2 rounded max-h-40 overflow-y-auto">
               {companies.map((c) => (
@@ -144,7 +149,7 @@ export default function StudentInternshipsPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Rok</label>
+            <label className="block text-sm font-medium mb-1">{msgs.common.date.year}</label>
             <input
               type="number"
               value={form.rok}
@@ -154,21 +159,21 @@ export default function StudentInternshipsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Semester</label>
+            <label className="block text-sm font-medium mb-1">{msgs.common.date.semester}</label>
             <select
               value={form.semester}
               onChange={(e) => setForm((f) => ({ ...f, semester: e.target.value }))}
               className="border w-full rounded p-2"
             >
-              <option value="zimny">Zimný</option>
-              <option value="letny">Letný</option>
+              <option value="zimny">{msgs.common.date.winter}</option>
+              <option value="letny">{msgs.common.date.summer}</option>
             </select>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Dátum začiatku</label>
+            <label className="block text-sm font-medium mb-1">{msgs.common.date.startDate}</label>
             <input
               type="date"
               value={form.datum_zaciatku}
@@ -178,7 +183,7 @@ export default function StudentInternshipsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Dátum konca</label>
+            <label className="block text-sm font-medium mb-1">{msgs.common.date.endDate}</label>
             <input
               type="date"
               value={form.datum_konca}
@@ -200,11 +205,11 @@ export default function StudentInternshipsPage() {
       </form>
 
       {/* 🔹 Zoznam praxí */}
-      <h2 className="text-lg font-medium mb-2">📋 Moje praxe</h2>
+      <h2 className="text-lg font-medium mb-2">📋 {msgs.common.internships.my}</h2>
       {loading ? (
-        <p>Načítavam...</p>
+        <p>{msgs.common.loading.loading}</p>
       ) : internships.length === 0 ? (
-        <p>Žiadne praxe zatiaľ neexistujú.</p>
+        <p>{msgs.common.internships.nonExist}</p>
       ) : (
         <div className="space-y-3">
           {internships.map((prax) => (
@@ -214,7 +219,7 @@ export default function StudentInternshipsPage() {
                 {prax.semester} {prax.rok} • {prax.datum_zaciatku} → {prax.datum_konca}
               </div>
               <div className="text-sm mt-1">
-                Stav:{" "}
+                {msgs.common.stateOpt}
                 <span
                   className={`font-medium ${
                     prax.stav === "vytvorena"

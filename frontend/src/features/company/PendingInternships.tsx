@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import axiosClient from "@/lib/axiosClient";
+import { useLocalization } from "@/shared/i18n/client";
 
 type Internship = {
   id: number;
@@ -34,6 +35,8 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
   const [error, setError] = useState<string>("");
   const [actionMessage, setActionMessage] = useState<string>("");
 
+  const { msgs } = useLocalization();
+
   // Získa access_token z localStorage a vráti ho v hlavičke Authorization, ak chýba, vyhodí chybu
   const getAuthHeaders = useCallback(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
@@ -55,11 +58,11 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
       const list = res.data.results?.internships ?? [];
       setInternships(list);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || "Nepodarilo sa načítať praxe.");
+      setError(err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships);
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, msgs.common.error.errorLoadInternships]);
 
   // Načíta čakajúce praxe po načítaní komponentu
   useEffect(() => {
@@ -74,15 +77,17 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
       const endpoint = `/internships/company/${action}/${id}/`;
       await axiosClient.patch(endpoint, {}, { headers: getAuthHeaders() });
       setInternships((prev) => prev.filter((item) => item.id !== id));
-      setActionMessage(action === "confirm" ? "Prax bola potvrdená." : "Prax bola zamietnutá.");
+      setActionMessage(
+        action === "confirm" ? msgs.common.internships.confirm : msgs.common.internships.denied,
+      );
       onChange?.();
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || "Akcia zlyhala.");
+      setError(err.response?.data?.error || err.message || msgs.common.error.errorAction);
     }
   };
 
   if (loading) {
-    return <p className="text-center text-gray-500">Načítavam čakajúce praxe...</p>;
+    return <p className="text-center text-gray-500">{msgs.common.loading.pending}</p>;
   }
 
   if (error) {
@@ -94,7 +99,7 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
           onClick={fetchPending}
           className="mt-4 bg-cyan-700 text-white px-4 py-2 rounded"
         >
-          Skúsiť znova
+          {msgs.common.tryAgain}
         </button>
       </div>
     );
@@ -103,28 +108,26 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-cyan-700">Čakajúce praxe</h1>
-        <p className="text-gray-600">
-          Tu vidíte všetky praxe, ktoré čakajú na potvrdenie alebo zamietnutie.
-        </p>
+        <h1 className="text-2xl font-semibold text-cyan-700">{msgs.common.internships.waiting}</h1>
+        <p className="text-gray-600">{msgs.common.internships.list}</p>
       </div>
 
       {actionMessage && <p className="text-green-600">{actionMessage}</p>}
 
       {internships.length === 0 ? (
-        <p className="text-gray-500">Momentálne nemáte žiadne nové žiadosti.</p>
+        <p className="text-gray-500">{msgs.common.internships.empty}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white shadow rounded">
             <thead>
               <tr className="bg-gray-100 text-left text-sm text-gray-600">
-                <th className="px-4 py-3">ID praxe</th>
-                <th className="px-4 py-3">Študent (ID)</th>
-                <th className="px-4 py-3">Rok</th>
-                <th className="px-4 py-3">Semester</th>
-                <th className="px-4 py-3">Od</th>
-                <th className="px-4 py-3">Do</th>
-                <th className="px-4 py-3">Akcie</th>
+                <th className="px-4 py-3">{msgs.common.internships.id}</th>
+                <th className="px-4 py-3">{msgs.common.entities.studentId}</th>
+                <th className="px-4 py-3">{msgs.common.date.year}</th>
+                <th className="px-4 py-3">{msgs.common.date.semester}</th>
+                <th className="px-4 py-3">{msgs.common.date.from}</th>
+                <th className="px-4 py-3">{msgs.common.date.to}</th>
+                <th className="px-4 py-3">{msgs.common.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -142,14 +145,14 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
                       onClick={() => handleAction(internship.id, "confirm")}
                       className="bg-green-600 text-white px-3 py-1 rounded"
                     >
-                      Potvrdiť
+                      {msgs.common.confirm}
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAction(internship.id, "reject")}
                       className="bg-red-600 text-white px-3 py-1 rounded"
                     >
-                      Zamietnuť
+                      {msgs.common.reject}
                     </button>
                   </td>
                 </tr>

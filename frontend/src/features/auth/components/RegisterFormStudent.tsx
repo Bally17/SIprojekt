@@ -2,6 +2,7 @@
 import { useState } from "react";
 // axiosClient = centrálna inštancia s baseURL (NEXT_PUBLIC_API_URL)
 import axiosClient from "@/lib/axiosClient";
+import { useLocalization } from "@/shared/i18n/client";
 
 export default function RegisterFormStudent() {
   // Lokálny stav formulára
@@ -19,6 +20,8 @@ export default function RegisterFormStudent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const { msgs } = useLocalization();
 
   // Aktualizácia vstupov → state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,10 +63,7 @@ export default function RegisterFormStudent() {
       });
     } catch (err: any) {
       console.error("❌ Chyba pri registrácii:", err.response?.data || err);
-      setError(
-        err.response?.data?.message ||
-          "Nepodarilo sa odoslať formulár. Skontrolujte údaje a skúste znova.",
-      );
+      setError(err.response?.data?.message || msgs.auth.errorSubmit);
     } finally {
       setLoading(false);
     }
@@ -76,12 +76,14 @@ export default function RegisterFormStudent() {
       onSubmit={handleSubmit}
       className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto"
     >
-      <h2 className="text-2xl font-semibold text-cyan-700 text-center">Registrácia študenta</h2>
+      <h2 className="text-2xl font-semibold text-cyan-700 text-center">
+        {msgs.auth.registerStudent}
+      </h2>
 
       {/* Polia formulára */}
       <input
         name="firstName"
-        placeholder="Meno"
+        placeholder={msgs.auth.name}
         onChange={handleChange}
         value={form.firstName}
         className={input}
@@ -89,7 +91,7 @@ export default function RegisterFormStudent() {
       />
       <input
         name="lastName"
-        placeholder="Priezvisko"
+        placeholder={msgs.auth.surename}
         onChange={handleChange}
         value={form.lastName}
         className={input}
@@ -97,7 +99,7 @@ export default function RegisterFormStudent() {
       />
       <input
         name="address"
-        placeholder="Adresa"
+        placeholder={msgs.auth.address}
         onChange={handleChange}
         value={form.address}
         className={input}
@@ -106,7 +108,7 @@ export default function RegisterFormStudent() {
       <input
         type="email"
         name="studentEmail"
-        placeholder="Študentský e-mail"
+        placeholder={msgs.auth.email}
         onChange={handleChange}
         value={form.studentEmail}
         className={input}
@@ -115,7 +117,7 @@ export default function RegisterFormStudent() {
       <input
         type="email"
         name="altEmail"
-        placeholder="Alternatívny e-mail (voliteľný)"
+        placeholder={msgs.auth.altEmail}
         onChange={handleChange}
         value={form.altEmail}
         className={input}
@@ -123,7 +125,7 @@ export default function RegisterFormStudent() {
       <input
         type="tel"
         name="phone"
-        placeholder="Telefón"
+        placeholder={msgs.auth.phone}
         onChange={handleChange}
         value={form.phone}
         className={input}
@@ -131,7 +133,7 @@ export default function RegisterFormStudent() {
       />
       <input
         name="studyField"
-        placeholder="Študijný odbor"
+        placeholder={msgs.auth.studyField}
         onChange={handleChange}
         value={form.studyField}
         className={input}
@@ -139,14 +141,16 @@ export default function RegisterFormStudent() {
       />
 
       {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-      {success && <p className="text-green-600 text-sm text-center">✅ Registrácia úspešná!</p>}
+      {success && (
+        <p className="text-green-600 text-sm text-center">✅ {msgs.auth.successRegister}</p>
+      )}
 
       <button
         type="submit"
         disabled={loading}
         className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
       >
-        {loading ? "Odosielam..." : "Registrovať ako študent"}
+        {loading ? msgs.auth.submitting : msgs.auth.registerStudent}
       </button>
     </form>
   );
