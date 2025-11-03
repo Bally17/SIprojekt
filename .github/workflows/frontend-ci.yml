@@ -50,6 +50,10 @@ jobs:
         if: steps.changes.outputs.frontend == 'true'
         run: npm ci
 
+      - name: i18n consistency check
+        if: steps.changes.outputs.frontend == 'true'
+        run: node scripts/i18n-check.mjs
+      
       - name: Lint and Typecheck
         if: steps.changes.outputs.frontend == 'true'
         run: |

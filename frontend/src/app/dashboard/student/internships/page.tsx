@@ -104,7 +104,7 @@ export default function StudentInternshipsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">📘 Evidencia odbornej praxe</h1>
+      <h1 className="text-2xl font-semibold mb-4">📘 {msgs.common.internships.evidence}</h1>
 
       {/* 🔹 Formulár pre novú prax */}
       <form

@@ -41,7 +41,7 @@ export default function ForgotPasswordForm() {
         type="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        placeholder="Váš e-mail"
+        placeholder={msgs.auth.yourEmail}
         required
         className="w-full border rounded px-3 py-2"
       />

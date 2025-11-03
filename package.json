@@ -11,9 +11,13 @@
     "build": "npm run build --workspace frontend",
     "start": "npm run start --workspace frontend",
     "lint": "npm run lint --workspace frontend",
-    "format": "npm run format --workspace frontend"
+    "format": "npm run format --workspace frontend",
+    "i18n:check": "node scripts/i18n-check.mjs"
   },
   "devDependencies": {
+    "@babel/parser": "7.28.5",
+    "@babel/traverse": "7.28.5",
+    "glob": "11.0.3",
     "husky": "9.1.7",
     "lint-staged": "16.2.4"
   },
