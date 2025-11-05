@@ -3,7 +3,7 @@ import "./globals.css";
 
 import type { ReactNode } from "react";
 import { getMessages, type Locale } from "@i18n/getMessages";
-import { LocalizationProvider } from "@shared/i18n/client";
+import { LocalizationProvider } from "@i18n/client";
 
 export const metadata: Metadata = {
   title: "Praxy – správa odbornej praxe jednoducho",

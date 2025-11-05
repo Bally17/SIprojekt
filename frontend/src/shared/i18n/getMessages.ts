@@ -3,12 +3,12 @@ export type Locale = "sk" | "en";
 export type Messages = Record<string, any>;
 
 export async function getMessages(locale: Locale, namespaces: string[] = []) {
-  const common = (await import(`@shared/i18n/locales/${locale}/common.json`)).default;
+  const common = (await import(`@i18n/locales/${locale}/common.json`)).default;
 
   const entries: [string, any][] = [["common", common]];
   for (const ns of namespaces) {
     try {
-      const mod = (await import(`@shared/i18n/locales/${locale}/${ns}.json`)).default;
+      const mod = (await import(`@i18n/locales/${locale}/${ns}.json`)).default;
       entries.push([ns, mod]);
     } catch {
       if (process.env.NODE_ENV !== "production") {

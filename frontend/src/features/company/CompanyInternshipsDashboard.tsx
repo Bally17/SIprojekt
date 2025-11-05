@@ -4,23 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import PendingInternships from "@features/company/PendingInternships";
 import { useLocalization } from "@/shared/i18n/client";
-
-type Document = {
-  id: number;
-  typ_dokumentu: string;
-  subor_url: string;
-};
-
-type Internship = {
-  id: number;
-  rok: number;
-  semester: string;
-  datum_zaciatku: string;
-  datum_konca: string;
-  stav: string;
-  student: number;
-  documents?: Document[];
-};
+import { Table } from "@/shared/components/table";
+import { TABLE_NAMES } from "@/constants/Table";
+import { Internship } from "@/shared/types/internship/internship";
 
 type CompanyInternshipsResponse = {
   firma: {
@@ -52,14 +38,6 @@ const STATUSES = [
   { label: "Obhájená", value: "obhajena" },
   { label: "Neobhájená", value: "neobhajena" },
 ];
-
-const buildMediaUrl = (path: string) => {
-  const backend = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(
-    /\/api\/?$/,
-    "",
-  );
-  return `${backend}/media/${path.replace(/^\/?/, "")}`;
-};
 
 export default function CompanyInternshipsDashboard() {
   const [internships, setInternships] = useState<Internship[]>([]);
@@ -203,56 +181,7 @@ export default function CompanyInternshipsDashboard() {
         ) : displayedInternships.length === 0 ? (
           <p className="text-gray-500">{msgs.common.error.errorFilterLoad}</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-100">
-              <thead>
-                <tr className="bg-gray-100 text-left text-sm text-gray-600">
-                  <th className="px-4 py-3">{msgs.common.entities.id}</th>
-                  <th className="px-4 py-3">{msgs.common.entities.studentId}</th>
-                  <th className="px-4 py-3">{msgs.common.date.year}</th>
-                  <th className="px-4 py-3">{msgs.common.date.semester}</th>
-                  <th className="px-4 py-3">{msgs.common.date.from}</th>
-                  <th className="px-4 py-3">{msgs.common.date.to}</th>
-                  <th className="px-4 py-3">{msgs.common.state}</th>
-                  <th className="px-4 py-3">{msgs.common.documents}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedInternships.map((internship) => (
-                  <tr key={internship.id} className="border-t text-sm">
-                    <td className="px-4 py-3 font-medium">#{internship.id}</td>
-                    <td className="px-4 py-3">{internship.student}</td>
-                    <td className="px-4 py-3">{internship.rok}</td>
-                    <td className="px-4 py-3 capitalize">{internship.semester}</td>
-                    <td className="px-4 py-3">{internship.datum_zaciatku}</td>
-                    <td className="px-4 py-3">{internship.datum_konca}</td>
-                    <td className="px-4 py-3 capitalize">{internship.stav}</td>
-                    <td className="px-4 py-3">
-                      {internship.documents?.length ? (
-                        <div className="space-y-1">
-                          {internship.documents
-                            .filter((doc) => doc.subor_url)
-                            .map((doc) => (
-                              <a
-                                key={doc.id}
-                                href={buildMediaUrl(doc.subor_url)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block text-cyan-700 hover:underline"
-                              >
-                                {doc.typ_dokumentu.toUpperCase()}
-                              </a>
-                            ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table data={displayedInternships} name={TABLE_NAMES.ALL_INTERNSHIPS} />
         )}
       </section>
     </div>
