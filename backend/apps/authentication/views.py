@@ -1,3 +1,4 @@
+# apps/authentication/views.py
 from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -8,6 +9,11 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 import requests
+from rest_framework.views import APIView
+
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
+
 import json
 
 from .serializers import (
@@ -40,6 +46,9 @@ signer = Signer()
 password_reset_signer = TimestampSigner()
 PASSWORD_RESET_TOKEN_MAX_AGE = 3600  # seconds
 
+# ----------------------------------------------------------------------
+# Registrácie
+# ----------------------------------------------------------------------
 class StudentRegistrationView(generics.CreateAPIView):
     serializer_class = StudentRegistrationSerializer
     permission_classes = [AllowAny]
@@ -78,7 +87,6 @@ Tím Študentskej praxe
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # 🔑 Generovanie hesla
         generated_password = self.generate_password()
         serializer.validated_data['password'] = generated_password
         serializer.validated_data['password_confirm'] = generated_password
@@ -88,7 +96,6 @@ Tím Študentskej praxe
         user.email_overeny = False
         user.save()
 
-        # ✉️ Odoslanie emailu s heslom a aktivačným linkom
         self.send_activation_email(user, generated_password)
 
         return Response({
@@ -98,7 +105,6 @@ Tím Študentskej praxe
         }, status=status.HTTP_201_CREATED)
 
 
-# Company Registration View  
 class CompanyRegistrationView(generics.CreateAPIView):
     serializer_class = CompanyRegistrationSerializer
     permission_classes = [AllowAny]
@@ -121,7 +127,9 @@ class CompanyRegistrationView(generics.CreateAPIView):
             "status": "neaktívny - vyžaduje aktiváciu"
         }, status=status.HTTP_201_CREATED)
 
-# Password reset request, spracuje mail, vygeneruje token, pošle reset link
+# ----------------------------------------------------------------------
+# Reset hesla
+# ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_request(request):
@@ -141,7 +149,6 @@ def password_reset_request(request):
         "message": "Ak účet existuje, poslali sme resetovací odkaz na email."
     }, status=status.HTTP_200_OK)
 
-# Posle nový password + token, ovrí ho a zemní heslo v databze
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_confirm(request):
@@ -170,7 +177,9 @@ def password_reset_confirm(request):
 
     return Response({"message": "Heslo bolo úspešne zresetované."}, status=status.HTTP_200_OK)
 
-
+# ----------------------------------------------------------------------
+# Rate limiting pre OAuth
+# ----------------------------------------------------------------------
 def custom_rate_limit(key, limit=10, window=60):
     """Simple custom rate limiting using Django cache"""
     count = cache.get(key, 0)
@@ -200,10 +209,11 @@ def oauth_rate_limit_check(request, endpoint_type):
             
     return False
 
+# ----------------------------------------------------------------------
+# JWT helpery
+# ----------------------------------------------------------------------
 def get_tokens_for_user(user):
     """Generate JWT tokens for user"""
-    from rest_framework_simplejwt.tokens import RefreshToken
-    
     refresh = RefreshToken.for_user(user)
     return {
         'refresh': str(refresh),
@@ -250,8 +260,9 @@ def get_user_data(user):
         'firma_id': user.firma_id,
     }
 
-# ... zvyšok tvojho pôvodného kódu (login_view, google_auth, github_auth, atď.) ...
-
+# ----------------------------------------------------------------------
+# GitHub OAuth helpery
+# ----------------------------------------------------------------------
 def handle_github_access_token(access_token):
     """Process GitHub access token"""
     try:
@@ -262,8 +273,6 @@ def handle_github_access_token(access_token):
             timeout=10
         )
         
-        print(f"🔧 GITHUB USER RESPONSE STATUS: {user_response.status_code}")
-        
         if user_response.status_code != 200:
             return Response(
                 {'error': 'Failed to get user info from GitHub'}, 
@@ -271,7 +280,6 @@ def handle_github_access_token(access_token):
             )
         
         user_data = user_response.json()
-        print(f"🔧 GITHUB USER DATA: {user_data}")
         
         # Get email from GitHub
         email_response = requests.get(
@@ -286,8 +294,6 @@ def handle_github_access_token(access_token):
             email = primary_email or user_data.get('email')
         else:
             email = user_data.get('email')
-        
-        print(f"🔧 USER EMAIL: {email}")
         
         if not email:
             return Response(
@@ -308,8 +314,6 @@ def handle_github_access_token(access_token):
             provider='github'
         )
         
-        print(f"🔧 USER {'CREATED' if created else 'UPDATED'}: {user.email}")
-        
         # Generate tokens
         tokens = get_tokens_for_user(user)
         
@@ -323,11 +327,9 @@ def handle_github_access_token(access_token):
             'tokens': tokens
         }
         
-        print(f"🎉 GITHUB OAUTH SUCCESSFUL!")
         return Response(response_data, status=status.HTTP_200_OK)
         
-    except requests.RequestException as e:
-        print(f"❌ GITHUB REQUEST EXCEPTION: {e}")
+    except requests.RequestException:
         return Response(
             {'error': 'Failed to verify GitHub token'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -358,9 +360,6 @@ def handle_github_code(code, code_verifier=None):
             timeout=10
         )
         
-        print(f"🔧 GITHUB TOKEN RESPONSE STATUS: {token_response.status_code}")
-        print(f"🔧 GITHUB TOKEN RESPONSE TEXT: {token_response.text}")
-        
         if token_response.status_code != 200:
             return Response(
                 {'error': f'GitHub returned status {token_response.status_code}'}, 
@@ -368,30 +367,27 @@ def handle_github_code(code, code_verifier=None):
             )
         
         token_json = token_response.json()
-        print(f"🔧 GITHUB TOKEN DATA: {token_json}")
-        
         access_token = token_json.get('access_token')
         
         if not access_token:
             error_msg = token_json.get('error_description', 'Failed to get access token from GitHub')
-            print(f"❌ GITHUB ERROR: {error_msg}")
             return Response(
                 {'error': error_msg}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        print(f"🔧 GITHUB ACCESS TOKEN: {access_token[:30]}...")
-        
         # Continue with access token
         return handle_github_access_token(access_token)
         
-    except requests.RequestException as e:
-        print(f"❌ GITHUB TOKEN REQUEST EXCEPTION: {e}")
+    except requests.RequestException:
         return Response(
             {'error': 'Failed to exchange code for token'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+# ----------------------------------------------------------------------
+# Login / Social login / Profil / Logout
+# ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -433,7 +429,8 @@ def google_auth(request):
         # Verify token with Google
         google_response = requests.get(
             'https://www.googleapis.com/oauth2/v3/userinfo',
-            headers={'Authorization': f'Bearer {access_token}'}
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=10
         )
         
         if google_response.status_code != 200:
@@ -480,7 +477,7 @@ def google_auth(request):
         
         return Response(response_data, status=status.HTTP_200_OK)
         
-    except requests.RequestException as e:
+    except requests.RequestException:
         return Response(
             {'error': 'Failed to verify Google token'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -490,21 +487,16 @@ def google_auth(request):
 @permission_classes([AllowAny])
 def github_auth(request):
     """GitHub OAuth authentication - podpora pre PKCE a access_token"""
-    print(f"🔧 GITHUB AUTH REQUEST DATA: {request.data}")
-    
     # Podpora pre access_token (jednoduchšie) aj code (PKCE)
     if 'access_token' in request.data:
         # Priamy access_token flow
         access_token = request.data['access_token']
-        print(f"🔧 USING ACCESS_TOKEN: {access_token[:30]}...")
         return handle_github_access_token(access_token)
         
     elif 'code' in request.data:
         # PKCE flow - musíme vymeniť code za access_token
         code = request.data['code']
         code_verifier = request.data.get('code_verifier')
-        print(f"🔧 USING CODE: {code}")
-        print(f"🔧 CODE VERIFIER: {code_verifier}")
         return handle_github_code(code, code_verifier)
         
     else:
@@ -520,8 +512,6 @@ def github_callback(request):
     code = request.GET.get('code')
     state = request.GET.get('state')
     
-    print(f"🔧 GITHUB CALLBACK - code: {code}, state: {state}")
-    
     if not code:
         return Response({'error': 'No code provided'}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -535,7 +525,8 @@ def github_callback(request):
                 'client_secret': settings.SOCIALACCOUNT_PROVIDERS['github']['APP']['secret'],
                 'code': code,
                 'redirect_uri': 'http://localhost:8000/api/auth/github/callback/'
-            }
+            },
+            timeout=10
         )
         
         token_data = token_response.json()
@@ -550,7 +541,8 @@ def github_callback(request):
         # Get user info from GitHub
         user_response = requests.get(
             'https://api.github.com/user',
-            headers={'Authorization': f'Bearer {access_token}'}
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=10
         )
         
         user_data = user_response.json()
@@ -558,11 +550,12 @@ def github_callback(request):
         # Get email from GitHub
         email_response = requests.get(
             'https://api.github.com/user/emails',
-            headers={'Authorization': f'Bearer {access_token}'}
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=10
         )
         
         emails = email_response.json()
-        primary_email = next((email['email'] for email in emails if email['primary']), None)
+        primary_email = next((email['email'] for email in emails if email.get('primary')), None)
         
         email = primary_email or user_data.get('email')
         first_name = user_data.get('name', '').split(' ')[0] if user_data.get('name') else ''
@@ -599,7 +592,7 @@ def github_callback(request):
         
         return Response(response_data, status=status.HTTP_200_OK)
         
-    except requests.RequestException as e:
+    except requests.RequestException:
         return Response(
             {'error': 'Failed to verify GitHub token'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -615,10 +608,25 @@ def profile(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    """Logout user"""
-    return Response({'status': 'success'})
+    """
+    Logout user:
+    - očakáva 'refresh_token' v body
+    - refresh token sa zneplatní (blacklist)
+    """
+    rt = request.data.get('refresh_token')
+    if rt:
+        try:
+            token = RefreshToken(rt)
+            token.blacklist()
+        except TokenError:
+            pass
+        except Exception:
+            pass
+    return Response({'status': 'success', 'detail': 'logged out'}, status=status.HTTP_200_OK)
 
+# ----------------------------------------------------------------------
 # OAuth Server Endpoints s CUSTOM RATE LIMITINGOM
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def oauth_authorize(request):
@@ -691,6 +699,7 @@ def oauth_token(request):
     """
     OAuth 2.0 Token Endpoint
     POST /oauth/token
+    - grant_type: authorization_code | refresh_token
     """
     # Custom rate limiting check
     if oauth_rate_limit_check(request, 'token'):
@@ -710,6 +719,7 @@ def oauth_token(request):
     client_secret = validated_data['client_secret']
     code = validated_data.get('code')
     redirect_uri = validated_data.get('redirect_uri')
+    refresh_token_str = validated_data.get('refresh_token')
     
     # Validácia client credentials
     try:
@@ -741,20 +751,44 @@ def oauth_token(request):
         auth_code.used = True
         auth_code.save()
         
-        # Generovanie tokenov (použij tvoj existujúci systém)
+        # Generovanie tokenov
         tokens = get_tokens_for_user(auth_code.user)
         
         return Response({
             'access_token': tokens['access'],
             'token_type': 'Bearer',
-            'expires_in': 3600,  # 1 hour
+            'expires_in': 900,  # zosúlaď s SIMPLE_JWT (15 min)
             'refresh_token': tokens['refresh'],
             'scope': auth_code.scope
         })
     
     elif grant_type == 'refresh_token':
-        # TODO: Implement refresh token flow
-        return Response({'error': 'refresh_token_not_implemented'}, status=400)
+        # Implementovaný refresh tok (rotácia + blacklist starého refreshu)
+        if not refresh_token_str:
+            return Response({'error': 'invalid_request', 'error_description': 'Missing refresh_token'}, status=400)
+        try:
+            old = RefreshToken(refresh_token_str)
+            user = User.objects.get(id=old['user_id'])
+        except (TokenError, KeyError, User.DoesNotExist):
+            return Response({'error': 'invalid_grant'}, status=400)
+
+        # Vytvor nový refresh + access (rotácia)
+        new_refresh = RefreshToken.for_user(user)
+        new_access = new_refresh.access_token
+
+        # Blacklistni starý refresh (ak je dostupný blacklist)
+        try:
+            old.blacklist()
+        except Exception:
+            pass
+
+        return Response({
+            'access_token': str(new_access),
+            'token_type': 'Bearer',
+            'expires_in': 900,  # 15 min
+            'refresh_token': str(new_refresh),
+            'scope': 'read profile'
+        })
     
     return Response({'error': 'unsupported_grant_type'}, status=400)
 
@@ -788,8 +822,6 @@ def oauth_clients(request):
 @permission_classes([AllowAny])
 def activate_account(request, token):
     """Aktivácia účtu cez token"""
-    from django.core.signing import BadSignature
-
     try:
         email = signer.unsign(token)
         user = User.objects.get(email=email)

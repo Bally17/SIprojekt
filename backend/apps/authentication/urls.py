@@ -18,20 +18,19 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token-verify'),
 
-    #OAuth Server endpoints
+    # OAuth Server endpoints
     path('oauth/authorize/', views.oauth_authorize, name='oauth-authorize'),
     path('oauth/token/', views.oauth_token, name='oauth-token'),
     path('oauth/userinfo/', views.oauth_userinfo, name='oauth-userinfo'),
     path('oauth/clients/', views.oauth_clients, name='oauth-clients'),
 
-    # Student and Company registeration
+    # Student and Company registration
     path('register/student/', StudentRegistrationView.as_view(), name='student-registration'),
     path('register/company/', CompanyRegistrationView.as_view(), name='company-registration'),
 
-    # Reset password added urls
+    # Reset password routes
     path('password/reset/', views.password_reset_request, name='password-reset'),
     path('password/reset/confirm/', views.password_reset_confirm, name='password-reset-confirm'),
 
     path('activate/<str:token>/', views.activate_account, name='activate_account'),
-
 ]
