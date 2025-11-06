@@ -5,26 +5,34 @@ from datetime import timedelta
 
 load_dotenv()
 
+# -----------------------------------------------------------------------------
+# ZÁKLAD
+# -----------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 AUTH_USER_MODEL = 'users.User'
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-in-production')
-
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# Application definition
+# Frontend URL (DEV: localhost:3000)
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+
+# -----------------------------------------------------------------------------
+# APLIKÁCIE
+# -----------------------------------------------------------------------------
 INSTALLED_APPS = [
-    # Local apps
+    # Lokálne apps
     'users',
     'authentication',
     'companies',
-    'documents', 
+    'documents',
     'internships',
     'notifications',
 
+    # Django apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,8 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    
-    # Third party apps
+
+    # 3rd party
     'rest_framework',
     'drf_yasg',
     'corsheaders',
@@ -43,13 +51,15 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
+    'rest_framework_simplejwt.token_blacklist',  # migrate!
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',      # CORS najvyššie
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    # CSRF middleware môže ostať; s JWTAuthentication nevyžaduješ CSRF
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -59,7 +69,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'core.urls'
 
-import drf_yasg
+import drf_yasg  # noqa
 
 TEMPLATES = [
     {
@@ -79,6 +89,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+# -----------------------------------------------------------------------------
+# CACHE
+# -----------------------------------------------------------------------------
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -86,52 +99,52 @@ CACHES = {
     }
 }
 
-# Database Configuration
-# Database Configuration - POSTGRESQL v Dockeri
+# -----------------------------------------------------------------------------
+# DATABÁZA
+# -----------------------------------------------------------------------------
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'praxy_db',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        'HOST': 'db',  # Názov služby v docker-compose
+        'HOST': 'db',  # názov služby v docker-compose
         'PORT': '5432',
     }
 }
 print("✅ Using Docker PostgreSQL")
 
-# Password validation
+# -----------------------------------------------------------------------------
+# HESLÁ
+# -----------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
+# -----------------------------------------------------------------------------
+# I18N
+# -----------------------------------------------------------------------------
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
+# -----------------------------------------------------------------------------
+# STATIC/MEDIA
+# -----------------------------------------------------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Allauth configuration
+# -----------------------------------------------------------------------------
+# DJANGO-ALLAUTH
+# -----------------------------------------------------------------------------
 SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -145,7 +158,6 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'
 LOGIN_REDIRECT_URL = '/api/auth/success/'
 LOGOUT_REDIRECT_URL = '/'
 
-# OAuth providers
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
@@ -153,14 +165,8 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': os.getenv('GOOGLE_CLIENT_SECRET', ''),
             'key': ''
         },
-        'SCOPE': [
-            'profile',
-            'email',
-            'openid',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        }
+        'SCOPE': ['profile', 'email', 'openid'],
+        'AUTH_PARAMS': {'access_type': 'online'},
     },
     'github': {
         'APP': {
@@ -168,36 +174,34 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': os.getenv('GITHUB_CLIENT_SECRET', ''),
             'key': ''
         },
-        'SCOPE': [
-            'user:email',
-            'read:user',
-        ]
+        'SCOPE': ['user:email', 'read:user'],
     }
 }
 
+# -----------------------------------------------------------------------------
+# SWAGGER
+# -----------------------------------------------------------------------------
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header',
-            'description': (
-                "Zadaj JWT token vo formáte:\n\n"
-                "**Bearer &lt;tvoj_token&gt;**"
-            ),
+            'description': "Zadaj JWT token vo formáte:\n\n**Bearer &lt;tvoj_token&gt;**",
         }
     },
     'USE_SESSION_AUTH': False,
 }
 
-# REST Framework
+# -----------------------------------------------------------------------------
+# DRF
+# -----------------------------------------------------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Authorization: Bearer
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -208,10 +212,12 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
-# JWT Settings
+# -----------------------------------------------------------------------------
+# JWT (SimpleJWT)
+# -----------------------------------------------------------------------------
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=60),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
@@ -220,24 +226,31 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS settings
+# -----------------------------------------------------------------------------
+# CORS/CSRF (Bearer only, no auth cookies)
+# -----------------------------------------------------------------------------
+CORS_ALLOW_CREDENTIALS = True  # nepoužívame cookies na auth
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    FRONTEND_URL,
+]
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # v DEV môžeš povoliť všetko (pomoc pri testovaní)
+
+# CSRF je relevantné najmä s cookie/session auth. S JWT headerom nie je nutné.
+# Necháme lokálne hodnoty pre dev ui/testy; v prod môžeš vypnúť alebo prispôsobiť.
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    FRONTEND_URL.replace('https://', 'http://').replace('http://', 'http://'),
 ]
 
-# Add your production frontend URL later
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
-if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only in development
-
-# Email configuration
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # na testovanie
-DEFAULT_FROM_EMAIL = 'noreply@studentpraxe.sk'
-
+# -----------------------------------------------------------------------------
+# EMAIL
+# -----------------------------------------------------------------------------
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "sandbox.smtp.mailtrap.io")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
@@ -246,30 +259,21 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@studentpraxe.sk")
 
-
-
-
-# Docker-specific settings
+# -----------------------------------------------------------------------------
+# DOCKER ŠPECIFIKÁ
+# -----------------------------------------------------------------------------
 if os.getenv('DOCKER_CONTAINER'):
-    # Pridaj Docker host do ALLOWED_HOSTS
     ALLOWED_HOSTS.extend(['web', 'backend', '0.0.0.0'])
-    
-    # Logovanie pre Docker
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-            },
-        },
-        'root': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
+        'handlers': {'console': {'class': 'logging.StreamHandler'}},
+        'root': {'handlers': ['console'], 'level': 'INFO'},
     }
 
-# Security settings for production
+# -----------------------------------------------------------------------------
+# SECURITY (PROD hardening)
+# -----------------------------------------------------------------------------
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
@@ -277,14 +281,17 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    SESSION_COOKIE_SAMESITE = "Lax"
 
-# OAuth Configuration
+# -----------------------------------------------------------------------------
+# OAuth Config DEBUG PRINT
+# -----------------------------------------------------------------------------
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET')
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 
-# Debug OAuth configuration
 print(f"🔧 OAuth Config Loaded:")
 print(f"   GitHub Client ID: {'✅' if GITHUB_CLIENT_ID else '❌'}")
 print(f"   Google Client ID: {'✅' if GOOGLE_CLIENT_ID else '❌'}")
