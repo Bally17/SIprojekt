@@ -30,6 +30,6 @@
       "@table_config/*": ["src/shared/tableConfig/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scripts"]
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", ".next", "dist", "build", "coverage", "scripts"]
 }

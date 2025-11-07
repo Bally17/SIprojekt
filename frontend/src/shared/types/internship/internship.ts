@@ -1,12 +1,17 @@
 import type { InternshipDocument } from "./components/InternshipDocument";
+import { Semester, Stav } from "./components/StateInternship";
 
 export interface Internship {
   id: number;
   rok: number;
-  semester: string;
+  semester: Semester;
   datum_zaciatku: string;
   datum_konca: string;
-  stav: string;
+  stav: Stav;
   student: number;
+  firma?: number;
+  garant?: number | null;
+  vytvorene_at?: string;
+  zmenene_at?: string;
   documents?: InternshipDocument[];
 }

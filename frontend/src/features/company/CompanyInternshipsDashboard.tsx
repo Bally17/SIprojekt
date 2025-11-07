@@ -7,6 +7,10 @@ import { useLocalization } from "@/shared/i18n/client";
 import { Table } from "@/shared/components/table";
 import { TABLE_NAMES } from "@/constants/Table";
 import { Internship } from "@/shared/types/internship/internship";
+import {
+  SEMESTER_OPTIONS,
+  STAV_OPTIONS,
+} from "@/shared/types/internship/components/StateInternship";
 
 type CompanyInternshipsResponse = {
   firma: {
@@ -24,20 +28,6 @@ type PaginatedCompanyInternshipsResponse = {
   previous: string | null;
   results: CompanyInternshipsResponse;
 };
-
-const SEMESTERS = [
-  { label: "Letný", value: "letny" },
-  { label: "Zimný", value: "zimny" },
-];
-
-const STATUSES = [
-  { label: "Vytvorená", value: "vytvorena" },
-  { label: "Potvrdená", value: "potvrdena" },
-  { label: "Zamietnutá", value: "zamietnuta" },
-  { label: "Schválená", value: "schvalena" },
-  { label: "Obhájená", value: "obhajena" },
-  { label: "Neobhájená", value: "neobhajena" },
-];
 
 export default function CompanyInternshipsDashboard() {
   const [internships, setInternships] = useState<Internship[]>([]);
@@ -86,11 +76,6 @@ export default function CompanyInternshipsDashboard() {
     fetchInternships();
   }, [fetchInternships]);
 
-  const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = event.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  };
-
   const resetFilters = () => setFilters({ rok: "", semester: "", stav: "" });
 
   const displayedInternships = useMemo(() => internships, [internships]);
@@ -100,89 +85,21 @@ export default function CompanyInternshipsDashboard() {
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-4 border border-gray-100">
         <PendingInternships onChange={fetchInternships} />
       </section>
-
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-3xl font-semibold text-cyan-700">{msgs.common.internships.all}</h2>
-            <p className="text-sm text-gray-600">{msgs.common.filterBy}</p>
-          </div>
-          <form
-            className="grid grid-cols-1 sm:grid-cols-4 gap-3 w-full md:w-auto"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="number"
-              name="rok"
-              value={filters.rok}
-              onChange={handleFilterChange}
-              placeholder={msgs.common.date.year}
-              className="border rounded px-3 py-2 text-sm"
-            />
-            <select
-              name="semester"
-              value={filters.semester}
-              onChange={handleFilterChange}
-              className="border rounded px-3 py-2 text-sm"
-            >
-              <option value="">{msgs.common.date.semester}</option>
-              {SEMESTERS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <select
-              name="stav"
-              value={filters.stav}
-              onChange={handleFilterChange}
-              className="border rounded px-3 py-2 text-sm"
-            >
-              <option value="">{msgs.common.internships.state}</option>
-              {STATUSES.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={fetchInternships}
-                className="flex-1 bg-cyan-700 text-white px-4 py-2 rounded text-sm hover:bg-cyan-800"
-              >
-                {msgs.common.filter}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  resetFilters();
-                }}
-                className="flex-1 border border-gray-300 text-sm rounded px-4 py-2 hover:bg-gray-100"
-              >
-                {msgs.common.reset}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {loading ? (
-          <p className="text-center text-gray-500">{msgs.common.loading.internships}</p>
-        ) : error ? (
-          <div className="text-center">
-            <p className="text-red-600">{error}</p>
-            <button
-              onClick={fetchInternships}
-              className="mt-3 bg-cyan-700 text-white px-4 py-2 rounded"
-            >
-              {msgs.common.tryAgain}
-            </button>
-          </div>
-        ) : displayedInternships.length === 0 ? (
-          <p className="text-gray-500">{msgs.common.error.errorFilterLoad}</p>
-        ) : (
-          <Table data={displayedInternships} name={TABLE_NAMES.ALL_INTERNSHIPS} />
-        )}
+        <Table
+          data={displayedInternships}
+          name={TABLE_NAMES.ALL_INTERNSHIPS}
+          document
+          showFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          onApplyFilters={fetchInternships}
+          onResetFilters={resetFilters}
+          semesterOptions={SEMESTER_OPTIONS}
+          stavOptions={STAV_OPTIONS}
+          isLoading={loading}
+          isError={error || null}
+        />
       </section>
     </div>
   );

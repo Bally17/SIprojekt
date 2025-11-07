@@ -4,4 +4,5 @@ export const DESC = "desc";
 
 export const TABLE_NAMES = {
   ALL_INTERNSHIPS: "AllInternships",
+  PENDING_INTERNSHIPS: "PendingInternships",
 } as const;

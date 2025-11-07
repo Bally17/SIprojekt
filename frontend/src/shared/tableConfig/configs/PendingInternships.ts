@@ -3,21 +3,21 @@ import TableConfig from "@/shared/types/tableConfig/TableConfig";
 const tableConfig: TableConfig = {
   tableName: [
     {
-      name: "Všetky praxe",
+      name: "Čakajúce praxe",
       lang: "sk",
     },
     {
-      name: "All internships",
+      name: "Pending internships",
       lang: "en",
     },
   ],
   tableSubtitle: [
     {
-      name: "Filtrovanie podľa roka, semestra a stavu.",
+      name: "Zoznam praxí, ktoré čakajú na potvrdenie alebo zamietnutie.",
       lang: "sk",
     },
     {
-      name: "Filter by year, semester, and status.",
+      name: "List of internships waiting for approval or rejection.",
       lang: "en",
     },
   ],
@@ -25,11 +25,11 @@ const tableConfig: TableConfig = {
     {
       columnName: [
         {
-          name: "ID",
+          name: "ID praxe",
           lang: "sk",
         },
         {
-          name: "ID",
+          name: "Internship ID",
           lang: "en",
         },
       ],
@@ -97,23 +97,11 @@ const tableConfig: TableConfig = {
     {
       columnName: [
         {
-          name: "Stav",
+          name: "Akcie",
           lang: "sk",
         },
         {
-          name: "State",
-          lang: "en",
-        },
-      ],
-    },
-    {
-      columnName: [
-        {
-          name: "Dokumenty",
-          lang: "sk",
-        },
-        {
-          name: "Documents",
+          name: "Actions",
           lang: "en",
         },
       ],
