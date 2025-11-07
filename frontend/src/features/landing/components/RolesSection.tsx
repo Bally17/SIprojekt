@@ -1,46 +1,21 @@
 "use client";
+import { roleSectionDatas } from "@/shared/data/roleSectionDatas";
 import { useLocalization } from "@/shared/i18n/client";
+import { RoleType } from "@/shared/types/roleTypes";
 import { GraduationCap, Building2, Shield, Puzzle, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import "@utils/idUsing";
 
 export default function RolesSection() {
   const { msgs } = useLocalization();
-  type Tab = "student" | "firma" | "garant" | "api";
-  const [tab, setTab] = useState<Tab>("student");
+  const [tab, setTab] = useState<RoleType>("student");
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+  const tabs: { key: RoleType; label: string; icon: React.ReactNode }[] = [
     { key: "student", label: "Študent", icon: <GraduationCap className="h-4 w-4" /> },
     { key: "firma", label: "Firma", icon: <Building2 className="h-4 w-4" /> },
     { key: "garant", label: "Garant", icon: <Shield className="h-4 w-4" /> },
     { key: "api", label: "API", icon: <Puzzle className="h-4 w-4" /> },
   ];
-
-  const rows: Record<Tab, { a: string; b: string }[]> = {
-    student: [
-      { a: "Vytvoriť prax (dohodnutie, firma, dátumy)", b: "Dohoda o odbornej praxi — Náhľad" },
-      { a: "Generovať PDF „Dohoda o odbornej praxi“", b: "Študent • Firma • Garant" },
-      { a: "Nahlásiť zmluvu (podmieň. pri stave Schválená)", b: "Zmluva s praxí (PDF) — upload" },
-      { a: "Nahrať výkaz praxe (potvrdenie firmy)", b: "Výkaz praxe (nahranie)" },
-    ],
-    firma: [
-      { a: "Schválenie dohody o praxi", b: "Podpis / potvrdenie" },
-      { a: "Overenie výkazu praxe", b: "Komentár a potvrdenie" },
-      { a: "Export reportov", b: "CSV / PDF" },
-      { a: "Používateľské účty", b: "Roly a prístupy" },
-    ],
-    garant: [
-      { a: "Kontrola a schvaľovanie", b: "Audit log" },
-      { a: "Správa študentov", b: "Hľadanie, filtre" },
-      { a: "Notifikácie", b: "E-mail / systémové" },
-      { a: "Reporty", b: "Semestre / programy" },
-    ],
-    api: [
-      { a: "OAuth 2.0", b: "Client credentials / PKCE" },
-      { a: "Webhooky", b: "Stavy, uploady" },
-      { a: "Integrácie", b: "Externý systém" },
-      { a: "Dostupnosť", b: "Rate limits" },
-    ],
-  };
 
   return (
     <section id="roles" className="section">
@@ -82,8 +57,8 @@ export default function RolesSection() {
               <div>
                 <div className="text-sm text-slate-500 mb-2">{msgs.common.role.permissions}</div>
                 <ul className="space-y-2">
-                  {rows[tab].map((r, i) => (
-                    <li key={i} className="flex items-start gap-2">
+                  {roleSectionDatas[tab].map((r) => (
+                    <li key={r.a.idUsing()} className="flex items-start gap-2">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary-600" />
                       <span>{r.a}</span>
                     </li>
@@ -94,9 +69,9 @@ export default function RolesSection() {
                 <div className="text-sm text-slate-500 mb-2">{msgs.common.role.previewTitle}</div>
                 <div className="rounded-xl border bg-white p-4">
                   <div className="grid gap-2">
-                    {rows[tab].map((r, i) => (
+                    {roleSectionDatas[tab].map((r, i) => (
                       <div
-                        key={i}
+                        key={r.a.idUsing()}
                         className="flex items-center justify-between rounded-lg border px-3 py-2"
                       >
                         <span className="text-sm">{r.b}</span>

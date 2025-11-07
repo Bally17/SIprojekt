@@ -23,9 +23,13 @@
       "@entities/*": ["src/entities/*"],
       "@lib/*": ["src/lib/*"],
       "@i18n/*": ["src/shared/i18n/*"],
-      "@shared/*": ["src/shared/*"]
+      "@data/*": ["src/shared/data/*"],
+      "@data_types/*": ["src/shared/types/*"],
+      "@utils/*": ["src/shared/utils/*"],
+      "@components/*": ["src/shared/components/*"],
+      "@table_config/*": ["src/shared/tableConfig/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scripts"]
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", ".next", "dist", "build", "coverage", "scripts"]
 }

@@ -3,16 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
-
-type Internship = {
-  id: number;
-  rok: number;
-  semester: string;
-  datum_zaciatku: string;
-  datum_konca: string;
-  stav: string;
-  student: number;
-};
+import { Table } from "@/shared/components/table";
+import { TABLE_NAMES } from "@/constants/Table";
+import { Internship } from "@/shared/types/internship/internship";
 
 type PendingResponse = {
   results?: {
@@ -29,11 +22,10 @@ type PendingInternshipsProps = {
   onChange?: () => void;
 };
 
-export default function PendingInternships({ onChange }: PendingInternshipsProps) {
+export default function PendingInternships({ onChange }: Readonly<PendingInternshipsProps>) {
   const [internships, setInternships] = useState<Internship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [actionMessage, setActionMessage] = useState<string>("");
 
   const { msgs } = useLocalization();
 
@@ -72,14 +64,10 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
   // Potvrdí alebo zamietne prax a odstráni ju zo zoznamu
   const handleAction = async (id: number, action: "confirm" | "reject") => {
     setError("");
-    setActionMessage("");
     try {
       const endpoint = `/internships/company/${action}/${id}/`;
       await axiosClient.patch(endpoint, {}, { headers: getAuthHeaders() });
       setInternships((prev) => prev.filter((item) => item.id !== id));
-      setActionMessage(
-        action === "confirm" ? msgs.common.internships.confirm : msgs.common.internships.denied,
-      );
       onChange?.();
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || msgs.common.error.errorAction);
@@ -106,61 +94,15 @@ export default function PendingInternships({ onChange }: PendingInternshipsProps
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-cyan-700">{msgs.common.internships.waiting}</h1>
-        <p className="text-gray-600">{msgs.common.internships.list}</p>
-      </div>
-
-      {actionMessage && <p className="text-green-600">{actionMessage}</p>}
-
-      {internships.length === 0 ? (
-        <p className="text-gray-500">{msgs.common.internships.empty}</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white shadow rounded">
-            <thead>
-              <tr className="bg-gray-100 text-left text-sm text-gray-600">
-                <th className="px-4 py-3">{msgs.common.internships.id}</th>
-                <th className="px-4 py-3">{msgs.common.entities.studentId}</th>
-                <th className="px-4 py-3">{msgs.common.date.year}</th>
-                <th className="px-4 py-3">{msgs.common.date.semester}</th>
-                <th className="px-4 py-3">{msgs.common.date.from}</th>
-                <th className="px-4 py-3">{msgs.common.date.to}</th>
-                <th className="px-4 py-3">{msgs.common.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {internships.map((internship) => (
-                <tr key={internship.id} className="border-t text-sm">
-                  <td className="px-4 py-3 font-medium">#{internship.id}</td>
-                  <td className="px-4 py-3">{internship.student}</td>
-                  <td className="px-4 py-3">{internship.rok}</td>
-                  <td className="px-4 py-3 capitalize">{internship.semester}</td>
-                  <td className="px-4 py-3">{internship.datum_zaciatku}</td>
-                  <td className="px-4 py-3">{internship.datum_konca}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => handleAction(internship.id, "confirm")}
-                      className="bg-green-600 text-white px-3 py-1 rounded"
-                    >
-                      {msgs.common.confirm}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAction(internship.id, "reject")}
-                      className="bg-red-600 text-white px-3 py-1 rounded"
-                    >
-                      {msgs.common.reject}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+    <Table
+      data={internships}
+      name={TABLE_NAMES.PENDING_INTERNSHIPS}
+      rowActions
+      onAction={handleAction}
+      actionMessage={msgs.common.internships.empty}
+      isLoading={loading}
+      isError={error || null}
+      showEmpty
+    />
   );
 }
