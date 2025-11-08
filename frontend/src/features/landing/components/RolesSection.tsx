@@ -14,7 +14,6 @@ export default function RolesSection() {
     { key: "student", label: "Študent", icon: <GraduationCap className="h-4 w-4" /> },
     { key: "firma", label: "Firma", icon: <Building2 className="h-4 w-4" /> },
     { key: "garant", label: "Garant", icon: <Shield className="h-4 w-4" /> },
-    { key: "api", label: "API", icon: <Puzzle className="h-4 w-4" /> },
   ];
 
   return (
