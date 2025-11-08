@@ -1,0 +1,39 @@
+DEBUG=False
+SECRET_KEY=change-this-to-very-secure-key-in-production
+ALLOWED_HOSTS=localhost,127.0.0.1,backend,web,your-domain.com
+DATABASE_URL=postgresql://user:password@db:5432/mydb
+FRONTEND_URL=http://localhost:3000
+
+# OAuth - budete musieť zmeniť pre produkciu
+GITHUB_CLIENT_ID=your-production-github-client-id
+GITHUB_CLIENT_SECRET=your-production-github-secret
+GOOGLE_CLIENT_ID=your-production-google-client-id
+GOOGLE_CLIENT_SECRET=your-production-google-secret
+
+
+
+# === MAILTRAP SMTP CONFIG ===
+EMAIL_BACKEND=place-holder
+EMAIL_HOST=place-holder
+EMAIL_PORT=place-holder
+EMAIL_USE_TLS=place-holder
+EMAIL_HOST_USER=place-holder
+EMAIL_HOST_PASSWORD=place-holder
+DEFAULT_FROM_EMAIL=place-holder
+MAILTRAP_TOKEN=place-holder
+
+# Backblaze B2 Demo - Local Use
+
+# Bucket name
+B2_BUCKET_NAME=SIprojekt
+# Upload key (WRITE ONLY)
+B2_UPLOAD_KEY_ID=xxxxxxxxxxxxxxxxxxxxx
+B2_UPLOAD_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxxxx
+# Download key (READ ONLY)
+B2_DOWNLOAD_KEY_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+B2_DOWNLOAD_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# S3 Endpoint
+B2_ENDPOINT_URL=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Presigned URL validity (seconds)
+B2_PRESIGNED_EXPIRES=xxx
+

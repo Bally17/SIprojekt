@@ -1,106 +1,100 @@
-from django.core.mail import send_mail
-from django.conf import settings
-from django.utils import timezone
 from apps.notifications.models import Notifikacie
-from apps.users.models import User
+from django.utils import timezone
+
 
 # ============================================
-# 📬 Centrálna funkcia na generovanie notifikácií
+# 📨 Vytvorenie Notifikácie (bez odoslania emailu)
+# - Email sa odošle v signals.py (post_save)
 # ============================================
 
-def send_notification_email(prax, stav):
+def create_notification(prax, prijemca, predmet, sablona_kluc, payload=None):
     """
-    Automaticky vytvorí záznam v Notifikacie a odošle email
-    podľa zmeny stavu praxe.
+    Vytvorí Notifikáciu – signál post_save sa postará o odoslanie emailu.
     """
-
-    # === urči príjemcu (firma alebo študent) ===
-    if hasattr(prax, "firma") and prax.firma:
-        prijemca = prax.firma
-    elif hasattr(prax, "student") and prax.student:
-        prijemca = prax.student
-    else:
-        print("⚠️ Prax nemá priradeného príjemcu, notifikácia preskočená.")
-        return None
-
-    # === urči predmet a text podľa stavu ===
-    predmet, sablona_kluc, text = get_notification_template(stav, prax)
-
-    if not predmet:
-        print(f"⚠️ Stav '{stav}' nemá definovanú notifikáciu.")
-        return None
-
-    # === ulož notifikáciu do DB ===
-    notif = Notifikacie.objects.create(
+    return Notifikacie.objects.create(
         prax=prax,
         prijemca=prijemca,
-        prijemca_email=prijemca.email,
+        prijemca_email=prijemca.email if prijemca else None,
         predmet=predmet,
         sablona_kluc=sablona_kluc,
-        payload_json={"stav": stav, "prax_id": prax.id},
-        stav="odoslane",
-        odoslane_at=timezone.now(),
+        payload_json=payload or {},
+        stav="nove",         # bude zmenené na "odoslane" v signals.py
+        odoslane_at=None
     )
-
-    # === odošli email ===
-    try:
-        send_mail(
-            predmet,
-            text,
-            settings.DEFAULT_FROM_EMAIL,
-            [prijemca.email],
-            fail_silently=False,
-        )
-        print(f"📧 Notifikácia odoslaná: {predmet} → {prijemca.email}")
-    except Exception as e:
-        notif.stav = "chyba"
-        notif.save()
-        print(f"❌ Chyba pri odosielaní emailu: {e}")
-
-    return notif
 
 
 # ============================================
-# 🧩 Pomocná funkcia: šablóny notifikácií
+# 🧠 ŠABLÓNY FORMÁLNYCH EMAILOV
 # ============================================
 
 def get_notification_template(stav, prax):
     """
-    Podľa stavu praxe vygeneruje predmet, kľúč šablóny a text.
+    Na základe stavu praxe vráti (predmet, šablona_kluc, text_emailu).
     """
-    firma_nazov = getattr(prax.firma, "meno", "Vaša firma") if hasattr(prax, "firma") else "firma"
-    student_meno = getattr(prax.student, "meno", "Študent") if hasattr(prax, "student") else "študent"
+
+    firma_nazov = getattr(prax.firma, "nazov", "firma")
+    student_meno = getattr(prax.student, "meno", "študent")
 
     templates = {
         "nova": {
-            "predmet": "Nová žiadosť o prax",
+            "predmet": "Nová žiadosť o odbornú prax",
             "sablona_kluc": "prax_nova",
-            "text": f"Dobrý deň {firma_nazov},\n\nštudent {student_meno} podal žiadosť o prax. Prosím, prihláste sa do systému a potvrďte ju.\n\nTím Študentskej praxe"
+            "text": (
+                f"Dobrý deň,\n\n"
+                f"študent {student_meno} podal žiadosť o odbornú prax vo firme {firma_nazov}.\n"
+                f"Prosíme o jej posúdenie a potvrdenie.\n\n"
+                f"S pozdravom\n"
+                f"Tím Študentských praxí"
+            )
         },
+
         "potvrdena_firmou": {
-            "predmet": "Prax bola potvrdená firmou",
+            "predmet": "Odborná prax bola potvrdená firmou",
             "sablona_kluc": "prax_potvrdena_firmou",
-            "text": f"Dobrý deň {student_meno},\n\nfirma {firma_nazov} potvrdila vašu prax. Čaká sa na schválenie garantom.\n\nTím Študentskej praxe"
+            "text": (
+                f"Dobrý deň,\n\n"
+                f"firma {firma_nazov} potvrdila Vašu žiadosť o odbornú prax.\n"
+                f"Prax čaká na schválenie garantom.\n\n"
+                f"S pozdravom\n"
+                f"Tím Študentských praxí"
+            )
         },
+
+        "zamietnuta_firmou": {
+            "predmet": "Odborná prax bola zamietnutá firmou",
+            "sablona_kluc": "prax_zamietnuta_firmou",
+            "text": (
+                f"Dobrý deň,\n\n"
+                f"žiadame Vás o informáciu, že odborná prax bola zamietnutá firmou {firma_nazov}.\n"
+                f"Pre viac informácií sa prosím prihláste do systému.\n\n"
+                f"S pozdravom\n"
+                f"Tím Študentských praxí"
+            )
+        },
+
         "schvalena_garantom": {
-            "predmet": "Prax bola schválená garantom",
+            "predmet": "Odborná prax bola schválená garantom",
             "sablona_kluc": "prax_schvalena_garantom",
-            "text": f"Dobrý deň {student_meno},\n\ngarant schválil vašu prax vo firme {firma_nazov}. Prax je teraz aktívna.\n\nTím Študentskej praxe"
+            "text": (
+                f"Dobrý deň,\n\n"
+                f"garant schválil Vašu odbornú prax vo firme {firma_nazov}.\n"
+                f"Prax je teraz aktívna.\n\n"
+                f"S pozdravom\n"
+                f"Tím Študentských praxí"
+            )
         },
-        "zamietnuta": {
-            "predmet": "Prax bola zamietnutá",
-            "sablona_kluc": "prax_zamietnuta",
-            "text": f"Dobrý deň,\n\nvaša prax bola zamietnutá. Pre viac informácií sa prihláste do systému.\n\nTím Študentskej praxe"
-        },
+
         "ukoncena": {
-            "predmet": "Prax bola ukončená",
+            "predmet": "Odborná prax bola ukončená",
             "sablona_kluc": "prax_ukoncena",
-            "text": f"Dobrý deň {student_meno},\n\nprax vo firme {firma_nazov} bola úspešne ukončená. Gratulujeme!\n\nTím Študentskej praxe"
+            "text": (
+                f"Dobrý deň,\n\n"
+                f"Vaša odborná prax vo firme {firma_nazov} bola úspešne ukončená.\n"
+                f"Ďakujeme za spoluprácu.\n\n"
+                f"S pozdravom\n"
+                f"Tím Študentských praxí"
+            )
         },
     }
 
-    template = templates.get(stav, None)
-    if not template:
-        return None, None, None
-
-    return template["predmet"], template["sablona_kluc"], template["text"]
+    return templates.get(stav, None)
