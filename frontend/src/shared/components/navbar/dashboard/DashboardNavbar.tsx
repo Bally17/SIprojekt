@@ -5,7 +5,16 @@ import { useRouter } from "next/navigation";
 import axiosClient, { clearAuthTokens } from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
-import { LogOut, GraduationCap, Building2, ShieldCheck, Globe } from "lucide-react";
+import {
+  LogOut,
+  GraduationCap,
+  Building2,
+  ShieldCheck,
+  Globe,
+  LockKeyhole,
+  RefreshCw,
+  ArrowRight,
+} from "lucide-react";
 
 type DashboardRole = "student" | "firma" | "garant" | string;
 
@@ -22,6 +31,7 @@ type DashboardUser = {
   firma?: {
     nazov?: string | null;
   };
+  musi_zmenit_heslo?: boolean;
 };
 
 // Pomocník pre localStorage, aby mal klient hneď dostupné dáta
@@ -49,6 +59,7 @@ const DashboardNavbar = () => {
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   const roleKey = (user?.rola || user?.role || "student").toLowerCase();
+  const mustChangePassword = Boolean(user?.musi_zmenit_heslo);
 
   // Firma -> názov spoločnosti, inak zlož meno + priezvisko
   const displayName = useMemo(() => {
@@ -149,69 +160,108 @@ const DashboardNavbar = () => {
   ]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-      <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-3">
-        <div className="flex flex-1 items-center gap-3 text-2xl font-bold text-primary-900">
-          <div className="rounded-md bg-primary-900 px-2 py-1 text-white">
-            {msgs.common.brand.logoLetter}
+    <>
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+        <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-3">
+          <div className="flex flex-1 items-center gap-3 text-2xl font-bold text-primary-900">
+            <div className="rounded-md bg-primary-900 px-2 py-1 text-white">
+              {msgs.common.brand.logoLetter}
+            </div>
+            <div className="text-primary-800 flex items-baseline gap-2">
+              <span>{msgs.common.brand.logoText}</span>
+              {roleLabel ? (
+                <span className="text-base font-semibold text-primary-600">{roleLabel}</span>
+              ) : null}
+            </div>
           </div>
-          <div className="text-primary-800 flex items-baseline gap-2">
-            <span>{msgs.common.brand.logoText}</span>
-            {roleLabel ? (
-              <span className="text-base font-semibold text-primary-600">{roleLabel}</span>
-            ) : null}
-          </div>
-        </div>
 
-        <div className="flex flex-1 items-center justify-center gap-3 text-base font-medium text-ink-900">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
-            {roleIcon}
+          <div className="flex flex-1 items-center justify-center gap-3 text-base font-medium text-ink-900">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
+              {roleIcon}
+            </div>
+            <p className="text-sm font-semibold text-ink-900">
+              {loadingUser ? msgs.common.loading.loading : displayName}
+            </p>
           </div>
-          <p className="text-sm font-semibold text-ink-900">
-            {loadingUser ? msgs.common.loading.loading : displayName}
-          </p>
-        </div>
 
-        <div className="flex flex-1 items-center justify-end gap-3">
-          <div className="relative">
+          <div className="flex flex-1 items-center justify-end gap-3">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLangMenuOpen((prev) => !prev)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-700 transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
+                aria-label={msgs.common.language.switcher}
+              >
+                <Globe className="h-5 w-5" />
+              </button>
+              {langMenuOpen ? (
+                <div className="absolute right-0 mt-2 w-28 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                  <button
+                    type="button"
+                    className="block w-full px-3 py-2 text-left hover:bg-primary-50"
+                    onClick={() => setLangMenuOpen(false)}
+                  >
+                    {msgs.common.language.sk}
+                  </button>
+                  <button
+                    type="button"
+                    className="block w-full px-3 py-2 text-left hover:bg-primary-50"
+                    onClick={() => setLangMenuOpen(false)}
+                  >
+                    {msgs.common.language.en}
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <button
               type="button"
-              onClick={() => setLangMenuOpen((prev) => !prev)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-700 transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
-              aria-label={msgs.common.language.switcher}
+              onClick={handleLogout}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 transition hover:bg-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              aria-label={msgs.auth.logout}
             >
-              <Globe className="h-5 w-5" />
+              <LogOut className="h-5 w-5" />
             </button>
-            {langMenuOpen ? (
-              <div className="absolute right-0 mt-2 w-28 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
-                <button
-                  type="button"
-                  className="block w-full px-3 py-2 text-left hover:bg-primary-50"
-                  onClick={() => setLangMenuOpen(false)}
-                >
-                  {msgs.common.language.sk}
-                </button>
-                <button
-                  type="button"
-                  className="block w-full px-3 py-2 text-left hover:bg-primary-50"
-                  onClick={() => setLangMenuOpen(false)}
-                >
-                  {msgs.common.language.en}
-                </button>
-              </div>
-            ) : null}
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 transition hover:bg-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            aria-label={msgs.auth.logout}
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {mustChangePassword ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-4 py-6">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="rounded-2xl bg-primary-100 p-3 text-primary-900">
+                <LockKeyhole className="h-6 w-6" aria-hidden />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-ink-900">{msgs.auth.mustChangeTitle}</h2>
+                <p className="text-sm text-ink-500">{msgs.auth.mustChangeDescription}</p>
+                <p className="text-xs text-ink-400">{msgs.auth.mustChangeNote}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => router.push("/auth/change-password")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-900 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-primary-800"
+              >
+                {msgs.auth.changePasswordNow}
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={loadProfile}
+                disabled={loadingUser}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-ink-700 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                <RefreshCw className={`h-4 w-4 ${loadingUser ? "animate-spin" : ""}`} aria-hidden />
+                {msgs.auth.refreshStatus}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 };
 
