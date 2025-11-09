@@ -187,3 +187,19 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         validate_password(password)
         return data
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        new_password = data.get('new_password')
+        confirm = data.get('new_password_confirm')
+
+        if new_password != confirm:
+            raise serializers.ValidationError("Heslá sa nezhodujú.")
+
+        validate_password(new_password)
+        return data

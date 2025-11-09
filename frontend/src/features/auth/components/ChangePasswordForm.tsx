@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
+import axiosClient from "@/lib/axiosClient";
+import { useRouter } from "next/navigation";
 
 type ChangePasswordFormProps = {
   onSubmit?: (payload: {
@@ -22,6 +24,7 @@ type FormState = {
 
 export default function ChangePasswordForm({ onSubmit, loading = false }: ChangePasswordFormProps) {
   const { msgs } = useLocalization();
+  const router = useRouter();
   const [form, setForm] = useState<FormState>({
     currentPassword: "",
     newPassword: "",
@@ -29,6 +32,44 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
   });
   const [submitting, setSubmitting] = useState(false);
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+
+  const defaultSubmit = useCallback(
+    async ({
+      currentPassword,
+      newPassword,
+      newPasswordConfirm,
+    }: {
+      currentPassword: string;
+      newPassword: string;
+      newPasswordConfirm: string;
+    }) => {
+      const response = await axiosClient.post("/auth/password/change/", {
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirm: newPasswordConfirm,
+      });
+
+      let latestUser = response.data?.user;
+      if (!latestUser) {
+        try {
+          const profile = await axiosClient.get("/auth/profile/");
+          latestUser = profile.data?.user;
+        } catch {
+          latestUser = null;
+        }
+      }
+
+      if (latestUser) {
+        localStorage.setItem("user", JSON.stringify(latestUser));
+      }
+
+      const roleKey = String(latestUser?.rola || latestUser?.role || "").toLowerCase();
+      const redirectTarget =
+        roleKey === "firma" ? "/dashboard/company/internships" : "/dashboard/student/dashboard";
+      router.push(redirectTarget);
+    },
+    [router],
+  );
 
   const handleChange = (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -40,7 +81,7 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
     if (form.newPassword.length < 8) {
       notifyWarning({
         title: msgs.auth.error,
-        description: "Nové heslo musí mať aspoň 8 znakov.",
+        description: msgs.auth.passwordTooShort,
       });
       return;
     }
@@ -48,22 +89,19 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
     if (form.newPassword !== form.newPasswordConfirm) {
       notifyWarning({
         title: msgs.auth.error,
-        description: "Heslá sa nezhodujú.",
+        description: msgs.auth.passwordMismatch,
       });
       return;
     }
 
     try {
       setSubmitting(true);
-      if (onSubmit) {
-        await onSubmit({
-          currentPassword: form.currentPassword,
-          newPassword: form.newPassword,
-          newPasswordConfirm: form.newPasswordConfirm,
-        });
-      } else {
-        console.info("ChangePasswordForm submit", form);
-      }
+      const submitHandler = onSubmit ?? defaultSubmit;
+      await submitHandler({
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
+        newPasswordConfirm: form.newPasswordConfirm,
+      });
       notifySuccess({
         title: msgs.auth.succesResetPassword,
         description: msgs.auth.setNewPassword,
