@@ -2,8 +2,8 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from apps.users.models import User, GarantProfil
 
-DEFAULT_EMAIL = getattr(settings, "DEFAULT_GARANT_EMAIL", "garant@ukf.sk")
-DEFAULT_PASS = getattr(settings, "DEFAULT_GARANT_PASS", "Garant123!")
+DEFAULT_EMAIL = getattr(settings, "DEFAULT_GARANT_EMAIL", None)
+DEFAULT_PASS = getattr(settings, "DEFAULT_GARANT_PASSWORD", None)
 
 class Command(BaseCommand):
     help = "Vytvorí defaultného garanta, ak neexistuje, alebo obnoví heslo."

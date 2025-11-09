@@ -295,3 +295,13 @@ GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 print(f"🔧 OAuth Config Loaded:")
 print(f"   GitHub Client ID: {'✅' if GITHUB_CLIENT_ID else '❌'}")
 print(f"   Google Client ID: {'✅' if GOOGLE_CLIENT_ID else '❌'}")
+
+# -----------------------------------------------------------------------------
+# DEFAULT GARANT (ENV)
+# -----------------------------------------------------------------------------
+DEFAULT_GARANT_EMAIL = os.getenv("DEFAULT_GARANT_EMAIL")
+DEFAULT_GARANT_PASSWORD = os.getenv("DEFAULT_GARANT_PASSWORD")
+DEFAULT_GARANT_FIRSTNAME = os.getenv("DEFAULT_GARANT_FIRSTNAME", "Hlavny")
+DEFAULT_GARANT_LASTNAME = os.getenv("DEFAULT_GARANT_LASTNAME", "Garant")
+DEFAULT_GARANT_WORKPLACE = os.getenv("DEFAULT_GARANT_WORKPLACE", "Rektorát")
+DEFAULT_GARANT_ORG = os.getenv("DEFAULT_GARANT_ORG", "Univerzita Konštantína Filozofa")
