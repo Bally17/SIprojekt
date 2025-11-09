@@ -52,7 +52,8 @@
 
   "entities": {
     "company": "Firma",
-    "student": "Študent"
+    "student": "Študent",
+    "guarant": "Garant"
   },
 
   "error": {

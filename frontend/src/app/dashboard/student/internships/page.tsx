@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
+import DashboardNavbar from "@/shared/components/navbar/dashboard/DashboardNavbar";
 
 type Internship = {
   id: number;
@@ -117,137 +118,140 @@ export default function StudentInternshipsPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">📘 {msgs.common.internships.evidence}</h1>
+    <>
+      <DashboardNavbar />
+      <div className="p-6 pt-24 max-w-4xl mx-auto">
+        <h1 className="text-2xl font-semibold mb-4">📘 {msgs.common.internships.evidence}</h1>
 
-      {/* 🔹 Formulár pre novú prax */}
-      <form
-        onSubmit={handleCreateInternship}
-        className="border rounded-lg p-4 mb-8 bg-white shadow-sm space-y-4"
-      >
-        <h2 className="text-lg font-medium">➕ {msgs.common.internships.new}</h2>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">{msgs.common.entities.company}</label>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              searchCompanies(e.target.value);
-            }}
-            placeholder={msgs.common.action.company}
-            className="border w-full rounded p-2"
-          />
-          {searchLoading && (
-            <p className="text-sm text-gray-500">{msgs.common.loading.companies}</p>
-          )}
-          {companies.length > 0 && (
-            <ul className="border mt-2 rounded max-h-40 overflow-y-auto">
-              {companies.map((c) => (
-                <li
-                  key={c.id}
-                  onClick={() => {
-                    setForm((f) => ({ ...f, firma_id: String(c.id) }));
-                    setSearchQuery(c.nazov);
-                    setCompanies([]);
-                  }}
-                  className="p-2 cursor-pointer hover:bg-blue-50"
-                >
-                  {c.nazov} {c.adresa && <span className="text-gray-500">({c.adresa})</span>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">{msgs.common.date.year}</label>
-            <input
-              type="number"
-              value={form.rok}
-              onChange={(e) => setForm((f) => ({ ...f, rok: Number(e.target.value) }))}
-              className="border w-full rounded p-2"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">{msgs.common.date.semester}</label>
-            <select
-              value={form.semester}
-              onChange={(e) => setForm((f) => ({ ...f, semester: e.target.value }))}
-              className="border w-full rounded p-2"
-            >
-              <option value="zimny">{msgs.common.date.winter}</option>
-              <option value="letny">{msgs.common.date.summer}</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">{msgs.common.date.startDate}</label>
-            <input
-              type="date"
-              value={form.datum_zaciatku}
-              onChange={(e) => setForm((f) => ({ ...f, datum_zaciatku: e.target.value }))}
-              className="border w-full rounded p-2"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">{msgs.common.date.endDate}</label>
-            <input
-              type="date"
-              value={form.datum_konca}
-              onChange={(e) => setForm((f) => ({ ...f, datum_konca: e.target.value }))}
-              className="border w-full rounded p-2"
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={creating}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        {/* 🔹 Formulár pre novú prax */}
+        <form
+          onSubmit={handleCreateInternship}
+          className="border rounded-lg p-4 mb-8 bg-white shadow-sm space-y-4"
         >
-          {creating ? "Ukladám..." : "Vytvoriť prax"}
-        </button>
-      </form>
+          <h2 className="text-lg font-medium">➕ {msgs.common.internships.new}</h2>
 
-      {/* 🔹 Zoznam praxí */}
-      <h2 className="text-lg font-medium mb-2">📋 {msgs.common.internships.my}</h2>
-      {loading ? (
-        <p>{msgs.common.loading.loading}</p>
-      ) : internships.length === 0 ? (
-        <p>{msgs.common.internships.nonExist}</p>
-      ) : (
-        <div className="space-y-3">
-          {internships.map((prax) => (
-            <div key={prax.id} className="border rounded p-3 bg-white shadow-sm">
-              <div className="font-medium">{prax.firma_nazov}</div>
-              <div className="text-sm text-gray-600">
-                {prax.semester} {prax.rok} • {prax.datum_zaciatku} → {prax.datum_konca}
-              </div>
-              <div className="text-sm mt-1">
-                {msgs.common.stateOpt}
-                <span
-                  className={`font-medium ${
-                    prax.stav === "vytvorena"
-                      ? "text-blue-600"
-                      : prax.stav === "schvalena"
-                        ? "text-green-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {prax.stav}
-                </span>
-              </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{msgs.common.entities.company}</label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                searchCompanies(e.target.value);
+              }}
+              placeholder={msgs.common.action.company}
+              className="border w-full rounded p-2"
+            />
+            {searchLoading && (
+              <p className="text-sm text-gray-500">{msgs.common.loading.companies}</p>
+            )}
+            {companies.length > 0 && (
+              <ul className="border mt-2 rounded max-h-40 overflow-y-auto">
+                {companies.map((c) => (
+                  <li
+                    key={c.id}
+                    onClick={() => {
+                      setForm((f) => ({ ...f, firma_id: String(c.id) }));
+                      setSearchQuery(c.nazov);
+                      setCompanies([]);
+                    }}
+                    className="p-2 cursor-pointer hover:bg-blue-50"
+                  >
+                    {c.nazov} {c.adresa && <span className="text-gray-500">({c.adresa})</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">{msgs.common.date.year}</label>
+              <input
+                type="number"
+                value={form.rok}
+                onChange={(e) => setForm((f) => ({ ...f, rok: Number(e.target.value) }))}
+                className="border w-full rounded p-2"
+              />
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">{msgs.common.date.semester}</label>
+              <select
+                value={form.semester}
+                onChange={(e) => setForm((f) => ({ ...f, semester: e.target.value }))}
+                className="border w-full rounded p-2"
+              >
+                <option value="zimny">{msgs.common.date.winter}</option>
+                <option value="letny">{msgs.common.date.summer}</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">{msgs.common.date.startDate}</label>
+              <input
+                type="date"
+                value={form.datum_zaciatku}
+                onChange={(e) => setForm((f) => ({ ...f, datum_zaciatku: e.target.value }))}
+                className="border w-full rounded p-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">{msgs.common.date.endDate}</label>
+              <input
+                type="date"
+                value={form.datum_konca}
+                onChange={(e) => setForm((f) => ({ ...f, datum_konca: e.target.value }))}
+                className="border w-full rounded p-2"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={creating}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            {creating ? "Ukladám..." : "Vytvoriť prax"}
+          </button>
+        </form>
+
+        {/* 🔹 Zoznam praxí */}
+        <h2 className="text-lg font-medium mb-2">📋 {msgs.common.internships.my}</h2>
+        {loading ? (
+          <p>{msgs.common.loading.loading}</p>
+        ) : internships.length === 0 ? (
+          <p>{msgs.common.internships.nonExist}</p>
+        ) : (
+          <div className="space-y-3">
+            {internships.map((prax) => (
+              <div key={prax.id} className="border rounded p-3 bg-white shadow-sm">
+                <div className="font-medium">{prax.firma_nazov}</div>
+                <div className="text-sm text-gray-600">
+                  {prax.semester} {prax.rok} • {prax.datum_zaciatku} → {prax.datum_konca}
+                </div>
+                <div className="text-sm mt-1">
+                  {msgs.common.stateOpt}
+                  <span
+                    className={`font-medium ${
+                      prax.stav === "vytvorena"
+                        ? "text-blue-600"
+                        : prax.stav === "schvalena"
+                          ? "text-green-600"
+                          : "text-gray-600"
+                    }`}
+                  >
+                    {prax.stav}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
