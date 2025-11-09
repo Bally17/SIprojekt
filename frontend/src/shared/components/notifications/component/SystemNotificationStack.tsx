@@ -53,7 +53,7 @@ const SystemNotificationStack: React.FC<SystemNotificationStackProps> = ({
 }) => {
   const { msgs } = useLocalization();
   const defaultCloseLabel =
-    msgs.notifications?.toast?.close ?? msgs.common?.close ?? "Close notification";
+    msgs.common?.notifications?.toast?.close ?? msgs.common?.close ?? "Close notification";
 
   if (!items.length) return null;
 
