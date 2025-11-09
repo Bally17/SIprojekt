@@ -13,9 +13,10 @@ export type SystemNotificationProps = {
   onClose?: () => void;
   className?: string;
   /**
-   * Zobrazuje integrovaný progres bar (1 = plný čas, 0 = ukončené).
+   * Celkové trvanie progresu v ms (animácia z prava doľava).
    */
-  progress?: number;
+  progressDuration?: number;
+  progressPaused?: boolean;
   closeLabel?: string;
 };
 
@@ -32,34 +33,34 @@ type VariantStyles = {
 
 const variantStyles: Record<SystemNotificationVariant, VariantStyles> = {
   success: {
-    wrapper: "bg-green-50 border border-green-100 text-green-900 shadow-soft",
-    accent: "bg-green-500",
-    icon: <CheckCircle2 className="h-5 w-5 text-green-600" aria-hidden />,
+    wrapper: "bg-green-200 border border-green-300 text-green-900 shadow-soft",
+    accent: "bg-green-600",
+    icon: <CheckCircle2 className="h-5 w-5 text-green-700" aria-hidden />,
     title: "text-green-900",
     description: "text-green-800",
     action: "text-green-700 hover:text-green-900 focus-visible:ring-green-500",
     progressTrack: "bg-green-100/80",
-    progressFill: "bg-green-500",
+    progressFill: "bg-green-600",
   },
   info: {
-    wrapper: "bg-blue-50 border border-blue-100 text-blue-900 shadow-soft",
-    accent: "bg-blue-500",
-    icon: <Info className="h-5 w-5 text-blue-600" aria-hidden />,
+    wrapper: "bg-blue-200 border border-blue-300 text-blue-900 shadow-soft",
+    accent: "bg-blue-600",
+    icon: <Info className="h-5 w-5 text-blue-700" aria-hidden />,
     title: "text-blue-900",
     description: "text-blue-800",
     action: "text-blue-700 hover:text-blue-900 focus-visible:ring-blue-500",
     progressTrack: "bg-blue-100/80",
-    progressFill: "bg-blue-500",
+    progressFill: "bg-blue-600",
   },
   warning: {
-    wrapper: "bg-red-50 border border-red-100 text-red-900 shadow-soft",
-    accent: "bg-red-500",
-    icon: <AlertTriangle className="h-5 w-5 text-red-600" aria-hidden />,
+    wrapper: "bg-red-200 border border-red-300 text-red-900 shadow-soft",
+    accent: "bg-red-600",
+    icon: <AlertTriangle className="h-5 w-5 text-red-700" aria-hidden />,
     title: "text-red-900",
     description: "text-red-800",
     action: "text-red-700 hover:text-red-900 focus-visible:ring-red-500",
     progressTrack: "bg-red-100/80",
-    progressFill: "bg-red-500",
+    progressFill: "bg-red-600",
   },
 };
 
@@ -72,15 +73,13 @@ const SystemNotification: React.FC<SystemNotificationProps> = ({
   onAction,
   onClose,
   className = "",
-  progress,
+  progressDuration,
+  progressPaused = false,
   closeLabel,
 }) => {
   const styles = variantStyles[variant];
   const role = variant === "warning" ? "alert" : "status";
-  const hasProgress = typeof progress === "number";
-  const sanitizedProgress = Math.max(0, Math.min(1, progress ?? 0));
-  const showProgress = hasProgress && sanitizedProgress >= 0;
-  const progressWidth = `${sanitizedProgress * 100}%`;
+  const showProgress = typeof progressDuration === "number" && progressDuration > 0;
 
   return (
     <div
@@ -91,8 +90,11 @@ const SystemNotification: React.FC<SystemNotificationProps> = ({
       {showProgress ? (
         <div className={`absolute inset-x-0 top-0 h-1 ${styles.progressTrack}`} aria-hidden>
           <div
-            className={`ml-auto h-full ${styles.progressFill} transition-[width] duration-150 ease-linear`}
-            style={{ width: progressWidth }}
+            className={`h-full ${styles.progressFill} toast-progress-bar`}
+            style={{
+              animationDuration: `${progressDuration}ms`,
+              animationPlayState: progressPaused ? "paused" : "running",
+            }}
           />
         </div>
       ) : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocalization } from "@/shared/i18n/client";
 import SystemNotification, { SystemNotificationProps } from "./SystemNotification";
 
@@ -83,7 +83,7 @@ type ToastItemProps = {
 
 const COMPLETION_DELAY_MS = 220;
 const EXIT_ANIMATION_MS = 320;
-const DEFAULT_TOAST_WIDTH = 360;
+const DEFAULT_TOAST_WIDTH = 420;
 
 const useProgressTimer = ({
   durationMs,
@@ -96,51 +96,45 @@ const useProgressTimer = ({
   enabled: boolean;
   onComplete: () => void;
 }) => {
-  const progressRef = useRef(0);
-  const [, setTick] = useState(0);
-  const finishTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const completionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const remainingRef = useRef(durationMs);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
-    if (paused) return;
 
-    let rafId: number;
-    const start = performance.now() - progressRef.current * durationMs;
-
-    const tick = (now: number) => {
-      const nextProgress = Math.min(1, (now - start) / durationMs);
-      progressRef.current = nextProgress;
-      setTick(nextProgress);
-
-      if (nextProgress < 1) {
-        rafId = requestAnimationFrame(tick);
+    if (paused) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
-    };
+      if (startTimeRef.current) {
+        const elapsed = performance.now() - startTimeRef.current;
+        remainingRef.current = Math.max(0, remainingRef.current - elapsed);
+        startTimeRef.current = null;
+      }
+      return;
+    }
 
-    rafId = requestAnimationFrame(tick);
-
-    const remaining = durationMs * (1 - progressRef.current);
-    finishTimeout.current = setTimeout(() => {
-      progressRef.current = 1;
-      setTick(1);
-      completionTimeout.current = setTimeout(onComplete, COMPLETION_DELAY_MS);
-    }, remaining);
+    startTimeRef.current = performance.now();
+    timeoutRef.current = setTimeout(() => {
+      startTimeRef.current = null;
+      remainingRef.current = durationMs;
+      onComplete();
+    }, remainingRef.current);
 
     return () => {
-      cancelAnimationFrame(rafId);
-      if (finishTimeout.current) {
-        clearTimeout(finishTimeout.current);
-        finishTimeout.current = null;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
-      if (completionTimeout.current) {
-        clearTimeout(completionTimeout.current);
-        completionTimeout.current = null;
+      if (startTimeRef.current) {
+        const elapsed = performance.now() - startTimeRef.current;
+        remainingRef.current = Math.max(0, remainingRef.current - elapsed);
+        startTimeRef.current = null;
       }
     };
   }, [durationMs, enabled, paused, onComplete]);
-
-  return progressRef.current;
 };
 
 const ToastItem: React.FC<ToastItemProps> = ({
@@ -176,14 +170,12 @@ const ToastItem: React.FC<ToastItemProps> = ({
     [],
   );
 
-  const elapsed = useProgressTimer({
+  useProgressTimer({
     durationMs,
     paused: pauseOnHover && hovered,
     enabled: autoClose && !isClosing,
     onComplete: startClosing,
   });
-
-  const remaining = useMemo(() => Math.max(0, 1 - Math.min(1, elapsed)), [elapsed]);
 
   const { className, closeLabel, ...rest } = item;
   const animationClass = isClosing ? "toast-exit" : "toast-enter";
@@ -200,7 +192,8 @@ const ToastItem: React.FC<ToastItemProps> = ({
         {...rest}
         onClose={startClosing}
         className={`${className ?? ""} pointer-events-auto`}
-        progress={autoClose ? remaining : undefined}
+        progressDuration={autoClose ? durationMs : undefined}
+        progressPaused={pauseOnHover && hovered}
         closeLabel={closeLabel ?? fallbackCloseLabel}
       />
     </div>

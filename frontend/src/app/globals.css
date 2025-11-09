@@ -71,3 +71,18 @@ body {
 .toast-exit {
   animation: toast-exit 0.32s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
+
+@keyframes toast-progress-bar {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.toast-progress-bar {
+  animation-name: toast-progress-bar;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}

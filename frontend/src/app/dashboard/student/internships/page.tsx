@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 type Internship = {
   id: number;
@@ -34,27 +35,30 @@ export default function StudentInternshipsPage() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+  const errorLoadMsg = msgs.common.error.errorLoadInternships;
 
   // 🔹 Načítanie praxí študenta
-  const fetchInternships = async () => {
+  const fetchInternships = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axiosClient.get("/internships/me/internships/");
       setInternships(res.data.results || res.data);
     } catch (err) {
       console.error(err);
-      setError("Nepodarilo sa načítať praxe.");
+      notifyWarning({
+        title: errorLoadMsg,
+        description: "Nepodarilo sa načítať praxe.",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [errorLoadMsg, notifyWarning]);
 
   useEffect(() => {
     fetchInternships();
-  }, []);
+  }, [fetchInternships]);
 
   // 🔹 Fulltext hľadanie firiem
   const searchCompanies = async (q: string) => {
@@ -65,6 +69,10 @@ export default function StudentInternshipsPage() {
       setCompanies(res.data.results || res.data);
     } catch (err) {
       console.error(err);
+      notifyWarning({
+        title: msgs.common.error.errorAction,
+        description: msgs.common.loading.companies,
+      });
     } finally {
       setSearchLoading(false);
     }
@@ -74,7 +82,6 @@ export default function StudentInternshipsPage() {
   const handleCreateInternship = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
-    setError(null);
 
     try {
       const payload = {
@@ -93,10 +100,17 @@ export default function StudentInternshipsPage() {
 
       // 🔹 Znovu načítaj praxe
       await fetchInternships();
-      alert("✅ Prax bola vytvorená a dohoda vygenerovaná.");
+      notifySuccess({
+        title: "Prax vytvorená",
+        description: "Dohoda bola vygenerovaná.",
+      });
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.detail || "Nepodarilo sa vytvoriť prax.");
+      const message = err.response?.data?.detail || "Nepodarilo sa vytvoriť prax.";
+      notifyWarning({
+        title: "Chyba",
+        description: message,
+      });
     } finally {
       setCreating(false);
     }
@@ -192,8 +206,6 @@ export default function StudentInternshipsPage() {
             />
           </div>
         </div>
-
-        {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <button
           type="submit"

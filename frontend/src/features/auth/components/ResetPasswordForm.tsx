@@ -3,6 +3,7 @@
 import { useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 type Props = {
   token: string;
@@ -11,9 +12,8 @@ type Props = {
 export default function ResetPasswordForm({ token }: Props) {
   const [form, setForm] = useState({ newPassword: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   // Ukladá zmeny z inputov podľa ich name atribútu
 
@@ -25,8 +25,6 @@ export default function ResetPasswordForm({ token }: Props) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError("");
-    setSuccess(false);
     setLoading(true);
 
     try {
@@ -35,12 +33,18 @@ export default function ResetPasswordForm({ token }: Props) {
         new_password: form.newPassword,
         new_password_confirm: form.confirmPassword,
       });
-      setSuccess(true);
       setForm({ newPassword: "", confirmPassword: "" });
+      notifySuccess({
+        title: msgs.auth.succesResetPassword,
+        description: msgs.auth.setNewPassword,
+      });
     } catch (err: any) {
-      setError(
-        err.response?.data?.error || err.response?.data?.message || msgs.auth.notNewPassword,
-      );
+      const message =
+        err.response?.data?.error || err.response?.data?.message || msgs.auth.notNewPassword;
+      notifyWarning({
+        title: msgs.auth.error,
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -77,11 +81,6 @@ export default function ResetPasswordForm({ token }: Props) {
         required
         minLength={8}
       />
-
-      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-      {success && (
-        <p className="text-green-600 text-sm text-center">{msgs.auth.succesResetPassword}</p>
-      )}
 
       <button
         type="submit"

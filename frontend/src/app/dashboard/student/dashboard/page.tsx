@@ -1,20 +1,22 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { Download, Building2, CalendarPlus, Loader2, FileText } from "lucide-react";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 export default function StudentDashboardPage() {
   const [internships, setInternships] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [companies, setCompanies] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
   const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+  const errorLoadMsg = msgs.common.error.errorLoadInternships;
 
   const [form, setForm] = useState({
     firma_id: "",
@@ -25,7 +27,7 @@ export default function StudentDashboardPage() {
   });
 
   // 🔹 Načítanie praxí
-  const fetchInternships = async () => {
+  const fetchInternships = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axiosClient.get("/internships/me/internships/");
@@ -40,15 +42,18 @@ export default function StudentDashboardPage() {
       setInternships(data);
     } catch (err) {
       console.error(err);
-      setError("Nepodarilo sa načítať praxe.");
+      notifyWarning({
+        title: errorLoadMsg,
+        description: "Nepodarilo sa načítať praxe.",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [errorLoadMsg, notifyWarning]);
 
   useEffect(() => {
     fetchInternships();
-  }, []);
+  }, [fetchInternships]);
 
   // 🔹 Hľadanie firiem
   const searchCompanies = async (q: string) => {
@@ -59,6 +64,10 @@ export default function StudentDashboardPage() {
       setCompanies(res.data.results || res.data);
     } catch (err) {
       console.error(err);
+      notifyWarning({
+        title: msgs.common.error.errorAction,
+        description: msgs.common.loading.companies,
+      });
     } finally {
       setSearchLoading(false);
     }
@@ -68,7 +77,6 @@ export default function StudentDashboardPage() {
   const handleCreateInternship = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
-    setError(null);
 
     try {
       const payload = {
@@ -80,11 +88,17 @@ export default function StudentDashboardPage() {
       };
 
       await axiosClient.post("/internships/create/", payload);
-      alert("✅ Prax bola vytvorená a dohoda automaticky vygenerovaná.");
+      notifySuccess({
+        title: "Prax vytvorená",
+        description: "Dohoda bola automaticky vygenerovaná.",
+      });
       await fetchInternships();
     } catch (err) {
       console.error(err);
-      setError("Nepodarilo sa vytvoriť prax.");
+      notifyWarning({
+        title: "Chyba",
+        description: "Nepodarilo sa vytvoriť prax.",
+      });
     } finally {
       setCreating(false);
     }
@@ -202,8 +216,6 @@ export default function StudentDashboardPage() {
               />
             </div>
           </div>
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <button
             type="submit"

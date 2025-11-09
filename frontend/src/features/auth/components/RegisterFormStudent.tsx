@@ -3,6 +3,7 @@ import { useState } from "react";
 // axiosClient = centrálna inštancia s baseURL (NEXT_PUBLIC_API_URL)
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 export default function RegisterFormStudent() {
   // Lokálny stav formulára
@@ -18,10 +19,9 @@ export default function RegisterFormStudent() {
 
   // Stav UI (spinner + hlášky)
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   // Aktualizácia vstupov → state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,8 +31,6 @@ export default function RegisterFormStudent() {
   // Submit handler: mapovanie na backend field names + POST
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess(false);
     setLoading(true);
 
     const payload = {
@@ -51,7 +49,10 @@ export default function RegisterFormStudent() {
       const res = await axiosClient.post("/auth/register/student/", payload);
       console.log("✅ Registrácia študenta:", res.data);
 
-      setSuccess(true);
+      notifySuccess({
+        title: msgs.auth.successRegister,
+        description: msgs.auth.registerStudent,
+      });
       setForm({
         firstName: "",
         lastName: "",
@@ -62,8 +63,12 @@ export default function RegisterFormStudent() {
         studyField: "",
       });
     } catch (err: any) {
+      const message = err.response?.data?.message || msgs.auth.errorSubmit;
       console.error("❌ Chyba pri registrácii:", err.response?.data || err);
-      setError(err.response?.data?.message || msgs.auth.errorSubmit);
+      notifyWarning({
+        title: msgs.auth.errorTitle,
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -139,11 +144,6 @@ export default function RegisterFormStudent() {
         className={input}
         required
       />
-
-      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-      {success && (
-        <p className="text-green-600 text-sm text-center">✅ {msgs.auth.successRegister}</p>
-      )}
 
       <button
         type="submit"

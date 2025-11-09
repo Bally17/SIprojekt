@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 type ChangePasswordFormProps = {
   onSubmit?: (payload: {
@@ -27,27 +28,28 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
     newPasswordConfirm: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   const handleChange = (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
-    setError(null);
-    setSuccess(false);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setSuccess(false);
 
     if (form.newPassword.length < 8) {
-      setError("Nové heslo musí mať aspoň 8 znakov.");
+      notifyWarning({
+        title: msgs.auth.error,
+        description: "Nové heslo musí mať aspoň 8 znakov.",
+      });
       return;
     }
 
     if (form.newPassword !== form.newPasswordConfirm) {
-      setError("Heslá sa nezhodujú.");
+      notifyWarning({
+        title: msgs.auth.error,
+        description: "Heslá sa nezhodujú.",
+      });
       return;
     }
 
@@ -60,17 +62,22 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
           newPasswordConfirm: form.newPasswordConfirm,
         });
       } else {
-        // Zatiaľ len simulácia – backend sa doplní neskôr.
         console.info("ChangePasswordForm submit", form);
       }
-      setSuccess(true);
+      notifySuccess({
+        title: msgs.auth.succesResetPassword,
+        description: msgs.auth.setNewPassword,
+      });
       setForm({ currentPassword: "", newPassword: "", newPasswordConfirm: "" });
     } catch (submitError: any) {
-      setError(
+      const message =
         submitError?.message ||
-          submitError?.response?.data?.detail ||
-          "Nepodarilo sa zmeniť heslo. Skúste znova.",
-      );
+        submitError?.response?.data?.detail ||
+        "Nepodarilo sa zmeniť heslo. Skúste znova.";
+      notifyWarning({
+        title: msgs.auth.error,
+        description: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -133,11 +140,6 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
           minLength={8}
         />
       </div>
-
-      {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-      {success && (
-        <p className="text-sm text-green-600 text-center">{msgs.auth.succesResetPassword}</p>
-      )}
 
       <button
         type="submit"
