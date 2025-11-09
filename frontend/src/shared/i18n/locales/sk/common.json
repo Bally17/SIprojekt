@@ -88,6 +88,11 @@
       "close": "Zavrieť notifikáciu"
     }
   },
+  "language": {
+    "switcher": "Zmena jazyka",
+    "sk": "Slovenčina",
+    "en": "Angličtina"
+  },
 
   "brand": {
     "brand": "Praxy.sk",

@@ -178,7 +178,7 @@ const DashboardNavbar = () => {
               type="button"
               onClick={() => setLangMenuOpen((prev) => !prev)}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-700 transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
-              aria-label="Language switcher"
+              aria-label={msgs.common.language.switcher}
             >
               <Globe className="h-5 w-5" />
             </button>
@@ -189,14 +189,14 @@ const DashboardNavbar = () => {
                   className="block w-full px-3 py-2 text-left hover:bg-primary-50"
                   onClick={() => setLangMenuOpen(false)}
                 >
-                  SK
+                  {msgs.common.language.sk}
                 </button>
                 <button
                   type="button"
                   className="block w-full px-3 py-2 text-left hover:bg-primary-50"
                   onClick={() => setLangMenuOpen(false)}
                 >
-                  EN
+                  {msgs.common.language.en}
                 </button>
               </div>
             ) : null}
