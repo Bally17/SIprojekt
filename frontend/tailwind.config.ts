@@ -25,6 +25,7 @@ const config: Config = {
         },
         ink: {
           900: "#0f172a", // titulky
+          800: "#172036",
           700: "#1f2937", // text
           500: "#6b7280", // sekundárny
         },

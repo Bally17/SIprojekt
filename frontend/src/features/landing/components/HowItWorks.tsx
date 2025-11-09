@@ -1,34 +1,39 @@
 "use client";
 import { useLocalization } from "@/shared/i18n/client";
-import { Users, FileText, BadgeCheck, Shield, Upload } from "lucide-react";
+import Icon from "@/shared/icons";
 
 export default function HowItWorks() {
   const { msgs } = useLocalization();
   const steps = [
-    { n: 1, title: "Registrácia", text: "Vytvoríš účet", icon: <Users className="h-6 w-6" /> },
+    {
+      n: 1,
+      title: "Registrácia",
+      text: "Vytvoríš účet",
+      icon: <Icon name="users" className="h-6 w-6" />,
+    },
     {
       n: 2,
       title: "Vytvor prax",
       text: "Vygeneruješ si PDF",
-      icon: <FileText className="h-6 w-6" />,
+      icon: <Icon name="file-text" className="h-6 w-6" />,
     },
     {
       n: 3,
       title: "Potvrdenie firmou",
       text: "Firma schváli",
-      icon: <BadgeCheck className="h-6 w-6" />,
+      icon: <Icon name="badge-check" className="h-6 w-6" />,
     },
     {
       n: 4,
       title: "Schválenie garantom",
       text: "Kontrola a schválenie",
-      icon: <Shield className="h-6 w-6" />,
+      icon: <Icon name="shield" className="h-6 w-6" />,
     },
     {
       n: 5,
       title: "Výkaz a uzavretie",
       text: "Upload + export CSV",
-      icon: <Upload className="h-6 w-6" />,
+      icon: <Icon name="upload" className="h-6 w-6" />,
     },
   ];
 

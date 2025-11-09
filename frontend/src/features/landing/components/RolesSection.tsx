@@ -2,18 +2,18 @@
 import { roleSectionDatas } from "@/shared/data/roleSectionDatas";
 import { useLocalization } from "@/shared/i18n/client";
 import { RoleType } from "@/shared/types/roleTypes";
-import { GraduationCap, Building2, Shield, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import "@utils/idUsing";
+import Icon from "@/shared/icons";
 
 export default function RolesSection() {
   const { msgs } = useLocalization();
   const [tab, setTab] = useState<RoleType>("student");
 
   const tabs: { key: RoleType; label: string; icon: React.ReactNode }[] = [
-    { key: "student", label: "Študent", icon: <GraduationCap className="h-4 w-4" /> },
-    { key: "firma", label: "Firma", icon: <Building2 className="h-4 w-4" /> },
-    { key: "garant", label: "Garant", icon: <Shield className="h-4 w-4" /> },
+    { key: "student", label: "Študent", icon: <Icon name="graduation-cap" className="h-4 w-4" /> },
+    { key: "firma", label: "Firma", icon: <Icon name="building-2" className="h-4 w-4" /> },
+    { key: "garant", label: "Garant", icon: <Icon name="shield" className="h-4 w-4" /> },
   ];
 
   return (
@@ -58,7 +58,7 @@ export default function RolesSection() {
                 <ul className="space-y-2">
                   {roleSectionDatas[tab].map((r) => (
                     <li key={r.a.idUsing()} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary-600" />
+                      <Icon name="check-circle-2" className="mt-0.5 h-4 w-4 text-primary-600" />
                       <span>{r.a}</span>
                     </li>
                   ))}

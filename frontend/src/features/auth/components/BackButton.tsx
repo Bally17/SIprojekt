@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import Icon from "@/shared/icons";
 import Link from "next/link";
 
 type BackButtonProps = {
@@ -14,7 +14,7 @@ export default function BackButton({ className = "", label = "Úvodná stránka"
 
   return (
     <Link href="/" className={`${baseClasses} ${className}`.trim()}>
-      <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+      <Icon name="arrow-left" className="h-5 w-5" aria-hidden />
       <span>{label}</span>
     </Link>
   );

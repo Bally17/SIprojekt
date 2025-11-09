@@ -5,16 +5,7 @@ import { useRouter } from "next/navigation";
 import axiosClient, { clearAuthTokens } from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
-import {
-  LogOut,
-  GraduationCap,
-  Building2,
-  ShieldCheck,
-  Globe,
-  LockKeyhole,
-  RefreshCw,
-  ArrowRight,
-} from "lucide-react";
+import Icon from "@/shared/icons";
 
 type DashboardRole = "student" | "firma" | "garant" | string;
 
@@ -76,12 +67,12 @@ const DashboardNavbar = () => {
   // Podľa role meníme ikonu, aby bolo hneď jasné kto je prihlásený
   const roleIcon = useMemo(() => {
     if (roleKey === "firma") {
-      return <Building2 className="h-5 w-5 text-primary-800" aria-hidden />;
+      return <Icon name="building-2" className="h-5 w-5 text-primary-800" aria-hidden />;
     }
     if (roleKey === "garant") {
-      return <ShieldCheck className="h-5 w-5 text-primary-800" aria-hidden />;
+      return <Icon name="shield-check" className="h-5 w-5 text-primary-800" aria-hidden />;
     }
-    return <GraduationCap className="h-5 w-5 text-primary-800" aria-hidden />;
+    return <Icon name="graduation-cap" className="h-5 w-5 text-primary-800" aria-hidden />;
   }, [roleKey]);
 
   const roleLabel = useMemo(() => {
@@ -192,7 +183,7 @@ const DashboardNavbar = () => {
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-700 transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
                 aria-label={msgs.common.language.switcher}
               >
-                <Globe className="h-5 w-5" />
+                <Icon name="globe" className="h-5 w-5" />
               </button>
               {langMenuOpen ? (
                 <div className="absolute right-0 mt-2 w-28 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
@@ -219,9 +210,17 @@ const DashboardNavbar = () => {
               className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 transition hover:bg-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               aria-label={msgs.auth.logout}
             >
-              <LogOut className="h-5 w-5" />
+              <Icon name="globe" className="h-5 w-5" />
             </button>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 transition hover:bg-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            aria-label={msgs.auth.logout}
+          >
+            <Icon name="log-out" className="h-5 w-5" />
+          </button>
         </div>
       </header>
 
@@ -230,7 +229,7 @@ const DashboardNavbar = () => {
           <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
             <div className="flex items-start gap-4">
               <div className="rounded-2xl bg-primary-100 p-3 text-primary-900">
-                <LockKeyhole className="h-6 w-6" aria-hidden />
+                <Icon name="lock-keyhole" className="h-6 w-6" aria-hidden />
               </div>
               <div className="space-y-2">
                 <h2 className="text-xl font-semibold text-ink-900">{msgs.auth.mustChangeTitle}</h2>
@@ -246,7 +245,7 @@ const DashboardNavbar = () => {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-900 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-primary-800"
               >
                 {msgs.auth.changePasswordNow}
-                <ArrowRight className="h-4 w-4" aria-hidden />
+                <Icon name="arrow-right" className="h-4 w-4" aria-hidden />
               </button>
               <button
                 type="button"
@@ -254,7 +253,7 @@ const DashboardNavbar = () => {
                 disabled={loadingUser}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-ink-700 transition hover:bg-slate-50 disabled:opacity-60"
               >
-                <RefreshCw className={`h-4 w-4 ${loadingUser ? "animate-spin" : ""}`} aria-hidden />
+                <Icon name="refresh-cw" className={`h-4 w-4 ${loadingUser ? "animate-spin" : ""}`} aria-hidden />
                 {msgs.auth.refreshStatus}
               </button>
             </div>

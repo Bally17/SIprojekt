@@ -5,7 +5,6 @@
   "reset": "Reset",
   "close": "Zavrieť",
   "tryAgain": "Skúsiť znova",
-  "stateOpt": "Stav: ",
   "questionMark": "?",
 
   "action": {
@@ -66,13 +65,11 @@
     "state": "Stav praxe",
     "empty": "Momentálne nemáte žiadne nové žiadosti.",
     "emptyYour": "Zatiaľ nemáš žiadne praxe.",
-    "nonExist": "Žiadne praxe zatiaľ neexistujú.",
     "management": "Správa praxí",
     "show": "Pozrite si čakajúce žiadosti, potvrďte alebo zamietnite praxe a filtrujte ich podľa roka, semestra a stavu.",
     "my": "Moje praxe",
     "manage": "Spravuj svoje praxe, vytváraj nové a sťahuj dohody o odbornej praxi.",
-    "new": "Nová prax",
-    "evidence": "Evidencia odbornej praxe"
+    "new": "Nová prax"
   },
 
   "date": {
