@@ -3,6 +3,7 @@
   "reject": "Zamietnuť",
   "filter": "Filtrovať",
   "reset": "Reset",
+  "close": "Zavrieť",
   "tryAgain": "Skúsiť znova",
   "stateOpt": "Stav: ",
   "questionMark": "?",
@@ -80,6 +81,11 @@
     "summer": "Letný",
     "startDate": "Dátum začiatku",
     "endDate": "Dátum konca"
+  },
+  "notifications": {
+    "toast": {
+      "close": "Zavrieť notifikáciu"
+    }
   },
 
   "brand": {

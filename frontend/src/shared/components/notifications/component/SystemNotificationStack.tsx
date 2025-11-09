@@ -1,4 +1,7 @@
+"use client";
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocalization } from "@/shared/i18n/client";
 import SystemNotification, { SystemNotificationProps } from "./SystemNotification";
 
 export type NotificationStackItem = {
@@ -48,6 +51,10 @@ const SystemNotificationStack: React.FC<SystemNotificationStackProps> = ({
   toastWidth = DEFAULT_TOAST_WIDTH,
   onDismiss,
 }) => {
+  const { msgs } = useLocalization();
+  const defaultCloseLabel =
+    msgs.notifications?.toast?.close ?? msgs.common?.close ?? "Close notification";
+
   if (!items.length) return null;
 
   return (
@@ -55,7 +62,13 @@ const SystemNotificationStack: React.FC<SystemNotificationStackProps> = ({
       className={`pointer-events-none fixed z-50 flex flex-col ${positionClasses[position]} ${spacingClasses[spacing]}`}
     >
       {items.map((item) => (
-        <ToastItem key={item.id} item={item} toastWidth={toastWidth} onDismiss={onDismiss} />
+        <ToastItem
+          key={item.id}
+          item={item}
+          toastWidth={toastWidth}
+          fallbackCloseLabel={defaultCloseLabel}
+          onDismiss={onDismiss}
+        />
       ))}
     </div>
   );
@@ -64,6 +77,7 @@ const SystemNotificationStack: React.FC<SystemNotificationStackProps> = ({
 type ToastItemProps = {
   item: NotificationStackItem;
   toastWidth: number | string;
+  fallbackCloseLabel: string;
   onDismiss?: (id: NotificationStackItem["id"]) => void;
 };
 
@@ -129,7 +143,12 @@ const useProgressTimer = ({
   return progressRef.current;
 };
 
-const ToastItem: React.FC<ToastItemProps> = ({ item, toastWidth, onDismiss }) => {
+const ToastItem: React.FC<ToastItemProps> = ({
+  item,
+  toastWidth,
+  fallbackCloseLabel,
+  onDismiss,
+}) => {
   const [hovered, setHovered] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoClose = item.autoClose !== false;
@@ -166,7 +185,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ item, toastWidth, onDismiss }) =>
 
   const remaining = useMemo(() => Math.max(0, 1 - Math.min(1, elapsed)), [elapsed]);
 
-  const { className, ...rest } = item;
+  const { className, closeLabel, ...rest } = item;
   const animationClass = isClosing ? "toast-exit" : "toast-enter";
   const widthStyle = typeof toastWidth === "number" ? `${toastWidth}px` : toastWidth;
 
@@ -182,6 +201,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ item, toastWidth, onDismiss }) =>
         onClose={startClosing}
         className={`${className ?? ""} pointer-events-auto`}
         progress={autoClose ? remaining : undefined}
+        closeLabel={closeLabel ?? fallbackCloseLabel}
       />
     </div>
   );

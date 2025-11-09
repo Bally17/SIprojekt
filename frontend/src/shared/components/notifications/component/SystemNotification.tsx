@@ -16,6 +16,7 @@ export type SystemNotificationProps = {
    * Zobrazuje integrovaný progres bar (1 = plný čas, 0 = ukončené).
    */
   progress?: number;
+  closeLabel?: string;
 };
 
 type VariantStyles = {
@@ -72,6 +73,7 @@ const SystemNotification: React.FC<SystemNotificationProps> = ({
   onClose,
   className = "",
   progress,
+  closeLabel,
 }) => {
   const styles = variantStyles[variant];
   const role = variant === "warning" ? "alert" : "status";
@@ -119,7 +121,7 @@ const SystemNotification: React.FC<SystemNotificationProps> = ({
             type="button"
             onClick={onClose}
             className="rounded-full p-1 text-sm text-ink-500 transition hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:ring-primary-500"
-            aria-label="Zavrieť notifikáciu"
+            aria-label={closeLabel ?? title}
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
