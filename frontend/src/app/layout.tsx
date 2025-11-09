@@ -4,6 +4,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import { getMessages, type Locale } from "@i18n/getMessages";
 import { LocalizationProvider } from "@i18n/client";
+import { SystemNotificationsProvider } from "@/shared/components/notifications";
 
 export const metadata: Metadata = {
   title: "Praxy – správa odbornej praxe jednoducho",
@@ -19,7 +20,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={locale}>
       <body>
         <LocalizationProvider locale={locale} messages={messages}>
-          {children}
+          <SystemNotificationsProvider>{children}</SystemNotificationsProvider>
         </LocalizationProvider>
       </body>
     </html>

@@ -7,6 +7,7 @@ import { useLocalization } from "@/shared/i18n/client";
 import { Table } from "@/shared/components/table";
 import { TABLE_NAMES } from "@/constants/Table";
 import { Internship } from "@/shared/types/internship/internship";
+import { useSystemNotifications } from "@/shared/components/notifications";
 import {
   SEMESTER_OPTIONS,
   STAV_OPTIONS,
@@ -36,6 +37,7 @@ export default function CompanyInternshipsDashboard() {
   const [filters, setFilters] = useState({ rok: "", semester: "", stav: "" });
 
   const { msgs } = useLocalization();
+  const { warning: notifyWarning } = useSystemNotifications();
 
   const getAuthHeaders = useCallback(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
@@ -66,11 +68,17 @@ export default function CompanyInternshipsDashboard() {
 
       setInternships(payload?.internships || []);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships);
+      const message =
+        err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships;
+      setError(message);
+      notifyWarning({
+        title: msgs.common.error.errorLoadInternships,
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
-  }, [filters, getAuthHeaders, msgs.common.error.errorLoadInternships]);
+  }, [filters, getAuthHeaders, msgs.common.error.errorLoadInternships, notifyWarning]);
 
   useEffect(() => {
     fetchInternships();

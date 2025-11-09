@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 // axiosClient má baseURL z NEXT_PUBLIC_API_URL
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -18,10 +19,9 @@ export default function LoginForm() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   // Sync vstupov do state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,8 +31,6 @@ export default function LoginForm() {
   // Odoslanie loginu – jednotný endpoint /auth/login/
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess(false);
     setLoading(true);
 
     try {
@@ -49,7 +47,10 @@ export default function LoginForm() {
       // Uloženie používateľa na localStorage
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      setSuccess(true);
+      notifySuccess({
+        title: msgs.auth.successLogin,
+        description: msgs.auth.successLogin,
+      });
 
       // Redirect podľa roly
       if (res.data.user.rola === "firma") {
@@ -58,8 +59,13 @@ export default function LoginForm() {
         router.push("/dashboard/student/dashboard");
       }
     } catch (err: any) {
+      const message =
+        err.response?.data?.detail || err.response?.data?.message || msgs.auth.errorMsg;
       console.error(msgs.auth.errorTitle, err.response?.data || err.message);
-      setError(err.response?.data?.detail || err.response?.data?.message || msgs.auth.errorMsg);
+      notifyWarning({
+        title: msgs.auth.errorTitle,
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -133,12 +139,6 @@ export default function LoginForm() {
             {msgs.auth.forgot}
           </a>
         </div>
-
-        {/* Stavové hlášky */}
-        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-        {success && (
-          <p className="text-green-600 text-sm text-center">✅ {msgs.auth.successLogin}</p>
-        )}
 
         <button
           type="submit"

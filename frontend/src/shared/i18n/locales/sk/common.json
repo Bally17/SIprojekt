@@ -3,6 +3,7 @@
   "reject": "Zamietnuť",
   "filter": "Filtrovať",
   "reset": "Reset",
+  "close": "Zavrieť",
   "tryAgain": "Skúsiť znova",
   "stateOpt": "Stav: ",
   "questionMark": "?",
@@ -51,7 +52,8 @@
 
   "entities": {
     "company": "Firma",
-    "student": "Študent"
+    "student": "Študent",
+    "guarant": "Garant"
   },
 
   "error": {
@@ -80,6 +82,16 @@
     "summer": "Letný",
     "startDate": "Dátum začiatku",
     "endDate": "Dátum konca"
+  },
+  "notifications": {
+    "toast": {
+      "close": "Zavrieť notifikáciu"
+    }
+  },
+  "language": {
+    "switcher": "Zmena jazyka",
+    "sk": "Slovenčina",
+    "en": "Angličtina"
   },
 
   "brand": {

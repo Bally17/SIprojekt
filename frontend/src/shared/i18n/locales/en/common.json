@@ -3,6 +3,7 @@
   "reject": "Reject",
   "filter": "Filter",
   "reset": "Reset",
+  "close": "Close",
   "tryAgain": "Try again",
   "stateOpt": "Status: ",
   "questionMark": "?",
@@ -51,7 +52,8 @@
 
   "entities": {
     "company": "Company",
-    "student": "Student"
+    "student": "Student",
+    "guarant": "Supervisor"
   },
 
   "error": {
@@ -80,6 +82,16 @@
     "summer": "Summer",
     "startDate": "Start date",
     "endDate": "End date"
+  },
+  "notifications": {
+    "toast": {
+      "close": "Close notification"
+    }
+  },
+  "language": {
+    "switcher": "Language switcher",
+    "sk": "Slovak",
+    "en": "English"
   },
 
   "brand": {

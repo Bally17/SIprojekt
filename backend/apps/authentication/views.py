@@ -24,6 +24,7 @@ from .serializers import (
     CompanyRegistrationSerializer,
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
+    ChangePasswordSerializer,
 )
 from .oauth_serializers import OAuthAuthorizeSerializer, OAuthTokenSerializer
 from .models import OAuthClient, AuthorizationCode
@@ -177,6 +178,29 @@ def password_reset_confirm(request):
 
     return Response({"message": "Heslo bolo úspešne zresetované."}, status=status.HTTP_200_OK)
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """Zmena hesla prihláseného používateľa"""
+    serializer = ChangePasswordSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    user = request.user
+    if not user.check_password(serializer.validated_data['current_password']):
+        return Response({"error": "Aktuálne heslo nie je správne."}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(serializer.validated_data['new_password'])
+    if user.musi_zmenit_heslo:
+        user.musi_zmenit_heslo = False
+    user.save()
+
+    user_data = get_user_data(user)
+    return Response(
+        {"message": "Heslo bolo úspešne zmenené.", "user": user_data},
+        status=status.HTTP_200_OK,
+    )
+
 # ----------------------------------------------------------------------
 # Rate limiting pre OAuth
 # ----------------------------------------------------------------------
@@ -258,6 +282,7 @@ def get_user_data(user):
         'aktivny': user.aktivny,
         'vytvorene_at': user.vytvorene_at.isoformat() if user.vytvorene_at else None,
         'firma_id': user.firma_id,
+        'musi_zmenit_heslo': user.musi_zmenit_heslo,
     }
 
 # ----------------------------------------------------------------------

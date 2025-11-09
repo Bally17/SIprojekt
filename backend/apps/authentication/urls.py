@@ -31,6 +31,7 @@ urlpatterns = [
     # Reset password routes
     path('password/reset/', views.password_reset_request, name='password-reset'),
     path('password/reset/confirm/', views.password_reset_confirm, name='password-reset-confirm'),
+    path('password/change/', views.change_password, name='password-change'),
 
     path('activate/<str:token>/', views.activate_account, name='activate_account'),
 ]

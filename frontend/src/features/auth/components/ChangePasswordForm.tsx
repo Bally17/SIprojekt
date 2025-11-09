@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
+import axiosClient from "@/lib/axiosClient";
+import { useRouter } from "next/navigation";
 
 type ChangePasswordFormProps = {
   onSubmit?: (payload: {
@@ -21,56 +24,98 @@ type FormState = {
 
 export default function ChangePasswordForm({ onSubmit, loading = false }: ChangePasswordFormProps) {
   const { msgs } = useLocalization();
+  const router = useRouter();
   const [form, setForm] = useState<FormState>({
     currentPassword: "",
     newPassword: "",
     newPasswordConfirm: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+
+  const defaultSubmit = useCallback(
+    async ({
+      currentPassword,
+      newPassword,
+      newPasswordConfirm,
+    }: {
+      currentPassword: string;
+      newPassword: string;
+      newPasswordConfirm: string;
+    }) => {
+      const response = await axiosClient.post("/auth/password/change/", {
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirm: newPasswordConfirm,
+      });
+
+      let latestUser = response.data?.user;
+      if (!latestUser) {
+        try {
+          const profile = await axiosClient.get("/auth/profile/");
+          latestUser = profile.data?.user;
+        } catch {
+          latestUser = null;
+        }
+      }
+
+      if (latestUser) {
+        localStorage.setItem("user", JSON.stringify(latestUser));
+      }
+
+      const roleKey = String(latestUser?.rola || latestUser?.role || "").toLowerCase();
+      const redirectTarget =
+        roleKey === "firma" ? "/dashboard/company/internships" : "/dashboard/student/dashboard";
+      router.push(redirectTarget);
+    },
+    [router],
+  );
 
   const handleChange = (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
-    setError(null);
-    setSuccess(false);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setSuccess(false);
 
     if (form.newPassword.length < 8) {
-      setError("Nové heslo musí mať aspoň 8 znakov.");
+      notifyWarning({
+        title: msgs.auth.error,
+        description: msgs.auth.passwordTooShort,
+      });
       return;
     }
 
     if (form.newPassword !== form.newPasswordConfirm) {
-      setError("Heslá sa nezhodujú.");
+      notifyWarning({
+        title: msgs.auth.error,
+        description: msgs.auth.passwordMismatch,
+      });
       return;
     }
 
     try {
       setSubmitting(true);
-      if (onSubmit) {
-        await onSubmit({
-          currentPassword: form.currentPassword,
-          newPassword: form.newPassword,
-          newPasswordConfirm: form.newPasswordConfirm,
-        });
-      } else {
-        // Zatiaľ len simulácia – backend sa doplní neskôr.
-        console.info("ChangePasswordForm submit", form);
-      }
-      setSuccess(true);
+      const submitHandler = onSubmit ?? defaultSubmit;
+      await submitHandler({
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
+        newPasswordConfirm: form.newPasswordConfirm,
+      });
+      notifySuccess({
+        title: msgs.auth.succesResetPassword,
+        description: msgs.auth.setNewPassword,
+      });
       setForm({ currentPassword: "", newPassword: "", newPasswordConfirm: "" });
     } catch (submitError: any) {
-      setError(
+      const message =
         submitError?.message ||
-          submitError?.response?.data?.detail ||
-          "Nepodarilo sa zmeniť heslo. Skúste znova.",
-      );
+        submitError?.response?.data?.detail ||
+        "Nepodarilo sa zmeniť heslo. Skúste znova.";
+      notifyWarning({
+        title: msgs.auth.error,
+        description: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -133,11 +178,6 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
           minLength={8}
         />
       </div>
-
-      {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-      {success && (
-        <p className="text-sm text-green-600 text-center">{msgs.auth.succesResetPassword}</p>
-      )}
 
       <button
         type="submit"
