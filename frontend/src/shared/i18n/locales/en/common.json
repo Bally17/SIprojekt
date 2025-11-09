@@ -1,13 +1,9 @@
 {
   "confirm": "Confirm",
   "reject": "Reject",
-  "actions": "Actions",
   "filter": "Filter",
-  "filterBy": "Filter by year, semester, and status.",
   "reset": "Reset",
   "tryAgain": "Try again",
-  "documents": "Documents",
-  "state": "Status",
   "stateOpt": "Status: ",
   "questionMark": "?",
 
@@ -54,10 +50,8 @@
   },
 
   "entities": {
-    "id": "ID",
     "company": "Company",
-    "student": "Student",
-    "studentId": "Student (ID)"
+    "student": "Student"
   },
 
   "error": {
@@ -67,13 +61,7 @@
   },
 
   "internships": {
-    "id": "Internship ID",
-    "waiting": "Pending internships",
-    "list": "List of internships waiting for approval or rejection.",
-    "all": "All internships",
     "state": "Internship status",
-    "confirm": "The internship has been approved.",
-    "denied": "The internship has been rejected.",
     "empty": "You currently have no new requests.",
     "emptyYour": "You don't have any internships yet.",
     "nonExist": "No internships exist yet.",
@@ -86,8 +74,6 @@
   },
 
   "date": {
-    "from": "From",
-    "to": "To",
     "year": "Year",
     "semester": "Semester",
     "winter": "Winter",

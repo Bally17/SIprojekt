@@ -1,13 +1,9 @@
 {
   "confirm": "Potvrdiť",
   "reject": "Zamietnuť",
-  "actions": "Akcie",
   "filter": "Filtrovať",
-  "filterBy": "Filtrovanie podľa roka, semestra a stavu.",
   "reset": "Reset",
   "tryAgain": "Skúsiť znova",
-  "documents": "Dokumenty",
-  "state": "Stav",
   "stateOpt": "Stav: ",
   "questionMark": "?",
 
@@ -54,10 +50,8 @@
   },
 
   "entities": {
-    "id": "ID",
     "company": "Firma",
-    "student": "Študent",
-    "studentId": "Študent (ID)"
+    "student": "Študent"
   },
 
   "error": {
@@ -67,13 +61,7 @@
   },
 
   "internships": {
-    "id": "ID praxe",
-    "waiting": "Čakajúce praxe",
-    "list": "Zoznam praxí, ktoré čakajú na potvrdenie alebo zamietnutie.",
-    "all": "Všetky praxe",
     "state": "Stav praxe",
-    "confirm": "Prax bola potvrdená.",
-    "denied": "Prax bola zamietnutá.",
     "empty": "Momentálne nemáte žiadne nové žiadosti.",
     "emptyYour": "Zatiaľ nemáš žiadne praxe.",
     "nonExist": "Žiadne praxe zatiaľ neexistujú.",
@@ -86,8 +74,6 @@
   },
 
   "date": {
-    "from": "Od",
-    "to": "Do",
     "year": "Rok",
     "semester": "Semester",
     "winter": "Zimný",
