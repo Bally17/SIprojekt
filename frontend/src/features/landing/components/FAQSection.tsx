@@ -13,7 +13,7 @@ export default function FAQSection() {
           <div className="text-primary-700 font-semibold">{msgs.common.page.faq}</div>
           <h2 className="text-3xl font-bold text-ink-900 mt-2">{msgs.common.page.faqTitle}</h2>
         </div>
-        <AcordeonComponent data={faqDatas} />
+        <AcordeonComponent variant="dark" data={faqDatas} />
       </div>
     </section>
   );

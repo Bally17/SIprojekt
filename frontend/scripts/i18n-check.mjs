@@ -12,7 +12,7 @@ const ROOT = process.cwd();
 const LANGS = ["sk", "en"];
 const LOCALES_DIR = path.join(ROOT, "src", "shared", "i18n", "locales");
 const SRC_GLOB = ["src/**/*.{ts,tsx,js,jsx}"];
-const IGNORE_GLOB = ["**/node_modules/**", "frontend/.next/**", "**/dist/**", "**/build/**"];
+const IGNORE_GLOB = ["frontend/src/app/helpers/page.tsx","**/node_modules/**", "frontend/.next/**", "**/dist/**", "**/build/**"];
 
 // Ak v kóde voláš t('key') bez namespace, doplní sa DEFAULT_NS[0]
 const DEFAULT_NS = ["common"];

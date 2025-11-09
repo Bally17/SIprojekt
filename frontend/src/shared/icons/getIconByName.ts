@@ -58,6 +58,8 @@ const iconMap = {
   "arrow-right": ArrowRight
 };
 
+export const ICON_NAMES = Object.keys(iconMap) as (keyof typeof iconMap)[];
+
 const getIconByName = (name: IconName): IconType | null => iconMap[name] ?? null;
 
 export default getIconByName;
