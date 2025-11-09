@@ -1,0 +1,34 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+<div id="content-main">
+  <h1>UKF Admin – prehľad</h1>
+
+  {% if is_admin %}
+    <div class="app-list">
+      <div class="module">
+        <h2>Prehľad</h2>
+        <ul>
+          <li>Počet používateľov: <strong>{{ users_count }}</strong></li>
+          <li>Počet praxí: <strong>{{ praxe_count }}</strong></li>
+          <li>Počet dokumentov: <strong>{{ docs_count }}</strong></li>
+          <li>Neodoslané notifikácie: <strong>{{ notifs_new }}</strong></li>
+        </ul>
+      </div>
+    </div>
+  {% elif is_garant %}
+    <div class="app-list">
+      <div class="module">
+        <h2>Prehľad (Garant)</h2>
+        <ul>
+          <li>Moje praxe: <strong>{{ my_praxe_count }}</strong></li>
+          <li>Neodoslané notifikácie (globálne): <strong>{{ notifs_new }}</strong></li>
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  {# Zobrazíme default zoznam aplikácií #}
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+</div>
+{% endblock %}
