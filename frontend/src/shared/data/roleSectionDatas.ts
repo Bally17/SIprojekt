@@ -19,10 +19,4 @@ export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
     { a: "Notifikácie", b: "E-mail / systémové" },
     { a: "Reporty", b: "Semestre / programy" },
   ],
-  api: [
-    { a: "OAuth 2.0", b: "Client credentials / PKCE" },
-    { a: "Webhooky", b: "Stavy, uploady" },
-    { a: "Integrácie", b: "Externý systém" },
-    { a: "Dostupnosť", b: "Rate limits" },
-  ],
 };

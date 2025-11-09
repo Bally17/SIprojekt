@@ -2,7 +2,7 @@
 import { roleSectionDatas } from "@/shared/data/roleSectionDatas";
 import { useLocalization } from "@/shared/i18n/client";
 import { RoleType } from "@/shared/types/roleTypes";
-import { GraduationCap, Building2, Shield, Puzzle, CheckCircle2 } from "lucide-react";
+import { GraduationCap, Building2, Shield, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import "@utils/idUsing";
 
@@ -14,7 +14,6 @@ export default function RolesSection() {
     { key: "student", label: "Študent", icon: <GraduationCap className="h-4 w-4" /> },
     { key: "firma", label: "Firma", icon: <Building2 className="h-4 w-4" /> },
     { key: "garant", label: "Garant", icon: <Shield className="h-4 w-4" /> },
-    { key: "api", label: "API", icon: <Puzzle className="h-4 w-4" /> },
   ];
 
   return (
