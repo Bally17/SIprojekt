@@ -5,13 +5,15 @@ export default function Footer() {
   const { msgs } = useLocalization();
   const year = String(new Date().getFullYear());
   return (
-    <footer id="contact" className="bg-night text-white">
+    <footer id="contact" className="bg-primary-900 text-white">
       <div className="container-wide py-12">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-white grid place-items-center text-night font-bold">
-            {msgs.common.brand.logoLetter}
+          <div className="flex items-center gap-2 text-2xl font-bold text-white">
+            <div className="bg-white text-primary-900 rounded-md px-2 py-1">
+              {msgs.common.brand.logoLetter}
+            </div>
+            {msgs.common.brand.logoText}
           </div>
-          <span className="text-xl font-semibold">{msgs.common.brand.logoText}</span>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 mt-8 text-sm">

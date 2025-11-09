@@ -52,7 +52,8 @@
 
   "entities": {
     "company": "Firma",
-    "student": "Študent"
+    "student": "Študent",
+    "guarant": "Garant"
   },
 
   "error": {
@@ -86,6 +87,11 @@
     "toast": {
       "close": "Zavrieť notifikáciu"
     }
+  },
+  "language": {
+    "switcher": "Zmena jazyka",
+    "sk": "Slovenčina",
+    "en": "Angličtina"
   },
 
   "brand": {

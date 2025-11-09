@@ -33,7 +33,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section id="how" className="bg-night text-white py-16">
+    <section id="how" className="bg-primary-900 text-white py-16">
       <div className="container-wide text-center">
         <h2 className="text-3xl font-bold mb-12">
           {msgs.common.page.howItWorks}
