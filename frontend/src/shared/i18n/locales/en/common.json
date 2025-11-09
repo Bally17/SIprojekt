@@ -3,6 +3,7 @@
   "reject": "Reject",
   "filter": "Filter",
   "reset": "Reset",
+  "close": "Close",
   "tryAgain": "Try again",
   "stateOpt": "Status: ",
   "questionMark": "?",
@@ -80,6 +81,11 @@
     "summer": "Summer",
     "startDate": "Start date",
     "endDate": "End date"
+  },
+  "notifications": {
+    "toast": {
+      "close": "Close notification"
+    }
   },
 
   "brand": {
