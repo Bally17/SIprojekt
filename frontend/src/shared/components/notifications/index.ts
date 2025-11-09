@@ -8,3 +8,4 @@ export type {
   NotificationStackItem,
   SystemNotificationStackProps,
 } from "./component/SystemNotificationStack";
+export { SystemNotificationsProvider, useSystemNotifications } from "./SystemNotificationsProvider";

@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 type Props = { token: string };
 
 export default function ActivateClient({ token }: Props) {
   const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState(msgs.auth.checking);
 
@@ -15,17 +17,26 @@ export default function ActivateClient({ token }: Props) {
     const activate = async () => {
       try {
         const res = await axiosClient.get(`/auth/activate/${token}/`);
-        setMessage(res.data?.message ?? msgs.auth.success);
+        const successMessage = res.data?.message ?? msgs.auth.success;
+        setMessage(successMessage);
         setStatus("success");
+        notifySuccess({
+          title: msgs.auth.success,
+          description: successMessage,
+        });
       } catch (error: any) {
-        setMessage(
-          error?.response?.data?.error ?? error?.response?.data?.message ?? msgs.auth.invalid,
-        );
+        const description =
+          error?.response?.data?.error ?? error?.response?.data?.message ?? msgs.auth.invalid;
+        setMessage(description);
         setStatus("error");
+        notifyWarning({
+          title: msgs.auth.error,
+          description,
+        });
       }
     };
     activate();
-  }, [token, msgs]); // msgsRef je stabilný → ESLint OK, žiadne i18n stringy v deps
+  }, [token, msgs, notifySuccess, notifyWarning]); // msgsRef je stabilný → ESLint OK, žiadne i18n stringy v deps
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">

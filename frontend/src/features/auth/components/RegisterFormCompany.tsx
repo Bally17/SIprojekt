@@ -3,6 +3,7 @@ import { useState } from "react";
 // axiosClient: shared inštancia s baseURL z NEXT_PUBLIC_API_URL (napr. http://localhost:8000/api)
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 export default function RegisterFormCompany() {
   // Lokálny stav formulára (controlled inputs)
@@ -16,10 +17,9 @@ export default function RegisterFormCompany() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   // Aktualizácia vstupov → state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,8 +29,6 @@ export default function RegisterFormCompany() {
   // Submit handler: mapovanie na backend field names + POST
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess(false);
     setLoading(true);
 
     // payload presne podľa API
@@ -49,7 +47,10 @@ export default function RegisterFormCompany() {
       console.log("✅ Registrácia firmy:", res.data);
 
       // Reset a info pre používateľa
-      setSuccess(true);
+      notifySuccess({
+        title: msgs.auth.successRegister,
+        description: msgs.auth.registerCompany,
+      });
       setForm({
         companyName: "",
         companyEmail: "",
@@ -59,8 +60,12 @@ export default function RegisterFormCompany() {
         contactPhone: "",
       });
     } catch (err: any) {
+      const message = err.response?.data?.message || msgs.auth.errorSubmit;
       console.error("❌ Chyba registrácie:", err);
-      setError(err.response?.data?.message || msgs.auth.errorSubmit);
+      notifyWarning({
+        title: msgs.auth.errorTitle,
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -133,11 +138,6 @@ export default function RegisterFormCompany() {
         className={input}
         required
       />
-
-      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-      {success && (
-        <p className="text-green-600 text-sm text-center">✅ {msgs.auth.successRegister}</p>
-      )}
 
       {/* Submit */}
       <button

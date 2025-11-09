@@ -3,25 +3,30 @@
 import { useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const { msgs } = useLocalization();
+  const { info: notifyInfo, warning: notifyWarning } = useSystemNotifications();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError("");
-    setSuccess(false);
     setLoading(true);
 
     try {
       await axiosClient.post("/auth/password/reset/", { email });
-      setSuccess(true);
+      notifyInfo({
+        title: msgs.auth.submitted,
+        description: msgs.auth.forgotPassword,
+      });
     } catch (err: any) {
-      setError(err.response?.data?.error || err.response?.data?.message || msgs.auth.error);
+      const message = err.response?.data?.error || err.response?.data?.message || msgs.auth.error;
+      notifyWarning({
+        title: msgs.auth.error,
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -45,9 +50,6 @@ export default function ForgotPasswordForm() {
         required
         className="w-full border rounded px-3 py-2"
       />
-
-      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-      {success && <p className="text-green-600 text-sm text-center">{msgs.auth.submitted}</p>}
 
       <button
         type="submit"

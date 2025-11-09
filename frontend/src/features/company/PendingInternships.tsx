@@ -6,6 +6,7 @@ import { useLocalization } from "@/shared/i18n/client";
 import { Table } from "@/shared/components/table";
 import { TABLE_NAMES } from "@/constants/Table";
 import { Internship } from "@/shared/types/internship/internship";
+import { useSystemNotifications } from "@/shared/components/notifications";
 
 type PendingResponse = {
   results?: {
@@ -28,6 +29,7 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
   const [error, setError] = useState<string>("");
 
   const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   // Získa access_token z localStorage a vráti ho v hlavičke Authorization, ak chýba, vyhodí chybu
   const getAuthHeaders = useCallback(() => {
@@ -50,11 +52,17 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
       const list = res.data.results?.internships ?? [];
       setInternships(list);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships);
+      const message =
+        err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships;
+      setError(message);
+      notifyWarning({
+        title: msgs.common.error.errorLoadInternships,
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeaders, msgs.common.error.errorLoadInternships]);
+  }, [getAuthHeaders, msgs.common.error.errorLoadInternships, notifyWarning]);
 
   // Načíta čakajúce praxe po načítaní komponentu
   useEffect(() => {
@@ -69,8 +77,19 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
       await axiosClient.patch(endpoint, {}, { headers: getAuthHeaders() });
       setInternships((prev) => prev.filter((item) => item.id !== id));
       onChange?.();
+      notifySuccess({
+        title:
+          action === "confirm" ? msgs.common.internships.management : msgs.common.error.errorAction,
+        description:
+          action === "confirm" ? msgs.common.internships.new : msgs.common.error.errorAction,
+      });
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || msgs.common.error.errorAction);
+      const message = err.response?.data?.error || err.message || msgs.common.error.errorAction;
+      setError(message);
+      notifyWarning({
+        title: msgs.common.error.errorAction,
+        description: message,
+      });
     }
   };
 
