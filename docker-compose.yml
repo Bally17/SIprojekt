@@ -4,18 +4,15 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
     env_file:
       - ./backend/.env
     environment:
       - DOCKER_CONTAINER=True
     depends_on:
       - db
-    command: >
-      sh -c "sleep 10 &&
-             python manage.py migrate --fake-initial &&
-             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app  # len raz!
+    entrypoint: ["/app/entrypoint.sh"]
 
   # PostgreSQL Database
   db:
@@ -26,7 +23,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql\data
+      - postgres_data:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
 
   # React Frontend
@@ -47,7 +44,6 @@ services:
     command: npm run dev
     depends_on:
       - backend
-
 
 volumes:
   postgres_data:
