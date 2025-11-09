@@ -37,3 +37,5 @@ B2_ENDPOINT_URL=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # Presigned URL validity (seconds)
 B2_PRESIGNED_EXPIRES=xxx
 
+DEFAULT_GARANT_EMAIL=xxxxxxxx
+DEFAULT_GARANT_PASSWORD=xxxxxxxxxxxxx
