@@ -54,9 +54,9 @@ export default function LoginForm() {
 
       // Redirect podľa roly
       if (res.data.user.rola === "firma") {
-        router.push("/dashboard/company/internships");
+        router.push("/dashboard/company");
       } else {
-        router.push("/dashboard/student/dashboard");
+        router.push("/dashboard/student");
       }
     } catch (err: any) {
       const message =

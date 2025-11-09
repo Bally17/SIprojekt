@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
-import PendingInternships from "@features/company/PendingInternships";
+import PendingInternships from "@/features/company/components/PendingInternships";
 import { useLocalization } from "@/shared/i18n/client";
 import { Table } from "@/shared/components/table";
 import { TABLE_NAMES } from "@/constants/Table";

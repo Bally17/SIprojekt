@@ -1,4 +1,4 @@
-import { X, CheckCircle2, Info, AlertTriangle } from "lucide-react";
+import Icon from "@/shared/icons";
 import React from "react";
 
 export type SystemNotificationVariant = "success" | "info" | "warning";
@@ -35,7 +35,7 @@ const variantStyles: Record<SystemNotificationVariant, VariantStyles> = {
   success: {
     wrapper: "bg-green-200 border border-green-300 text-green-900 shadow-soft",
     accent: "bg-green-600",
-    icon: <CheckCircle2 className="h-5 w-5 text-green-700" aria-hidden />,
+    icon: <Icon name="check-circle-2" className="h-5 w-5 text-green-700" aria-hidden />,
     title: "text-green-900",
     description: "text-green-800",
     action: "text-green-700 hover:text-green-900 focus-visible:ring-green-500",
@@ -45,7 +45,7 @@ const variantStyles: Record<SystemNotificationVariant, VariantStyles> = {
   info: {
     wrapper: "bg-blue-200 border border-blue-300 text-blue-900 shadow-soft",
     accent: "bg-blue-600",
-    icon: <Info className="h-5 w-5 text-blue-700" aria-hidden />,
+    icon: <Icon name="info" className="h-5 w-5 text-blue-700" aria-hidden />,
     title: "text-blue-900",
     description: "text-blue-800",
     action: "text-blue-700 hover:text-blue-900 focus-visible:ring-blue-500",
@@ -55,7 +55,7 @@ const variantStyles: Record<SystemNotificationVariant, VariantStyles> = {
   warning: {
     wrapper: "bg-red-200 border border-red-300 text-red-900 shadow-soft",
     accent: "bg-red-600",
-    icon: <AlertTriangle className="h-5 w-5 text-red-700" aria-hidden />,
+    icon: <Icon name="alert-triangle" className="h-5 w-5 text-red-700" aria-hidden />,
     title: "text-red-900",
     description: "text-red-800",
     action: "text-red-700 hover:text-red-900 focus-visible:ring-red-500",
@@ -125,7 +125,7 @@ const SystemNotification: React.FC<SystemNotificationProps> = ({
             className="rounded-full p-1 text-sm text-ink-500 transition hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:ring-primary-500"
             aria-label={closeLabel ?? title}
           >
-            <X className="h-4 w-4" aria-hidden />
+            <Icon name="x" className="h-4 w-4" aria-hidden />
           </button>
         ) : null}
       </div>

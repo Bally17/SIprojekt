@@ -2,10 +2,10 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
-import { Download, Building2, CalendarPlus, Loader2, FileText } from "lucide-react";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
 import DashboardNavbar from "@/shared/components/navbar/dashboard/DashboardNavbar";
+import Icon from "@/shared/icons";
 
 export default function StudentDashboardPage() {
   const [internships, setInternships] = useState<any[]>([]);
@@ -124,7 +124,7 @@ export default function StudentDashboardPage() {
             className="border border-cyan-100 rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition space-y-5"
           >
             <div className="flex items-center gap-2">
-              <CalendarPlus className="text-cyan-600" />
+              <Icon name="calendar-plus" className="text-cyan-600" />
               <h2 className="text-xl font-semibold text-gray-800">{msgs.common.internships.new}</h2>
             </div>
 
@@ -225,7 +225,11 @@ export default function StudentDashboardPage() {
               disabled={creating}
               className="bg-cyan-600 text-white px-5 py-2.5 rounded-lg hover:bg-cyan-700 transition flex items-center gap-2"
             >
-              {creating ? <Loader2 className="animate-spin" /> : <Building2 size={18} />}
+              {creating ? (
+                <Icon name="loader-2" className="animate-spin" />
+              ) : (
+                <Icon name="building-2" size={18} />
+              )}
               {creating ? "Ukladám..." : "Vytvoriť prax"}
             </button>
           </form>
@@ -276,7 +280,7 @@ export default function StudentDashboardPage() {
                         download={`Dohoda_prax_${p.id}.pdf`}
                         className="mt-3 inline-flex items-center gap-2 text-cyan-600 hover:text-cyan-700 text-sm font-medium"
                       >
-                        <Download size={16} />
+                        <Icon name="download" size={16} />
                         {msgs.common.action.downloadAgreement}
                       </a>
                     )}
