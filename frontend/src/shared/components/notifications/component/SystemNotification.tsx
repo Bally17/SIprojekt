@@ -1,5 +1,6 @@
 import Icon from "@/shared/icons";
 import React from "react";
+import { Button } from "../../button";
 
 export type SystemNotificationVariant = "success" | "info" | "warning";
 
@@ -108,25 +109,27 @@ const SystemNotification: React.FC<SystemNotificationProps> = ({
               <p className={`mt-1 text-sm ${styles.description}`}>{description}</p>
             ) : null}
             {actionLabel ? (
-              <button
+              <Button
                 type="button"
                 onClick={onAction}
-                className={`mt-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${styles.action}`}
+                variant="ghost"
+                className={`mt-2 text-sm font-medium transition focus-visible:ring-offset-2 ${styles.action}`}
               >
                 {actionLabel}
-              </button>
+              </Button>
             ) : null}
           </div>
         </div>
         {dismissible ? (
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={onClose}
-            className="rounded-full p-1 text-sm text-ink-500 transition hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:ring-primary-500"
             aria-label={closeLabel ?? title}
+            className="rounded-full p-1 text-sm text-ink-500 transition hover:bg-white/60 focus-visible:ring-offset-2"
           >
             <Icon name="x" className="h-4 w-4" aria-hidden />
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

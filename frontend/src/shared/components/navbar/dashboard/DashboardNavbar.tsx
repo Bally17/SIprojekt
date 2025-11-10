@@ -6,6 +6,7 @@ import axiosClient, { clearAuthTokens } from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
 import Icon from "@/shared/icons";
+import { Button } from "../../button";
 
 type DashboardRole = "student" | "firma" | "garant" | string;
 
@@ -177,50 +178,47 @@ const DashboardNavbar = () => {
 
           <div className="flex flex-1 items-center justify-end gap-3">
             <div className="relative">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setLangMenuOpen((prev) => !prev)}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-700 transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
                 aria-label={msgs.common.language.switcher}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-700 transition hover:bg-primary-100"
               >
                 <Icon name="globe" className="h-5 w-5" />
-              </button>
+              </Button>
               {langMenuOpen ? (
                 <div className="absolute right-0 mt-2 w-28 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     className="block w-full px-3 py-2 text-left hover:bg-primary-50"
                     onClick={() => setLangMenuOpen(false)}
                   >
                     {msgs.common.language.sk}
-                  </button>
-                  <button
+                  </Button>
+
+                  <Button
                     type="button"
+                    variant="ghost"
                     className="block w-full px-3 py-2 text-left hover:bg-primary-50"
                     onClick={() => setLangMenuOpen(false)}
                   >
                     {msgs.common.language.en}
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 transition hover:bg-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-              aria-label={msgs.auth.logout}
-            >
-              <Icon name="globe" className="h-5 w-5" />
-            </button>
           </div>
-          <button
+          <Button
             type="button"
+            variant="danger"
             onClick={handleLogout}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 transition hover:bg-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             aria-label={msgs.auth.logout}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white"
           >
             <Icon name="log-out" className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -239,23 +237,29 @@ const DashboardNavbar = () => {
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <button
+              <Button
                 type="button"
+                variant="primary"
                 onClick={() => router.push("/auth/change-password")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-900 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-primary-800"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-soft"
               >
                 {msgs.auth.changePasswordNow}
                 <Icon name="arrow-right" className="h-4 w-4" aria-hidden />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={loadProfile}
                 disabled={loadingUser}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-ink-700 transition hover:bg-slate-50 disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:bg-slate-50"
               >
-                <Icon name="refresh-cw" className={`h-4 w-4 ${loadingUser ? "animate-spin" : ""}`} aria-hidden />
+                <Icon
+                  name="refresh-cw"
+                  className={`h-4 w-4 ${loadingUser ? "animate-spin" : ""}`}
+                  aria-hidden
+                />
                 {msgs.auth.refreshStatus}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -12,6 +12,7 @@ import {
   SEMESTER_OPTIONS,
   STAV_OPTIONS,
 } from "@/shared/types/internship/components/StateInternship";
+import { TableFilters } from "@/shared/types/components/table/components/TableFilters";
 
 type CompanyInternshipsResponse = {
   firma: {
@@ -34,7 +35,7 @@ export default function CompanyInternshipsDashboard() {
   const [internships, setInternships] = useState<Internship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [filters, setFilters] = useState({ rok: "", semester: "", stav: "" });
+  const [filters, setFilters] = useState<TableFilters>({ rok: "", semester: "", stav: "" });
 
   const { msgs } = useLocalization();
   const { warning: notifyWarning } = useSystemNotifications();

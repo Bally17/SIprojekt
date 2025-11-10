@@ -4,6 +4,15 @@ import { useLoadTableData } from "@/shared/utils/actions";
 import React, { FC, useState } from "react";
 import { Button } from "../../button";
 import { InternshipDocument } from "@/shared/types/internship/components/InternshipDocument";
+import Select from "../../select/component/SelectComponent";
+import {
+  SEMESTER_OPTIONS,
+  STAV_OPTIONS,
+  type Semester,
+  type Stav,
+  isSemester,
+  isStav,
+} from "@/shared/types/internship/components/StateInternship";
 
 const buildMediaUrl = (path: string) => {
   const backend = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(
@@ -36,6 +45,21 @@ const TableComponent: FC<TableProps> = (props) => {
   const { subTitle, title, columns } = useLoadTableData(name);
   const { msgs } = useLocalization();
   const [busy, setBusy] = useState<Record<number, Action | undefined>>({});
+
+  // pred return:
+  const semesterValue: Semester | "" = isSemester(String(filters?.semester))
+    ? (filters!.semester as Semester)
+    : "";
+
+  const stavValue: Stav | "" = isStav(String(filters?.stav)) ? (filters!.stav as Stav) : "";
+
+  const semesterOpts = (
+    semesterOptions?.length ? semesterOptions.filter((o) => isSemester(o.value)) : SEMESTER_OPTIONS
+  ) as readonly { value: Semester; label: string }[];
+
+  const stavOpts = (
+    stavOptions?.length ? stavOptions.filter((o) => isStav(o.value)) : STAV_OPTIONS
+  ) as readonly { value: Stav; label: string }[];
 
   const runAction = async (id: number, action: Action) => {
     if (!onAction) return;
@@ -86,13 +110,9 @@ const TableComponent: FC<TableProps> = (props) => {
           <div className="flex items-center justify-center gap-3">
             <span>{isError}</span>
             {onApplyFilters && (
-              <button
-                type="button"
-                onClick={onApplyFilters}
-                className="rounded bg-cyan-700 px-3 py-1 text-white text-sm hover:bg-cyan-800"
-              >
+              <Button variant="primary" onClick={onApplyFilters}>
                 {msgs.common.tryAgain}
-              </button>
+              </Button>
             )}
           </div>
         </td>
@@ -152,7 +172,7 @@ const TableComponent: FC<TableProps> = (props) => {
         {rowActions && (
           <td className="px-4 py-3 space-x-2">
             <Button
-              variant="primary"
+              variant="success"
               loading={busy[item.id] === "confirm"}
               onClick={() => runAction(item.id, "confirm")}
             >
@@ -193,49 +213,41 @@ const TableComponent: FC<TableProps> = (props) => {
               className="border rounded px-3 py-2 text-sm"
             />
 
-            <select
+            <Select<Semester>
               name="semester"
-              value={filters.semester}
-              onChange={handleLocalChange}
+              value={semesterValue}
+              options={semesterOpts}
+              emptyOptionLabel={msgs.common.date.semester}
               className="border rounded px-3 py-2 text-sm"
-            >
-              <option value="">{msgs.common.date.semester}</option>
-              {semesterOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+              onChangeValue={(val) =>
+                handleLocalChange({
+                  target: { name: "semester", value: val } as any,
+                } as React.ChangeEvent<HTMLSelectElement>)
+              }
+            />
 
-            <select
+            <Select<Stav>
               name="stav"
-              value={filters.stav}
-              onChange={handleLocalChange}
+              value={stavValue}
+              options={stavOpts}
+              emptyOptionLabel={msgs.common.internships.state}
               className="border rounded px-3 py-2 text-sm"
-            >
-              <option value="">{msgs.common.internships.state}</option>
-              {stavOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+              onChangeValue={(val) =>
+                handleLocalChange({
+                  target: { name: "stav", value: val } as any,
+                } as React.ChangeEvent<HTMLSelectElement>)
+              }
+            />
 
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onApplyFilters}
-                className="flex-1 bg-cyan-700 text-white px-4 py-2 rounded text-sm hover:bg-cyan-800"
-              >
-                {msgs.common.filter}
-              </button>
-              <button
-                type="button"
-                onClick={onResetFilters}
-                className="flex-1 border border-gray-300 text-sm rounded px-4 py-2 hover:bg-gray-100"
-              >
-                {msgs.common.reset}
-              </button>
+              <div className="flex gap-2">
+                <Button type="button" onClick={onApplyFilters} variant="primary" className="flex-1">
+                  {msgs.common.filter}
+                </Button>
+                <Button type="button" onClick={onResetFilters} variant="ghost" className="flex-1">
+                  {msgs.common.reset}
+                </Button>
+              </div>
             </div>
           </form>
         )}

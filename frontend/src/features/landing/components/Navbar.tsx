@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocalization } from "@/shared/i18n/client";
+import { Button } from "@/shared/components/button";
 
 export default function Navbar() {
   const { msgs } = useLocalization();
@@ -37,12 +38,15 @@ export default function Navbar() {
           >
             {msgs.auth.login}
           </Link>
-          <button
+          <Button
+            type="button"
+            variant="primary"
+            className="px-4 py-2 rounded-md text-sm transition-all flex items-center gap-1"
             onClick={() => setRegisterOpen((prev) => !prev)}
-            className="bg-primary-900 text-white px-4 py-2 rounded-md text-sm hover:bg-primary-800 transition-all flex items-center gap-1"
+            aria-expanded={registerOpen}
           >
             {msgs.auth.register} ▾
-          </button>
+          </Button>
           {registerOpen && (
             <div className="absolute right-0 top-14 bg-paper border border-primary-100 rounded-md shadow-lg w-48 py-2 text-sm text-left">
               <Link href="/auth/register/student" className="block px-4 py-2 hover:bg-primary-50">
@@ -55,9 +59,17 @@ export default function Navbar() {
           )}
         </div>
 
-        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-ink-700 text-2xl">
-          ☰
-        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="md:hidden text-ink-700 text-2xl p-1"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
+          title={menuOpen ? "Zavrieť menu" : "Otvoriť menu"}
+        >
+          {menuOpen ? "✕" : "☰"}
+        </Button>
       </div>
 
       {menuOpen && (
