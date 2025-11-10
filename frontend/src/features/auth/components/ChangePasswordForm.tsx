@@ -5,6 +5,7 @@ import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
 import axiosClient from "@/lib/axiosClient";
 import { useRouter } from "next/navigation";
+import { Button } from "@/shared/components/button";
 
 type ChangePasswordFormProps = {
   onSubmit?: (payload: {
@@ -64,8 +65,7 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
       }
 
       const roleKey = String(latestUser?.rola || latestUser?.role || "").toLowerCase();
-      const redirectTarget =
-        roleKey === "firma" ? "/dashboard/company/internships" : "/dashboard/student/dashboard";
+      const redirectTarget = roleKey === "firma" ? "/dashboard/company" : "/dashboard/student";
       router.push(redirectTarget);
     },
     [router],
@@ -179,13 +179,15 @@ export default function ChangePasswordForm({ onSubmit, loading = false }: Change
         />
       </div>
 
-      <button
+      <Button
         type="submit"
+        variant="primary"
+        className="w-full"
         disabled={isSubmitting}
-        className="w-full bg-primary-900 text-white py-2 rounded hover:bg-primary-800 disabled:opacity-70 transition"
+        loading={isSubmitting}
       >
         {isSubmitting ? "Ukladám..." : "Uložiť nové heslo"}
-      </button>
+      </Button>
     </form>
   );
 }

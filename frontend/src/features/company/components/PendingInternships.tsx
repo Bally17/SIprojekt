@@ -7,6 +7,7 @@ import { Table } from "@/shared/components/table";
 import { TABLE_NAMES } from "@/constants/Table";
 import { Internship } from "@/shared/types/internship/internship";
 import { useSystemNotifications } from "@/shared/components/notifications";
+import { Button } from "@/shared/components/button";
 
 type PendingResponse = {
   results?: {
@@ -101,13 +102,9 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
     return (
       <div className="text-center">
         <p className="text-red-600">{error}</p>
-        <button
-          type="button"
-          onClick={fetchPending}
-          className="mt-4 bg-cyan-700 text-white px-4 py-2 rounded"
-        >
+        <Button type="button" variant="primary" className="mt-4" onClick={fetchPending}>
           {msgs.common.tryAgain}
-        </button>
+        </Button>
       </div>
     );
   }

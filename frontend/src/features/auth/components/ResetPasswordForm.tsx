@@ -4,6 +4,7 @@ import { useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
+import { Button } from "@/shared/components/button";
 
 type Props = {
   token: string;
@@ -82,13 +83,16 @@ export default function ResetPasswordForm({ token }: Props) {
         minLength={8}
       />
 
-      <button
+      <Button
         type="submit"
+        variant="primary"
+        className="w-full"
         disabled={loading}
-        className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
+        loading={loading}
+        aria-busy={loading}
       >
         {loading ? msgs.auth.saving : msgs.auth.savePassword}
-      </button>
+      </Button>
     </form>
   );
 }

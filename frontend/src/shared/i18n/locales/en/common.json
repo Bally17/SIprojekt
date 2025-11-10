@@ -45,8 +45,7 @@
     "loading": "Loading...",
     "companies": "Searching companies...",
     "internships": "Loading internships...",
-    "pending": "Loading pending internships...",
-    "yours": "Loading your internships..."
+    "pending": "Loading pending internships..."
   },
 
   "entities": {
@@ -75,8 +74,6 @@
   "date": {
     "year": "Year",
     "semester": "Semester",
-    "winter": "Winter",
-    "summer": "Summer",
     "startDate": "Start date",
     "endDate": "End date"
   },

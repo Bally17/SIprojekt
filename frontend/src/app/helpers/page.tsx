@@ -5,6 +5,7 @@ import { useSystemNotifications } from "@/shared/components/notifications";
 import { useState } from "react";
 import { AcordeonComponent } from "@/shared/components/acordeon";
 import { FaqData } from "@/shared/types/faqTypes";
+import { Button } from "@/shared/components/button";
 
 export default function Helpers() {
   const { success, warning } = useSystemNotifications();
@@ -13,7 +14,7 @@ export default function Helpers() {
   const howToUse: FaqData[] = [
     {
       q: "Ako pridať novú ikonku?",
-      a: "Otvor alebo vyhladaj subor: 'getIconByName.ts' a pridaj do importov novú ikonku z lucide-react -> následne pridaj do súboru iconName.ts na koniec '| \"názov ikonky ktorý sa bude používať\";",
+      a: "Otvor alebo vyhladaj subor: 'getIconByName.ts' a pridaj do importov novú ikonku z lucide-react -> následne pridaj do súboru iconName.ts na koniec '| \"názov ikonky ktorý sa bude používať\";'",
     },
   ];
 
@@ -51,17 +52,18 @@ export default function Helpers() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
           {ICON_NAMES.map((name) => (
-            <button
+            <Button
               key={name}
               type="button"
+              variant="soft"
               onClick={() => copySnippet(name)}
               title="Klikni pre skopírovanie snippet-u"
-              className="flex flex-col items-center w-full bg-white rounded-lg text-ink-900 p-3 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex flex-col items-center w-full rounded-lg p-3"
               disabled={pending === name}
             >
               <Icon name={name} className="h-5 w-5 text-primary-700" aria-hidden />
               <span className="mt-2 text-xs font-medium break-all">{name}</span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>

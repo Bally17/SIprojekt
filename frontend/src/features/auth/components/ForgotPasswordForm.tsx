@@ -4,6 +4,7 @@ import { useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
+import { Button } from "@/shared/components/button";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -51,13 +52,15 @@ export default function ForgotPasswordForm() {
         className="w-full border rounded px-3 py-2"
       />
 
-      <button
+      <Button
         type="submit"
+        variant="primary"
+        className="w-full"
         disabled={loading}
-        className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
+        loading={loading}
       >
         {loading ? msgs.auth.submitting : msgs.auth.submit}
-      </button>
+      </Button>
     </form>
   );
 }

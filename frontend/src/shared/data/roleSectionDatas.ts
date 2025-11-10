@@ -1,4 +1,4 @@
-import { RoleType, RoleDataType } from "@/shared/types/roleTypes";
+import { RoleDataType, RoleType } from "@/shared/types/roleTypes";
 
 export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
   student: [

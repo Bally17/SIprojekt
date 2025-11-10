@@ -45,8 +45,7 @@
     "loading": "Načítavam...",
     "companies": "Hľadám firmy...",
     "internships": "Načítavam praxe...",
-    "pending": "Načítavam čakajúce praxe...",
-    "yours": "Načítavam tvoje praxe..."
+    "pending": "Načítavam čakajúce praxe..."
   },
 
   "entities": {
@@ -75,8 +74,6 @@
   "date": {
     "year": "Rok",
     "semester": "Semester",
-    "winter": "Zimný",
-    "summer": "Letný",
     "startDate": "Dátum začiatku",
     "endDate": "Dátum konca"
   },

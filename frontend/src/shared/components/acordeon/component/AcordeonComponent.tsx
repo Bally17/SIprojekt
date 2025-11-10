@@ -1,6 +1,7 @@
 import React, { FC, useState } from "react";
 import type { FaqData } from "@/shared/types/faqTypes";
 import "@utils/idUsing";
+import { Button } from "../../button";
 
 type Variant = "light" | "dark";
 
@@ -63,16 +64,20 @@ const AcordeonComponent: FC<AcordeonComponentProps> = ({
     <div className={className ?? v.wrapper}>
       {data.map((it, i) => (
         <div key={it.q.idUsing()} className={itemClassName ?? v.item}>
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setOpen(open === i ? null : i)}
             className={headerClassName ?? v.header}
+            aria-expanded={open === i}
+            aria-controls={`faq-panel-${i}`}
+            id={`faq-header-${i}`}
           >
             <span className={titleClassName ?? v.title}>{it.q}</span>
             <span className={chevronClassName ?? v.chevron} aria-hidden>
-              {open === i ? "-" : "+"}
+              {open === i ? "−" : "+"}
             </span>
-          </button>
+          </Button>
           {open === i && <div className={contentClassName ?? v.content}>{it.a}</div>}
         </div>
       ))}

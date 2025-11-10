@@ -7,11 +7,14 @@ import { useRouter } from "next/navigation";
 import axiosClient from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
+import { Button } from "@/shared/components/button";
+import { RoleType } from "@/shared/types/components/button/RoleTypes";
 
 export default function LoginForm() {
   const router = useRouter();
-  // Prepínač medzi „študent“ a firma
-  const [userType, setUserType] = useState<"student" | "company">("student");
+  const [userType, setUserType] = useState<RoleType>("student");
+  const isStudent = userType === "student";
+  const isCompany = userType === "company";
 
   const [form, setForm] = useState({
     email: "",
@@ -88,28 +91,25 @@ export default function LoginForm() {
 
       {/* Prepínač typu používateľa – ovplyvňuje len placeholder a zobrazenie OAuth blokov */}
       <div className="flex justify-center gap-4 mb-4">
-        <button
+        <Button
           type="button"
           onClick={() => setUserType("student")}
-          className={`px-4 py-2 rounded-full text-sm ${
-            userType === "student"
-              ? "bg-cyan-700 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
+          variant={isStudent ? "primary" : "ghost"}
+          className={`rounded-full px-4 py-2 text-sm ${isStudent ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"}`}
+          aria-pressed={isStudent}
         >
           {msgs.common.entities.student}
-        </button>
-        <button
+        </Button>
+
+        <Button
           type="button"
           onClick={() => setUserType("company")}
-          className={`px-4 py-2 rounded-full text-sm ${
-            userType === "company"
-              ? "bg-cyan-700 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
+          variant={isCompany ? "primary" : "ghost"}
+          className={`rounded-full px-4 py-2 text-sm ${isCompany ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"}`}
+          aria-pressed={isCompany}
         >
           {msgs.common.entities.company}
-        </button>
+        </Button>
       </div>
 
       {/* Login formulár – jednotný pre oba typy (payload email + password) */}
@@ -140,13 +140,15 @@ export default function LoginForm() {
           </a>
         </div>
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          className="w-full"
           disabled={loading}
-          className="w-full bg-cyan-700 text-white py-2 rounded hover:bg-cyan-800 disabled:opacity-70"
+          loading={loading}
         >
           {loading ? msgs.auth.logining : msgs.auth.login}
-        </button>
+        </Button>
       </form>
 
       {/* OAuth blok – zobraziť len pre firmy */}
@@ -154,10 +156,11 @@ export default function LoginForm() {
         <div className="text-center mt-6 space-y-2">
           <p className="text-gray-500 mb-2">{msgs.auth.orWith}</p>
 
-          <button
+          <Button
             type="button"
             onClick={handleGoogleLogin}
-            className="bg-gray-100 border px-3 py-2 rounded w-full hover:bg-gray-200 flex items-center justify-center gap-2"
+            variant="ghost"
+            className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200"
           >
             <Image
               src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -167,12 +170,13 @@ export default function LoginForm() {
               height={20}
             />
             {msgs.auth.google}
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={handleGithubLogin}
-            className="bg-gray-100 border px-3 py-2 rounded w-full hover:bg-gray-200 flex items-center justify-center gap-2"
+            variant="ghost"
+            className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200"
           >
             <Image
               src="https://www.svgrepo.com/show/512317/github-142.svg"
@@ -182,7 +186,7 @@ export default function LoginForm() {
               height={20}
             />
             {msgs.auth.github}
-          </button>
+          </Button>
         </div>
       )}
 
