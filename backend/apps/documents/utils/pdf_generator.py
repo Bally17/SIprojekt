@@ -1,11 +1,22 @@
 import io
 import os
 from datetime import datetime, date
-from PyPDF2 import PdfReader, PdfWriter
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import mm
 from django.conf import settings
+
+try:
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+except ImportError:  # pragma: no cover - optional dependency in dev env
+    canvas = None
+    A4 = None
+    mm = None
+
+try:
+    from PyPDF2 import PdfReader, PdfWriter
+except ImportError:  # pragma: no cover - optional dependency in dev env
+    PdfReader = None
+    PdfWriter = None
 
 
 def generate_dohoda_pdf(prax):
@@ -13,6 +24,11 @@ def generate_dohoda_pdf(prax):
     Vygeneruje PDF dohodu o odbornej praxi pre danú prax.
     Automaticky konvertuje dátumy z reťazcov a ošetrí None hodnoty v textoch.
     """
+
+    if PdfReader is None or PdfWriter is None or canvas is None or A4 is None or mm is None:
+        raise RuntimeError(
+            "PyPDF2 a ReportLab sú potrebné na generovanie PDF. Spusti 'pip install PyPDF2 reportlab'."
+        )
 
     firma = prax.firma
     student = prax.student

@@ -29,12 +29,15 @@ def create_notification_on_status_change(sender, instance, created, **kwargs):
         return
 
     # 🔹 zapíšeme históriu zmeny
+    zmenil = getattr(instance, "_changed_by", getattr(instance, "garant", None))
+    poznamka = getattr(instance, "_status_change_note", f"Automatická zmena stavu z {old_stav} na {new_stav}")
+
     HistoriaStavovPraxe.objects.create(
         prax=instance,
         stary_stav=old_stav,
         novy_stav=new_stav,
-        zmenil=getattr(instance, "garant", None),
-        poznamka=f"Automatická zmena stavu z {old_stav} na {new_stav}",
+        zmenil=zmenil,
+        poznamka=poznamka,
     )
 
     predmet = f"Zmena stavu praxe: {new_stav.capitalize()}"
@@ -75,3 +78,9 @@ def create_notification_on_status_change(sender, instance, created, **kwargs):
             payload_json=payload,
             stav="nove",
         )
+
+    # vyčisti pomocné atribúty, aby sa neprenášali do ďalších uložení
+    if hasattr(instance, "_changed_by"):
+        delattr(instance, "_changed_by")
+    if hasattr(instance, "_status_change_note"):
+        delattr(instance, "_status_change_note")

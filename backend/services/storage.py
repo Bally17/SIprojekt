@@ -1,8 +1,12 @@
 import os
 import uuid
 from dotenv import load_dotenv
-import boto3
-from botocore.exceptions import ClientError
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+except ImportError:  # pragma: no cover - optional dependency in some environments
+    boto3 = None
+    ClientError = Exception
 
 # Load environment variables from .env in backend root
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,6 +31,9 @@ def _get_b2_client(upload: bool = True):
 
     if not all([access_key, secret_key, B2_ENDPOINT_URL]):
         raise RuntimeError("Missing B2 environment variables or endpoint URL.")
+
+    if boto3 is None:
+        raise RuntimeError("boto3 is required for B2 storage operations. Install it via 'pip install boto3'.")
 
     return boto3.client(
         "s3",
