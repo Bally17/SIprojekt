@@ -9,13 +9,17 @@ type BackButtonProps = {
 };
 
 export default function BackButton({ className = "", label = "Úvodná stránka" }: BackButtonProps) {
-  const baseClasses =
-    "inline-flex items-center gap-2 text-base text-primary-900 hover:text-primary-800 transition-colors underline";
-
   return (
-    <Link href="/" className={`${baseClasses} ${className}`.trim()}>
-      <Icon name="arrow-left" className="h-5 w-5" aria-hidden />
-      <span>{label}</span>
+    <Link
+      href="/"
+      className={`group inline-flex items-center gap-2 rounded-lg border border-primary-100 bg-white/90 px-4 py-2 text-sm font-semibold text-primary-900 shadow-soft transition-all hover:-translate-x-0.5 hover:border-primary-200 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 ${className}`.trim()}
+    >
+      <Icon
+        name="arrow-left"
+        className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1"
+        aria-hidden
+      />
+      <span className="tracking-tight">{label}</span>
     </Link>
   );
 }
