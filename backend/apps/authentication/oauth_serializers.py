@@ -9,6 +9,8 @@ class OAuthAuthorizeSerializer(serializers.Serializer):
     response_type = serializers.CharField(required=True, max_length=20)
     state = serializers.CharField(required=False, max_length=100, allow_blank=True)
     scope = serializers.CharField(required=False, max_length=200, default='read profile')
+    code_challenge = serializers.CharField(required=False, max_length=128, allow_blank=True)
+    code_challenge_method = serializers.CharField(required=False, max_length=10, allow_blank=True)
     
     def validate_response_type(self, value):
         if value != 'code':
@@ -34,16 +36,25 @@ class OAuthAuthorizeSerializer(serializers.Serializer):
         
         return value
 
+    def validate(self, data):
+        method = data.get('code_challenge_method') or 'plain'
+        if data.get('code_challenge') and method not in ('plain', 'S256'):
+            raise serializers.ValidationError({'code_challenge_method': 'Only plain or S256 are supported'})
+        data['code_challenge_method'] = method
+        return data
 class OAuthTokenSerializer(serializers.Serializer):
     grant_type = serializers.CharField(required=True, max_length=50)
     client_id = serializers.CharField(required=True, max_length=100)
-    client_secret = serializers.CharField(required=True, max_length=100)
+    client_secret = serializers.CharField(required=False, max_length=100, allow_blank=True)
     code = serializers.CharField(required=False, max_length=100)
     redirect_uri = serializers.CharField(required=False, max_length=300)
     refresh_token = serializers.CharField(required=False, max_length=255)
+    username = serializers.CharField(required=False, max_length=255)
+    password = serializers.CharField(required=False, max_length=255)
+    code_verifier = serializers.CharField(required=False, max_length=128)
     
     def validate_grant_type(self, value):
-        allowed_grants = ['authorization_code', 'refresh_token']
+        allowed_grants = ['authorization_code', 'refresh_token', 'password']
         if value not in allowed_grants:
             raise serializers.ValidationError(f'Unsupported grant_type. Allowed: {allowed_grants}')
         return value
@@ -60,5 +71,11 @@ class OAuthTokenSerializer(serializers.Serializer):
         elif grant_type == 'refresh_token':
             if not data.get('refresh_token'):
                 raise serializers.ValidationError({'refresh_token': 'This field is required for refresh_token grant'})
+        
+        elif grant_type == 'password':
+            if not data.get('username'):
+                raise serializers.ValidationError({'username': 'This field is required for password grant'})
+            if not data.get('password'):
+                raise serializers.ValidationError({'password': 'This field is required for password grant'})
         
         return data

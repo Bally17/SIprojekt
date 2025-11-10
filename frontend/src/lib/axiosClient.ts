@@ -12,6 +12,7 @@ const AUTH_WHITELIST = [
   "/auth/password/reset/confirm/",
   "/auth/token/",
   "/auth/token/refresh/",
+  "/auth/oauth/token/",
 ];
 
 /** Pomôcka: je URL whitelisted? */
