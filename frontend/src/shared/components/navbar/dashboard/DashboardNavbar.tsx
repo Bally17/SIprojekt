@@ -209,16 +209,16 @@ const DashboardNavbar = () => {
                 </div>
               ) : null}
             </div>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleLogout}
+              aria-label={msgs.auth.logout}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white"
+            >
+              <Icon name="log-out" className="h-5 w-5" />
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="danger"
-            onClick={handleLogout}
-            aria-label={msgs.auth.logout}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white"
-          >
-            <Icon name="log-out" className="h-5 w-5" />
-          </Button>
         </div>
       </header>
 
