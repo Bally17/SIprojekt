@@ -68,7 +68,9 @@
     "show": "View pending requests, approve or reject internships, and filter them by year, semester, and status.",
     "my": "My internships",
     "manage": "Manage your internships, create new ones, and download internship agreements.",
-    "new": "New internship"
+    "new": "New internship",
+    "updated": "Internship updated.",
+    "stateChanged": "Status change saved."
   },
 
   "date": {
@@ -93,5 +95,50 @@
     "copyright": "© {year}. All rights reserved.",
     "logoText": "Praxy",
     "logoLetter": "P"
+  },
+  "guarant": {
+    "title": "Internship administration",
+    "subtitle": "See every internship, change statuses, and prepare exports for reports.",
+    "filtersTitle": "Advanced filters",
+    "filtersDescription": "Narrow down internships by year, company, student, program, or status.",
+    "tableTitle": "Current internships",
+    "tableSubtitle": "See every placement with its status, company, student, and term in one place.",
+    "filters": {
+      "year": "Year",
+      "company": "Company",
+      "companyPlaceholder": "Company name or ID",
+      "student": "Student",
+      "studentPlaceholder": "Name or email",
+      "field": "Study program",
+      "fieldPlaceholder": "Program name",
+      "state": "Status",
+      "statePlaceholder": "Select status"
+    },
+    "table": {
+      "student": "Student",
+      "company": "Company",
+      "program": "Program",
+      "term": "Term",
+      "actions": "Actions",
+      "update": "Save status"
+    },
+    "noStateChange": "Pick a new status before saving.",
+    "exportTitle": "Export for reports",
+    "exportDescription": "We will prepare an export of internships that match the current filters (CSV / XLSX).",
+    "exportButton": "Prepare export",
+    "exportPending": "Export will be ready soon.",
+    "edit": {
+      "title": "Edit internship",
+      "description": "Update assigned student, company, term dates, and status.",
+      "legend": "Use IDs stored in the system for student and company.",
+      "studentId": "Student ID",
+      "companyId": "Company ID",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "submit": "Save changes",
+      "success": "Internship has been updated.",
+      "error": "Editing internship failed.",
+      "trigger": "Edit internship"
+    }
   }
 }

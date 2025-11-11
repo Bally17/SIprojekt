@@ -68,7 +68,9 @@
     "show": "Pozrite si čakajúce žiadosti, potvrďte alebo zamietnite praxe a filtrujte ich podľa roka, semestra a stavu.",
     "my": "Moje praxe",
     "manage": "Spravuj svoje praxe, vytváraj nové a sťahuj dohody o odbornej praxi.",
-    "new": "Nová prax"
+    "new": "Nová prax",
+    "updated": "Prax bola aktualizovaná.",
+    "stateChanged": "Zmena stavu bola uložená."
   },
 
   "date": {
@@ -93,5 +95,50 @@
     "copyright": "© {year}. Všetky práva vyhradené.",
     "logoText": "Praxy",
     "logoLetter": "P"
+  },
+  "guarant": {
+    "title": "Správa praxí",
+    "subtitle": "Kompletný prehľad o všetkých praxiach so zmenou stavov a exportom pre reporty.",
+    "filtersTitle": "Pokročilé filtre",
+    "filtersDescription": "Vyber ročník, firmu, študenta, program alebo stav a zobraz iba relevantné praxe.",
+    "tableTitle": "Aktuálne praxe",
+    "tableSubtitle": "Detailný prehľad všetkých praxí vrátane stavu, firmy, študenta a obdobia.",
+    "filters": {
+      "year": "Rok",
+      "company": "Firma",
+      "companyPlaceholder": "Názov alebo IČO",
+      "student": "Študent",
+      "studentPlaceholder": "Meno alebo e-mail",
+      "field": "Študijný program",
+      "fieldPlaceholder": "Názov programu",
+      "state": "Stav",
+      "statePlaceholder": "Vyberte stav"
+    },
+    "table": {
+      "student": "Študent",
+      "company": "Firma",
+      "program": "Program",
+      "term": "Obdobie",
+      "actions": "Akcie",
+      "update": "Uložiť stav"
+    },
+    "noStateChange": "Vyberte nový stav, aby ste uložili zmenu.",
+    "exportTitle": "Export pre reporty",
+    "exportDescription": "Pripravíme export praxí podľa vybraných filtrov (CSV / XLSX).",
+    "exportButton": "Pripraviť export",
+    "exportPending": "Export pripravíme čoskoro.",
+    "edit": {
+      "title": "Upraviť prax",
+      "description": "Aktualizuj študenta, firmu, termíny aj stav jednej praxe.",
+      "legend": "Použi ID študenta a firmy, ktoré sú vedené v systéme.",
+      "studentId": "ID študenta",
+      "companyId": "ID firmy",
+      "startDate": "Dátum začiatku",
+      "endDate": "Dátum konca",
+      "submit": "Uložiť zmeny",
+      "success": "Prax bola aktualizovaná.",
+      "error": "Úprava praxe zlyhala.",
+      "trigger": "Upraviť prax"
+    }
   }
 }

@@ -21,7 +21,10 @@ from apps.users.serializers import UserSerializer, StudentProfileSerializer
 
 # 🔹 CRUD pre praxe
 class InternshipViewSet(viewsets.ModelViewSet):
-    queryset = Prax.objects.all()
+    queryset = (
+        Prax.objects.select_related("student", "student__studentprofil", "firma", "garant")
+        .all()
+    )
     serializer_class = InternshipSerializer
 
 

@@ -14,4 +14,8 @@ export interface Internship {
   vytvorene_at?: string;
   zmenene_at?: string;
   documents?: InternshipDocument[];
+  student_full_name?: string | null;
+  student_email?: string | null;
+  company_name?: string | null;
+  study_program?: string | null;
 }

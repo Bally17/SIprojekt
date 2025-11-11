@@ -15,6 +15,7 @@ export default function LoginForm() {
   const [userType, setUserType] = useState<RoleType>("student");
   const isStudent = userType === "student";
   const isCompany = userType === "company";
+  const isGarant = userType === "garant";
 
   const [form, setForm] = useState({
     email: "",
@@ -56,8 +57,11 @@ export default function LoginForm() {
       });
 
       // Redirect podľa roly
-      if (res.data.user.rola === "firma") {
+      const role = res.data.user.rola;
+      if (role === "firma") {
         router.push("/dashboard/company");
+      } else if (role === "garant") {
+        router.push("/dashboard/garant");
       } else {
         router.push("/dashboard/student");
       }
@@ -90,7 +94,7 @@ export default function LoginForm() {
       <h2 className="text-2xl font-semibold text-cyan-700 text-center">{msgs.auth.title}</h2>
 
       {/* Prepínač typu používateľa – ovplyvňuje len placeholder a zobrazenie OAuth blokov */}
-      <div className="flex justify-center gap-4 mb-4">
+      <div className="flex justify-center gap-3 mb-4 flex-wrap">
         <Button
           type="button"
           onClick={() => setUserType("student")}
@@ -110,6 +114,16 @@ export default function LoginForm() {
         >
           {msgs.common.entities.company}
         </Button>
+
+        <Button
+          type="button"
+          onClick={() => setUserType("garant")}
+          variant={isGarant ? "primary" : "ghost"}
+          className={`rounded-full px-4 py-2 text-sm ${isGarant ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"}`}
+          aria-pressed={isGarant}
+        >
+          {msgs.common.entities.guarant}
+        </Button>
       </div>
 
       {/* Login formulár – jednotný pre oba typy (payload email + password) */}
@@ -117,7 +131,13 @@ export default function LoginForm() {
         <input
           type="email"
           name="email"
-          placeholder={userType === "student" ? msgs.auth.studentEmail : msgs.auth.companyEmail}
+          placeholder={
+            userType === "student"
+              ? msgs.auth.studentEmail
+              : userType === "company"
+                ? msgs.auth.companyEmail
+                : msgs.auth.guarantEmail
+          }
           value={form.email}
           onChange={handleChange}
           className={input}
