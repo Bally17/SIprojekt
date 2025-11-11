@@ -23,6 +23,14 @@ export const STAV_LABEL: Record<Stav, string> = {
 
 export const SEMESTER_OPTIONS = SEMESTERS.map((v) => ({ value: v, label: SEMESTER_LABEL[v] }));
 export const STAV_OPTIONS = STAVY.map((v) => ({ value: v, label: STAV_LABEL[v] }));
+export const STAV_BADGE_CLASS: Record<Stav, string> = {
+  vytvorena: "bg-blue-50 text-blue-700",
+  potvrdena: "bg-green-50 text-green-700",
+  zamietnuta: "bg-red-50 text-red-700",
+  schvalena: "bg-emerald-50 text-emerald-700",
+  obhajena: "bg-purple-50 text-purple-700",
+  neobhajena: "bg-gray-50 text-gray-600",
+};
 
 export const isSemester = (v: string): v is Semester =>
   (SEMESTERS as readonly string[]).includes(v);

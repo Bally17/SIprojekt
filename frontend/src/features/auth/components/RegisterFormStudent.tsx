@@ -35,11 +35,12 @@ export default function RegisterFormStudent() {
     setLoading(true);
 
     const payload = {
-      first_name: form.firstName,
-      last_name: form.lastName,
+      meno: form.firstName,
+      priezvisko: form.lastName,
+      adresa: form.address,
       email: form.studentEmail,
       alt_email: form.altEmail || "",
-      phone: form.phone,
+      telefon: form.phone,
       studijny_program: form.studyField,
     };
 

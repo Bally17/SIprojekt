@@ -24,6 +24,7 @@ type IconName =
   | "shield-check"
   | "refresh-cw"
   | "lock-keyhole"
-  | "arrow-right";
+  | "arrow-right"
+  | "pencil";
 
 export default IconName;

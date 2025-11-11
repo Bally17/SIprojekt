@@ -9,6 +9,7 @@ import {
   Semester,
   SEMESTER_OPTIONS,
   Stav,
+  STAV_BADGE_CLASS,
 } from "@/shared/types/internship/components/StateInternship";
 import type { Internship } from "@/shared/types/internship/internship";
 import type { InternshipDocument } from "@/shared/types/internship/components/InternshipDocument";
@@ -29,15 +30,6 @@ type CreateInternshipPayload = Pick<
 
 type CreateInternshipForm = Omit<CreateInternshipPayload, "firma_id"> & {
   firma_id: string;
-};
-
-const STAV_BADGE_CLASS: Record<Stav, string> = {
-  vytvorena: "bg-blue-50 text-blue-700",
-  potvrdena: "bg-green-50 text-green-700",
-  zamietnuta: "bg-red-50 text-red-700",
-  schvalena: "bg-emerald-50 text-emerald-700",
-  obhajena: "bg-purple-50 text-purple-700",
-  neobhajena: "bg-gray-50 text-gray-600",
 };
 
 export default function StudentDashboardPage() {
