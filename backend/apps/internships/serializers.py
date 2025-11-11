@@ -43,4 +43,14 @@ class InternshipSerializer(serializers.ModelSerializer):
 class InternshipHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoriaStavovPraxe
-        fields = "__all__"
+        fields = '__all__'
+
+class ExternalDefenseSerializer(serializers.Serializer):
+    prax_id = serializers.IntegerField()
+    external_reference = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    note = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+    def validate_prax_id(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("prax_id musí byť kladné číslo.")
+        return value

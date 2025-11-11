@@ -1,1 +1,5 @@
 NEXT_PUBLIC_API_URL=http://localhost:8000/api
+# dev udaje 
+NEXT_PUBLIC_OAUTH_CLIENT_ID=test-client-123
+NEXT_PUBLIC_OAUTH_CLIENT_SECRET=test-secret-456
+

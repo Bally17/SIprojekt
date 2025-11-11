@@ -15,7 +15,7 @@ from apps.documents.serializers import DocumentSerializer
 from django.db import transaction
 
 from .models import Prax, HistoriaStavovPraxe
-from .serializers import InternshipSerializer, InternshipHistorySerializer
+from .serializers import InternshipSerializer, InternshipHistorySerializer, ExternalDefenseSerializer
 from apps.users.serializers import UserSerializer, StudentProfileSerializer
 
 
@@ -383,5 +383,63 @@ def company_reject_internship(request, prax_id):
         #     typ="warning",
         #     sprava=f"Vaša prax vo firme {user.meno} bola zamietnutá."
         # )
+
+    return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Externý systém označí prax ako obhájenú",
+    operation_description="""
+    Endpoint pre integračných partnerov ktorý umožní zmenu stavu praxe zo `schvalena` na `obhajena`.
+    Je dostupný len pre používateľov s rolou **externy** (resp. garant) a vyžaduje platný OAuth2/JWT token.
+    """,
+    request_body=ExternalDefenseSerializer,
+    responses={
+        200: openapi.Response("Aktualizovaná prax", InternshipSerializer),
+        400: "Prax nie je v stave 'schvalena'",
+        404: "Prax neexistuje",
+        403: "Zakázané",
+    },
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def external_mark_defended(request):
+    """Externý systém prepne prax zo stavu schvalena do stavu obhajena."""
+    user = request.user
+
+    if user.rola not in ("externy", "garant"):
+        return Response(
+            {"error": "Prístup povolený len pre externých integrátorov."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    serializer = ExternalDefenseSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    prax_id = serializer.validated_data["prax_id"]
+    reference = serializer.validated_data.get("external_reference")
+    note = serializer.validated_data.get("note")
+
+    try:
+        with transaction.atomic():
+            prax = Prax.objects.select_for_update().get(id=prax_id)
+
+            if (prax.stav or "").lower() != "schvalena":
+                return Response(
+                    {"error": "Prax je možné obhájiť len zo stavu 'schvalena'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            custom_note = note or "Externý systém označil prax ako obhájenú."
+            if reference:
+                custom_note = f"{custom_note} Referencia: {reference}"
+
+            prax._changed_by = user
+            prax._status_change_note = custom_note
+            prax.stav = "obhajena"
+            prax.save()
+
+    except Prax.DoesNotExist:
+        return Response({"error": "Prax so zadaným ID neexistuje."}, status=status.HTTP_404_NOT_FOUND)
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)

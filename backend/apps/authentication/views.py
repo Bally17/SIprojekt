@@ -15,6 +15,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
 import json
+import base64
+import hashlib
 
 from .serializers import (
     LoginSerializer,
@@ -243,6 +245,21 @@ def get_tokens_for_user(user):
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     }
+
+def _generate_pkce_hash(verifier: str, method: str) -> str:
+    if method == 'S256':
+        digest = hashlib.sha256(verifier.encode("ascii")).digest()
+        return base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
+    return verifier
+
+def verify_pkce(code_verifier: str, code_challenge: str, method: str = "plain") -> bool:
+    if not code_challenge:
+        return True
+    if not code_verifier:
+        return False
+    method = method or 'plain'
+    computed = _generate_pkce_hash(code_verifier, method)
+    return secrets.compare_digest(computed, code_challenge)
 
 def create_or_update_oauth_user(email, first_name, last_name, avatar, provider):
     """Create or update user from OAuth provider"""
@@ -677,6 +694,8 @@ def oauth_authorize(request):
     response_type = validated_data['response_type']
     state = validated_data.get('state', '')
     scope = validated_data.get('scope', 'read profile')
+    code_challenge = validated_data.get('code_challenge')
+    code_challenge_method = validated_data.get('code_challenge_method') or 'plain'
     
     # Validácia clienta
     try:
@@ -686,6 +705,12 @@ def oauth_authorize(request):
             return Response({'error': 'invalid_request', 'error_description': 'Invalid redirect_uri'}, status=400)
     except OAuthClient.DoesNotExist:
         return Response({'error': 'invalid_client', 'error_description': 'Invalid client'}, status=400)
+
+    if client.is_public and not code_challenge:
+        return Response(
+            {'error': 'invalid_request', 'error_description': 'PKCE code_challenge is required for public clients'},
+            status=400,
+        )
     
     # Ak užívateľ nie je prihlásený, vráť chybu (frontend ho musí najprv prihlásiť)
     if not request.user.is_authenticated:
@@ -701,7 +726,9 @@ def oauth_authorize(request):
         client=client,
         redirect_uri=redirect_uri,
         scope=scope,
-        expires_at=timezone.now() + timedelta(minutes=10)
+        expires_at=timezone.now() + timedelta(minutes=10),
+        code_challenge=code_challenge,
+        code_challenge_method=code_challenge_method,
     )
     
     # Presmeruj späť na client s code
@@ -724,7 +751,7 @@ def oauth_token(request):
     """
     OAuth 2.0 Token Endpoint
     POST /oauth/token
-    - grant_type: authorization_code | refresh_token
+    - grant_type: authorization_code | refresh_token | password
     """
     # Custom rate limiting check
     if oauth_rate_limit_check(request, 'token'):
@@ -741,16 +768,23 @@ def oauth_token(request):
     validated_data = serializer.validated_data
     grant_type = validated_data['grant_type']
     client_id = validated_data['client_id']
-    client_secret = validated_data['client_secret']
+    client_secret = validated_data.get('client_secret')
     code = validated_data.get('code')
     redirect_uri = validated_data.get('redirect_uri')
     refresh_token_str = validated_data.get('refresh_token')
+    username = validated_data.get('username')
+    password = validated_data.get('password')
+    code_verifier = validated_data.get('code_verifier')
     
     # Validácia client credentials
     try:
         client = OAuthClient.objects.get(client_id=client_id, is_active=True)
-        if client.client_secret != client_secret:
-            return Response({'error': 'invalid_client'}, status=401)
+        if client.is_public:
+            if client.client_secret and client_secret and client.client_secret != client_secret:
+                return Response({'error': 'invalid_client'}, status=401)
+        else:
+            if not client_secret or client.client_secret != client_secret:
+                return Response({'error': 'invalid_client'}, status=401)
     except OAuthClient.DoesNotExist:
         return Response({'error': 'invalid_client'}, status=401)
     
@@ -772,6 +806,16 @@ def oauth_token(request):
         except AuthorizationCode.DoesNotExist:
             return Response({'error': 'invalid_grant'}, status=400)
         
+        # PKCE verification (if required)
+        if auth_code.code_challenge:
+            if not code_verifier:
+                return Response(
+                    {'error': 'invalid_request', 'error_description': 'Missing code_verifier'},
+                    status=400,
+                )
+            if not verify_pkce(code_verifier, auth_code.code_challenge, auth_code.code_challenge_method):
+                return Response({'error': 'invalid_grant', 'error_description': 'Invalid code_verifier'}, status=400)
+
         # Označ code ako použitý
         auth_code.used = True
         auth_code.save()
@@ -813,6 +857,46 @@ def oauth_token(request):
             'expires_in': 900,  # 15 min
             'refresh_token': str(new_refresh),
             'scope': 'read profile'
+        })
+
+    elif grant_type == 'password':
+        # Resource Owner Password Credentials grant (first-party apps)
+        if not client.allow_password_grant:
+            return Response({'error': 'unauthorized_client'}, status=400)
+        if not username or not password:
+            return Response({'error': 'invalid_request', 'error_description': 'Missing username/password'}, status=400)
+
+        try:
+            user = User.objects.get(email__iexact=username)
+        except User.DoesNotExist:
+            return Response({'error': 'invalid_grant'}, status=400)
+
+        if not user.check_password(password):
+            return Response({'error': 'invalid_grant'}, status=400)
+
+        if not user.is_active:
+            return Response({'error': 'inactive_user'}, status=403)
+
+        tokens = get_tokens_for_user(user)
+        access_lifetime = settings.SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME', timedelta(minutes=15))
+        try:
+            expires_in = int(access_lifetime.total_seconds())
+        except AttributeError:
+            expires_in = 900
+
+        user_data = get_user_data(user)
+        scope = client.scope or 'read profile'
+
+        return Response({
+            'status': 'success',
+            'created': False,
+            'access_token': tokens['access'],
+            'token_type': 'Bearer',
+            'expires_in': expires_in,
+            'refresh_token': tokens['refresh'],
+            'scope': scope,
+            'user': user_data,
+            'tokens': tokens,
         })
     
     return Response({'error': 'unsupported_grant_type'}, status=400)

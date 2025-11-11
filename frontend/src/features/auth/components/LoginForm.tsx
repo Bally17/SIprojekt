@@ -4,13 +4,15 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 // axiosClient má baseURL z NEXT_PUBLIC_API_URL
-import axiosClient from "@/lib/axiosClient";
+import axiosClient, { setAuthTokens } from "@/lib/axiosClient";
 import { useLocalization } from "@/shared/i18n/client";
 import { useSystemNotifications } from "@/shared/components/notifications";
 import { Button } from "@/shared/components/button";
 import { RoleType } from "@/shared/types/components/button/RoleTypes";
 
 export default function LoginForm() {
+  const oauthClientId = process.env.NEXT_PUBLIC_OAUTH_CLIENT_ID || "test-client-123";
+  const oauthClientSecret = process.env.NEXT_PUBLIC_OAUTH_CLIENT_SECRET || "";
   const router = useRouter();
   const [userType, setUserType] = useState<RoleType>("student");
   const isStudent = userType === "student";
@@ -32,21 +34,32 @@ export default function LoginForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Odoslanie loginu – jednotný endpoint /auth/login/
+  // Odoslanie loginu cez OAuth password grant
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const endpoint = "/auth/login/";
-      const res = await axiosClient.post(endpoint, form);
+      const endpoint = "/auth/oauth/token/";
+      const payload: Record<string, string> = {
+        grant_type: "password",
+        username: form.email,
+        password: form.password,
+        client_id: oauthClientId,
+      };
+      if (oauthClientSecret) {
+        payload.client_secret = oauthClientSecret;
+      }
+      const res = await axiosClient.post(endpoint, payload);
 
       console.log("Login úspešný:", res.data);
 
       // Uloženie tokenov
-      const { access, refresh } = res.data.tokens;
-      localStorage.setItem("access_token", access);
-      localStorage.setItem("refresh_token", refresh);
+      const accessToken = res.data.access_token || res.data.tokens?.access;
+      const refreshToken = res.data.refresh_token || res.data.tokens?.refresh;
+      if (accessToken) {
+        setAuthTokens({ access: accessToken, refresh: refreshToken });
+      }
 
       // Uloženie používateľa na localStorage
       localStorage.setItem("user", JSON.stringify(res.data.user));
@@ -67,7 +80,11 @@ export default function LoginForm() {
       }
     } catch (err: any) {
       const message =
-        err.response?.data?.detail || err.response?.data?.message || msgs.auth.errorMsg;
+        err.response?.data?.error_description ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        msgs.auth.errorMsg;
       console.error(msgs.auth.errorTitle, err.response?.data || err.message);
       notifyWarning({
         title: msgs.auth.errorTitle,
