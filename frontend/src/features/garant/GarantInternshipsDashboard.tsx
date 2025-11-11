@@ -385,7 +385,7 @@ export default function GarantInternshipsDashboard() {
                           <div className="text-xs text-ink-400">{internship.student_email}</div>
                         </td>
                         <td className="px-4 py-4 text-sm text-ink-900">
-                          {internship.company_name || msgs.entities.company}
+                          {internship.company_name || msgs.common.entities.company}
                         </td>
                         <td className="px-4 py-4 text-sm text-ink-900">
                           {internship.study_program || "—"}
