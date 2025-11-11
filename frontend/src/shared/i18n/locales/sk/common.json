@@ -68,9 +68,7 @@
     "show": "Pozrite si čakajúce žiadosti, potvrďte alebo zamietnite praxe a filtrujte ich podľa roka, semestra a stavu.",
     "my": "Moje praxe",
     "manage": "Spravuj svoje praxe, vytváraj nové a sťahuj dohody o odbornej praxi.",
-    "new": "Nová prax",
-    "updated": "Prax bola aktualizovaná.",
-    "stateChanged": "Zmena stavu bola uložená."
+    "new": "Nová prax"
   },
 
   "date": {
@@ -119,10 +117,8 @@
       "company": "Firma",
       "program": "Program",
       "term": "Obdobie",
-      "actions": "Akcie",
-      "update": "Uložiť stav"
+      "actions": "Akcie"
     },
-    "noStateChange": "Vyberte nový stav, aby ste uložili zmenu.",
     "exportTitle": "Export pre reporty",
     "exportDescription": "Pripravíme export praxí podľa vybraných filtrov (CSV / XLSX).",
     "exportButton": "Pripraviť export",
@@ -137,8 +133,7 @@
       "endDate": "Dátum konca",
       "submit": "Uložiť zmeny",
       "success": "Prax bola aktualizovaná.",
-      "error": "Úprava praxe zlyhala.",
-      "trigger": "Upraviť prax"
+      "error": "Úprava praxe zlyhala."
     }
   }
 }
