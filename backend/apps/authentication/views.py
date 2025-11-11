@@ -430,30 +430,64 @@ def handle_github_code(code, code_verifier=None):
 # ----------------------------------------------------------------------
 # Login / Social login / Profil / Logout
 # ----------------------------------------------------------------------
+def _build_login_response(user):
+    """Generate unified login response for username/password flows."""
+    tokens = get_tokens_for_user(user)
+    user_data = get_user_data(user)
+    return {
+        'status': 'success',
+        'created': False,
+        'user': user_data,
+        'tokens': tokens,
+    }
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    """Normal email/password login"""
+    """Normal email/password login for students"""
     serializer = LoginSerializer(data=request.data)
     
     if serializer.is_valid():
         user = serializer.validated_data['user']
+
+        if user.rola != 'student':
+            return Response(
+                {
+                    'error': 'invalid_role',
+                    'message': 'Tento login je určený len pre študentov. Použite firemný login.',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         
-        # Generate tokens
-        tokens = get_tokens_for_user(user)
-        
-        # Get user data
-        user_data = get_user_data(user)
-        
-        response_data = {
-            'status': 'success',
-            'created': False,  # Always False for normal login
-            'user': user_data,
-            'tokens': tokens
-        }
-        
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(_build_login_response(user), status=status.HTTP_200_OK)
     
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def company_login_view(request):
+    """Email/password login for companies"""
+    serializer = LoginSerializer(data=request.data)
+
+    if serializer.is_valid():
+        user = serializer.validated_data['user']
+
+        if user.rola != 'firma':
+            return Response(
+                {
+                    'error': 'invalid_role',
+                    'message': 'Firemný login je určený len pre kontá firiem.',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not user.is_active:
+            return Response({'error': 'inactive_user'}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(_build_login_response(user), status=status.HTTP_200_OK)
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
@@ -873,6 +907,15 @@ def oauth_token(request):
 
         if not user.check_password(password):
             return Response({'error': 'invalid_grant'}, status=400)
+
+        if user.rola != 'firma':
+            return Response(
+                {
+                    'error': 'invalid_role',
+                    'error_description': 'Firemný login je určený len pre kontá firiem.',
+                },
+                status=403,
+            )
 
         if not user.is_active:
             return Response({'error': 'inactive_user'}, status=403)

@@ -11,8 +11,6 @@ import { Button } from "@/shared/components/button";
 import { RoleType } from "@/shared/types/components/button/RoleTypes";
 
 export default function LoginForm() {
-  const oauthClientId = process.env.NEXT_PUBLIC_OAUTH_CLIENT_ID || "test-client-123";
-  const oauthClientSecret = process.env.NEXT_PUBLIC_OAUTH_CLIENT_SECRET || "";
   const router = useRouter();
   const [userType, setUserType] = useState<RoleType>("student");
   const isStudent = userType === "student";
@@ -33,22 +31,18 @@ export default function LoginForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Odoslanie loginu cez OAuth password grant
+  // Odoslanie loginu - študenti vs firmy
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const endpoint = "/auth/oauth/token/";
-      const payload: Record<string, string> = {
-        grant_type: "password",
-        username: form.email,
+      const payload = {
+        email: form.email,
         password: form.password,
-        client_id: oauthClientId,
       };
-      if (oauthClientSecret) {
-        payload.client_secret = oauthClientSecret;
-      }
+
+      const endpoint = isStudent ? "/auth/login/" : "/auth/login/company/";
       const res = await axiosClient.post(endpoint, payload);
 
       console.log("Login úspešný:", res.data);

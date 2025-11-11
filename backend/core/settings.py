@@ -5,6 +5,17 @@ from datetime import timedelta
 
 load_dotenv()
 
+
+def env_bool(name: str, default: bool = False) -> bool:
+    """Helper for consistent boolean env parsing."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() in ('true', '1', 'yes', 'on')
+
+
+DJANGO_ENV = os.getenv('DJANGO_ENV', 'production').lower()
+
 # -----------------------------------------------------------------------------
 # ZÁKLAD
 # -----------------------------------------------------------------------------
@@ -13,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = 'users.User'
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-in-production')
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = env_bool('DEBUG', DJANGO_ENV != 'production')
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
