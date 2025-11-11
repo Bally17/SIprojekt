@@ -32,7 +32,7 @@ export default function LoginForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Odoslanie loginu - študenti vs firmy
+  // Odoslanie loginu - študenti vs firmy vs garanti
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -43,7 +43,11 @@ export default function LoginForm() {
         password: form.password,
       };
 
-      const endpoint = isStudent ? "/auth/login/" : "/auth/login/company/";
+      const endpoint = isStudent
+        ? "/auth/login/"
+        : isCompany
+          ? "/auth/login/company/"
+          : "/auth/login/garant/";
       const res = await axiosClient.post(endpoint, payload);
 
       console.log("Login úspešný:", res.data);
