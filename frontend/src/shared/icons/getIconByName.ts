@@ -28,7 +28,7 @@ import {
   Pencil,
 } from "lucide-react";
 import IconName from "./iconName";
-import { IconType } from "../types/icons/iconTypes";
+import { IconType } from "../types/propsDataType/icons/iconTypes";
 
 const iconMap = {
   download: Download,

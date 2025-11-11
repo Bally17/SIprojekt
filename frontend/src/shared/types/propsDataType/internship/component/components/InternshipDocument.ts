@@ -1,4 +1,4 @@
-export interface InternshipDocument {
+export default interface InternshipDocument {
   id: number;
   typ_dokumentu: string;
   subor_url?: string | null;

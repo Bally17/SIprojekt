@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import axiosClient from "@/lib/axiosClient";
 import { useRouter } from "next/navigation";
-import { Button } from "@/shared/components/button";
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import axiosClient from "@lib/axiosClient";
 
 type ChangePasswordFormProps = {
   onSubmit?: (payload: {
@@ -23,7 +23,10 @@ type FormState = {
   newPasswordConfirm: string;
 };
 
-export default function ChangePasswordForm({ onSubmit, loading = false }: ChangePasswordFormProps) {
+export default function ChangePasswordForm({
+  onSubmit,
+  loading = false,
+}: Readonly<ChangePasswordFormProps>) {
   const { msgs } = useLocalization();
   const router = useRouter();
   const [form, setForm] = useState<FormState>({

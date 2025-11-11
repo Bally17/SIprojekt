@@ -1,6 +1,6 @@
-import Icon from "@/shared/icons";
+import { Button } from "@components/button";
+import Icon from "@icons/index";
 import React from "react";
-import { Button } from "../../button";
 
 export type SystemNotificationVariant = "success" | "info" | "warning";
 

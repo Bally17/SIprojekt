@@ -1,6 +1,7 @@
 "use client";
-import { useLocalization } from "@/shared/i18n/client";
-import Icon from "@/shared/icons";
+
+import { useLocalization } from "@i18n/client";
+import Icon from "@icons/index";
 
 export default function HowItWorks() {
   const { msgs } = useLocalization();

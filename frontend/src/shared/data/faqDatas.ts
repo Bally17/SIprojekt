@@ -1,4 +1,4 @@
-import type { FaqData } from "@data_types/faqTypes";
+import { FaqData } from "@type/props/common/globalTypes";
 
 export const faqDatas: FaqData[] = [
   {

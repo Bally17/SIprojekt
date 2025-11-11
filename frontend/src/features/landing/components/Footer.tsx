@@ -1,5 +1,6 @@
 "use client";
-import { useLocalization } from "@/shared/i18n/client";
+
+import { useLocalization } from "@i18n/client";
 
 export default function Footer() {
   const { msgs } = useLocalization();

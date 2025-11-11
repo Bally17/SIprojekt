@@ -1,13 +1,14 @@
 "use client";
-import StudentInternshipsDashboard from "@/features/student/StudentInternshipsDashboard";
-import { useLocalization } from "@/shared/i18n/client";
-import { Card } from "@/shared/components/sections";
+
+import { Card } from "@components/sections";
+import { StudentDashboard } from "@features/student";
+import { useLocalization } from "@i18n/client";
 
 export default function CompanyInternshipsPage() {
   const { msgs } = useLocalization();
   return (
     <Card title={msgs.common.internships.my} subtitle={msgs.common.internships.manage}>
-      <StudentInternshipsDashboard />
+      <StudentDashboard />
     </Card>
   );
 }

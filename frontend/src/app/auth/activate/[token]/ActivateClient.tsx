@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axiosClient from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import axiosClient from "@lib/axiosClient";
 
 type Props = { token: string };
 
-export default function ActivateClient({ token }: Props) {
+export default function ActivateClient({ token }: Readonly<Props>) {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");

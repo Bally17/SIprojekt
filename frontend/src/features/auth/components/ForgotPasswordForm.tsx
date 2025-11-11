@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import axiosClient from "@lib/axiosClient";
 import { useState } from "react";
-import axiosClient from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import { Button } from "@/shared/components/button";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");

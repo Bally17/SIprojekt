@@ -1,4 +1,4 @@
-import { Semester, Stav } from "@/shared/types/internship/components/StateInternship";
+import { Semester, Stav } from "@type/props/internship";
 
 export type TableFilters = {
   rok?: number | string;

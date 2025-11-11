@@ -1,7 +1,8 @@
 "use client";
-import { faqDatas } from "@/shared/data/faqDatas";
-import { useLocalization } from "@/shared/i18n/client";
-import { AcordeonComponent } from "@/shared/components/acordeon";
+
+import { AcordeonComponent } from "@components/acordeon";
+import { faqDatas } from "@data/faqDatas";
+import { useLocalization } from "@i18n/client";
 
 export default function FAQSection() {
   const { msgs } = useLocalization();

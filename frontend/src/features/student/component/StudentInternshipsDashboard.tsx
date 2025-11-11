@@ -1,20 +1,19 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import axiosClient from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import Icon from "@/shared/icons";
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { Select } from "@components/select";
+import { useLocalization } from "@i18n/client";
+import Icon from "@icons/index";
+import axiosClient from "@lib/axiosClient";
 import {
+  Internship,
+  InternshipDocument,
+  STAV_BADGE_CLASS,
   Semester,
   SEMESTER_OPTIONS,
-  Stav,
-  STAV_BADGE_CLASS,
-} from "@/shared/types/internship/components/StateInternship";
-import type { Internship } from "@/shared/types/internship/internship";
-import type { InternshipDocument } from "@/shared/types/internship/components/InternshipDocument";
-import { Select } from "@/shared/components/select";
-import { Button } from "@/shared/components/button";
+} from "@type/props/internship";
+import { useState, useCallback, useEffect } from "react";
 
 type Company = { id: number; nazov: string; adresa?: string | null };
 

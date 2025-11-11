@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import type { ReactNode } from "react";
-import { getMessages, type Locale } from "@i18n/getMessages";
+import { getMessages } from "@i18n/getMessages";
 import { LocalizationProvider } from "@i18n/client";
-import { SystemNotificationsProvider } from "@/shared/components/notifications";
+import { SystemNotificationsProvider } from "@components/notifications";
+import { Locale } from "@type/props/common/globalTypes";
 
 export const metadata: Metadata = {
   title: "Praxy – správa odbornej praxe jednoducho",

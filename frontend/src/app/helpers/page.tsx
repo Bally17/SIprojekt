@@ -1,11 +1,12 @@
 "use client";
-import Icon from "@/shared/icons";
-import { ICON_NAMES } from "@/shared/icons/getIconByName";
-import { useSystemNotifications } from "@/shared/components/notifications";
 import { useState } from "react";
-import { AcordeonComponent } from "@/shared/components/acordeon";
-import { FaqData } from "@/shared/types/faqTypes";
-import { Button } from "@/shared/components/button";
+
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { FaqData } from "@type/props/common/globalTypes";
+import { AcordeonComponent } from "@components/acordeon";
+import Icon from "@icons/index";
+import { ICON_NAMES } from "@icons/getIconByName";
 
 export default function Helpers() {
   const { success, warning } = useSystemNotifications();

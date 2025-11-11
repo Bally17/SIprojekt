@@ -1,8 +1,7 @@
-import { Internship } from "../../internship/internship";
+import { Action } from "@type/props/common/globalTypes";
+import { Internship } from "@type/props/internship";
 import { TableFilters } from "./components/TableFilters";
 import { TableNameValues } from "./components/TableNameValues";
-
-export type Action = "confirm" | "reject";
 
 interface TableProps {
   name: TableNameValues;

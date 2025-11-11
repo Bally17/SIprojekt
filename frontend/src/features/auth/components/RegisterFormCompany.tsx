@@ -1,10 +1,10 @@
 "use client";
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import axiosClient from "@lib/axiosClient";
 import { useState } from "react";
 // axiosClient: shared inštancia s baseURL z NEXT_PUBLIC_API_URL (napr. http://localhost:8000/api)
-import axiosClient from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import { Button } from "@/shared/components/button";
 
 export default function RegisterFormCompany() {
   // Lokálny stav formulára (controlled inputs)

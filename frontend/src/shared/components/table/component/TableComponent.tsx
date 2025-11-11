@@ -1,18 +1,19 @@
-import { useLocalization } from "@/shared/i18n/client";
-import TableProps, { Action } from "@/shared/types/components/table/TableProps";
-import { useLoadTableData } from "@/shared/utils/actions";
-import React, { FC, useState } from "react";
-import { Button } from "../../button";
-import { InternshipDocument } from "@/shared/types/internship/components/InternshipDocument";
-import Select from "../../select/component/SelectComponent";
+import { Button } from "@components/button";
+import { Select } from "@components/select";
+import { useLocalization } from "@i18n/client";
+import { Action } from "@type/props/common/globalTypes";
 import {
+  Semester,
+  isSemester,
+  Stav,
+  isStav,
   SEMESTER_OPTIONS,
   STAV_OPTIONS,
-  type Semester,
-  type Stav,
-  isSemester,
-  isStav,
-} from "@/shared/types/internship/components/StateInternship";
+  InternshipDocument,
+} from "@type/props/internship";
+import { TableProps } from "@type/props/table";
+import useLoadTableData from "@utils/actions";
+import { FC, useState } from "react";
 
 const buildMediaUrl = (path: string) => {
   const backend = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(

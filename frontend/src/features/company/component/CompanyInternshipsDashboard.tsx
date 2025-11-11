@@ -1,18 +1,15 @@
 "use client";
 
+import { useSystemNotifications } from "@components/notifications";
+import { Table } from "@components/table";
+import { useLocalization } from "@i18n/client";
+import axiosClient from "@lib/axiosClient";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
-import axiosClient from "@/lib/axiosClient";
-import PendingInternships from "@/features/company/components/PendingInternships";
-import { useLocalization } from "@/shared/i18n/client";
-import { Table } from "@/shared/components/table";
-import { TABLE_NAMES } from "@/constants/Table";
-import { Internship } from "@/shared/types/internship/internship";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import {
-  SEMESTER_OPTIONS,
-  STAV_OPTIONS,
-} from "@/shared/types/internship/components/StateInternship";
-import { TableFilters } from "@/shared/types/components/table/components/TableFilters";
+import { TABLE_NAMES } from "src/constants/Table";
+import PendingInternships from "./components/PendingInternships";
+import { Internship, SEMESTER_OPTIONS, STAV_OPTIONS } from "@type/props/internship";
+import { TableFilters } from "@type/props/table";
 
 type CompanyInternshipsResponse = {
   firma: {

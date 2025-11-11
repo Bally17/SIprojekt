@@ -1,4 +1,4 @@
-import { RoleDataType, RoleType } from "@/shared/types/roleTypes";
+import { RoleType, RoleDataType } from "@type/props/roles/roleTypes";
 
 export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
   student: [
@@ -7,7 +7,7 @@ export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
     { a: "Nahlásiť zmluvu (podmieň. pri stave Schválená)", b: "Zmluva s praxí (PDF) — upload" },
     { a: "Nahrať výkaz praxe (potvrdenie firmy)", b: "Výkaz praxe (nahranie)" },
   ],
-  firma: [
+  company: [
     { a: "Schválenie dohody o praxi", b: "Podpis / potvrdenie" },
     { a: "Overenie výkazu praxe", b: "Komentár a potvrdenie" },
     { a: "Export reportov", b: "CSV / PDF" },

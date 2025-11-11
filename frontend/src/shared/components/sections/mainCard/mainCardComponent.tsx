@@ -1,7 +1,7 @@
 "use client";
 
+import { DashboardNavbar } from "@components/navbar";
 import React from "react";
-import DashboardNavbar from "@/shared/components/navbar/dashboard/DashboardNavbar";
 
 type Props = {
   title: string;

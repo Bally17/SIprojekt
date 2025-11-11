@@ -1,13 +1,13 @@
 "use client";
 
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { Table } from "@components/table";
+import { useLocalization } from "@i18n/client";
+import axiosClient from "@lib/axiosClient";
+import { Internship } from "@type/props/internship";
 import { useEffect, useState, useCallback } from "react";
-import axiosClient from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { Table } from "@/shared/components/table";
-import { TABLE_NAMES } from "@/constants/Table";
-import { Internship } from "@/shared/types/internship/internship";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import { Button } from "@/shared/components/button";
+import { TABLE_NAMES } from "src/constants/Table";
 
 type PendingResponse = {
   results?: {

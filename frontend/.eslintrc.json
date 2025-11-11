@@ -18,6 +18,41 @@
     "coverage/"
   ],
   "rules": {
-    "import/no-cycle": ["error", { "ignoreExternal": true, "maxDepth": 10 }]
+    "import/no-cycle": ["error", { "ignoreExternal": true, "maxDepth": 10 }],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@features/*/*",
+              "@features/*/**",
+              "@lib/*/*",
+              "@lib/*/**",
+              "@components/*/*",
+              "@components/*/**",
+              "@data/*/*",
+              "@data/*/**",
+              "@i18n/*/*",
+              "@i18n/*/**",
+              "@table_config/*/*",
+              "@table_config/*/**",
+              "@type/backend/*/*",
+              "@type/backend/*/**",
+              "@type/props/*/*/*",
+              "@type/props/*/*/**",
+              "@utils/*/*",
+              "@utils/*/**"
+            ],
+            "message": "Importuj cez barrel (t.j. <alias>/<modul>), nie priamo zo súborov."
+          }
+        ]
+      }
+    ]
+  },
+  "settings": {
+    "import/resolver": {
+      "typescript": { "project": "tsconfig.json" }
+    }
   }
 }

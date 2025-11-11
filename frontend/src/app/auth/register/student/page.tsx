@@ -1,5 +1,4 @@
-import RegisterFormStudent from "@/features/auth/components/RegisterFormStudent";
-import { BackButton } from "@features/auth";
+import { BackButton, RegisterFormStudent } from "@features/auth";
 import { Footer, Navbar } from "@features/landing";
 
 export default function RegisterStudentPage() {

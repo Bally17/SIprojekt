@@ -11,7 +11,7 @@ import {
 import SystemNotificationStack, {
   type NotificationStackItem,
 } from "./component/SystemNotificationStack";
-import { type SystemNotificationVariant } from "./component/SystemNotification";
+import type { SystemNotificationVariant } from "./component/SystemNotification";
 
 type ToastInput = Omit<NotificationStackItem, "id"> & {
   id?: NotificationStackItem["id"];
@@ -34,7 +34,7 @@ const withVariant = (
   notification: Omit<ToastInput, "variant">,
 ): ToastInput => ({ ...notification, variant });
 
-export function SystemNotificationsProvider({ children }: PropsWithChildren) {
+export function SystemNotificationsProvider({ children }: Readonly<PropsWithChildren>) {
   const [items, setItems] = useState<NotificationStackItem[]>([]);
 
   const dismiss = useCallback((id: NotificationStackItem["id"]) => {
