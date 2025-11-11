@@ -11,6 +11,7 @@ urlpatterns = [
     # login
     path('login/', views.login_view, name='login'),
     path('login/company/', views.company_login_view, name='company-login'),
+    path('login/garant/', views.garant_login_view, name='garant-login'),
     path('google/', views.google_auth, name='google-auth'),
     path('profile/', views.profile, name='profile'),
     path('logout/', views.logout_view, name='logout'),

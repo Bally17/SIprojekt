@@ -490,6 +490,32 @@ def company_login_view(request):
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def garant_login_view(request):
+    """Email/password login for garants"""
+    serializer = LoginSerializer(data=request.data)
+
+    if serializer.is_valid():
+        user = serializer.validated_data['user']
+
+        if user.rola != 'garant':
+            return Response(
+                {
+                    'error': 'invalid_role',
+                    'message': 'Garant login je určený len pre kontá garantov.',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not user.is_active:
+            return Response({'error': 'inactive_user'}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(_build_login_response(user), status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def google_auth(request):
