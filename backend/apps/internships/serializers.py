@@ -1,7 +1,9 @@
+from django.db import IntegrityError
 from rest_framework import serializers
-from .models import Prax, HistoriaStavovPraxe
+
 from apps.documents.models import Dokument
 from apps.documents.serializers import DocumentSerializer
+from .models import Prax, HistoriaStavovPraxe
 
 
 class InternshipSerializer(serializers.ModelSerializer):
@@ -54,3 +56,88 @@ class ExternalDefenseSerializer(serializers.Serializer):
         if value <= 0:
             raise serializers.ValidationError("prax_id musí byť kladné číslo.")
         return value
+
+
+class GarantInternshipIdentitySerializer(serializers.ModelSerializer):
+    student_id = serializers.IntegerField(source="student.id", read_only=True)
+    student_email = serializers.EmailField(source="student.email", read_only=True)
+    student_first_name = serializers.CharField(
+        source="student.meno", required=False, allow_blank=True
+    )
+    student_last_name = serializers.CharField(
+        source="student.priezvisko", required=False, allow_blank=True
+    )
+    student_full_name = serializers.SerializerMethodField()
+    company_id = serializers.IntegerField(source="firma.id", read_only=True)
+    company_name = serializers.CharField(source="firma.nazov", required=False)
+
+    class Meta:
+        model = Prax
+        fields = [
+            "id",
+            "student_id",
+            "student_email",
+            "student_first_name",
+            "student_last_name",
+            "student_full_name",
+            "company_id",
+            "company_name",
+        ]
+        read_only_fields = [
+            "id",
+            "student_id",
+            "student_email",
+            "student_full_name",
+            "company_id",
+        ]
+
+    def validate(self, attrs):
+        if not attrs.get("student") and not attrs.get("firma"):
+            raise serializers.ValidationError(
+                "Musíte zadať aspoň jedno pole (študent alebo firma) na aktualizáciu."
+            )
+        return super().validate(attrs)
+
+    def get_student_full_name(self, obj):
+        student = getattr(obj, "student", None)
+        if not student:
+            return None
+        return f"{student.meno or ''} {student.priezvisko or ''}".strip() or student.email
+
+    def update(self, instance, validated_data):
+        student_payload = validated_data.pop("student", None)
+        firma_payload = validated_data.pop("firma", None)
+
+        if student_payload and instance.student:
+            student = instance.student
+            updated_fields = []
+
+            if "meno" in student_payload:
+                student.meno = student_payload["meno"]
+                updated_fields.append("meno")
+
+            if "priezvisko" in student_payload:
+                student.priezvisko = student_payload["priezvisko"]
+                updated_fields.append("priezvisko")
+
+            if updated_fields:
+                student.save(update_fields=updated_fields)
+
+        if firma_payload and instance.firma:
+            firma = instance.firma
+            if "nazov" in firma_payload:
+                new_name = firma_payload["nazov"].strip()
+                if not new_name:
+                    raise serializers.ValidationError(
+                        {"company_name": "Názov firmy nesmie byť prázdny."}
+                    )
+                firma.nazov = new_name
+                try:
+                    firma.save(update_fields=["nazov"])
+                except IntegrityError:
+                    raise serializers.ValidationError(
+                        {"company_name": "Firma s týmto názvom už existuje."}
+                    )
+
+        instance.refresh_from_db(fields=["student", "firma"])
+        return instance
