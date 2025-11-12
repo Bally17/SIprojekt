@@ -9,7 +9,6 @@ import {
   STAV_BADGE_CLASS,
   STAV_LABEL,
   STAV_OPTIONS,
-  type Semester,
   type Stav,
 } from "@/shared/types/internship/components/StateInternship";
 import type { Internship } from "@/shared/types/internship/internship";
@@ -29,13 +28,51 @@ type Filters = typeof DEFAULT_FILTERS;
 type GarantInternship = Internship;
 
 type EditFormState = {
-  rok: string;
-  semester: Semester;
   datum_zaciatku: string;
   datum_konca: string;
   stav: Stav;
-  student: string;
-  firma: string;
+  studentId: string;
+  companyId: string;
+  statusNote: string;
+};
+
+type StudentOption = {
+  id: number;
+  meno?: string | null;
+  priezvisko?: string | null;
+  email?: string | null;
+  studijny_program?: string | null;
+};
+
+type CompanyOption = {
+  id: number;
+  nazov: string;
+  kontakt_meno?: string | null;
+  kontakt_email?: string | null;
+};
+
+const getStudentLabel = (
+  data: { meno?: string | null; priezvisko?: string | null; email?: string | null } | null,
+  fallback?: number | string | null,
+) => {
+  if (!data && !fallback) return "";
+  const name = `${data?.meno ?? ""} ${data?.priezvisko ?? ""}`.trim();
+  if (name.length) return name;
+  if (data?.email) return data.email;
+  if (fallback) return `#${fallback}`;
+  return "";
+};
+
+const getCompanyLabel = (
+  data: { nazov?: string | null } | null,
+  fallback?: number | string | null,
+) => {
+  if (!data && !fallback) return "";
+  if (data?.nazov) return data.nazov;
+  if (typeof fallback !== "undefined" && fallback !== null) {
+    return `#${fallback}`;
+  }
+  return "";
 };
 
 export default function GarantInternshipsDashboard() {
@@ -55,6 +92,14 @@ export default function GarantInternshipsDashboard() {
   const [editForm, setEditForm] = useState<EditFormState | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [companySearch, setCompanySearch] = useState("");
+  const [studentOptions, setStudentOptions] = useState<StudentOption[]>([]);
+  const [companyOptions, setCompanyOptions] = useState<CompanyOption[]>([]);
+  const [studentSearchLoading, setStudentSearchLoading] = useState(false);
+  const [companySearchLoading, setCompanySearchLoading] = useState(false);
+  const [selectedStudentLabel, setSelectedStudentLabel] = useState("");
+  const [selectedCompanyLabel, setSelectedCompanyLabel] = useState("");
 
   // Načíta všetky praxe podľa aktuálne aplikovaných filtrov
   const fetchInternships = useCallback(async () => {
@@ -67,7 +112,7 @@ export default function GarantInternshipsDashboard() {
           .map(([key, value]) => [key, value]),
       );
 
-      const response = await axiosClient.get("/internships/internships/", { params });
+      const response = await axiosClient.get("/internships/garant/internships/", { params });
       const rawPayload =
         response.data?.results ??
         response.data?.internships ??
@@ -90,6 +135,74 @@ export default function GarantInternshipsDashboard() {
   useEffect(() => {
     fetchInternships();
   }, [fetchInternships]);
+
+  useEffect(() => {
+    if (!editingInternship) return;
+    const query = studentSearch.trim();
+    if (query.length < 2) {
+      setStudentOptions([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      setStudentSearchLoading(true);
+      axiosClient
+        .get("/users/students/search/", {
+          params: { q: query },
+          signal: controller.signal,
+        })
+        .then((response) => {
+          const results = Array.isArray(response.data?.results) ? response.data.results : [];
+          setStudentOptions(results);
+        })
+        .catch(() => {
+          setStudentOptions([]);
+        })
+        .finally(() => {
+          setStudentSearchLoading(false);
+        });
+    }, 300);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [editingInternship, studentSearch]);
+
+  useEffect(() => {
+    if (!editingInternship) return;
+    const query = companySearch.trim();
+    if (query.length < 2) {
+      setCompanyOptions([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      setCompanySearchLoading(true);
+      axiosClient
+        .get("/companies/search/", {
+          params: { q: query },
+          signal: controller.signal,
+        })
+        .then((response) => {
+          const results = Array.isArray(response.data?.results) ? response.data.results : [];
+          setCompanyOptions(results);
+        })
+        .catch(() => {
+          setCompanyOptions([]);
+        })
+        .finally(() => {
+          setCompanySearchLoading(false);
+        });
+    }, 300);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [editingInternship, companySearch]);
 
   // Lokálne ovládanie filtrov vo formulári (hodnoty sa aplikujú až po potvrdení)
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -139,14 +252,23 @@ export default function GarantInternshipsDashboard() {
   const openEditModal = (internship: GarantInternship) => {
     setEditingInternship(internship);
     setEditForm({
-      rok: String(internship.rok),
-      semester: internship.semester,
       datum_zaciatku: internship.datum_zaciatku,
       datum_konca: internship.datum_konca,
       stav: internship.stav,
-      student: String(internship.student),
-      firma: internship.firma ? String(internship.firma) : "",
+      studentId: internship.student ? String(internship.student) : "",
+      companyId: internship.firma ? String(internship.firma) : "",
+      statusNote: "",
     });
+    const studentLabel =
+      internship.student_full_name || internship.student_email || (internship.student ? `#${internship.student}` : "");
+    const companyLabel =
+      internship.company_name || (typeof internship.firma === "number" ? `#${internship.firma}` : "");
+    setStudentSearch(studentLabel);
+    setCompanySearch(companyLabel);
+    setSelectedStudentLabel(studentLabel);
+    setSelectedCompanyLabel(companyLabel);
+    setStudentOptions([]);
+    setCompanyOptions([]);
     setEditError(null);
   };
 
@@ -155,22 +277,49 @@ export default function GarantInternshipsDashboard() {
     setEditForm(null);
     setEditSaving(false);
     setEditError(null);
+    setStudentOptions([]);
+    setCompanyOptions([]);
+    setStudentSearch("");
+    setCompanySearch("");
+    setSelectedStudentLabel("");
+    setSelectedCompanyLabel("");
   };
 
   const handleEditFieldChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
     setEditForm((prev) => {
       if (!prev) return prev;
-      if (name === "semester") {
-        return { ...prev, semester: value as Semester };
-      }
       if (name === "stav") {
         return { ...prev, stav: value as Stav };
       }
       return { ...prev, [name]: value } as EditFormState;
     });
+  };
+
+  const handleStudentSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setStudentSearch(event.target.value);
+  };
+
+  const handleCompanySearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanySearch(event.target.value);
+  };
+
+  const handleSelectStudent = (option: StudentOption) => {
+    setEditForm((prev) => (prev ? { ...prev, studentId: String(option.id) } : prev));
+    const label = getStudentLabel(option, option.id);
+    setSelectedStudentLabel(label);
+    setStudentSearch(label);
+    setStudentOptions([]);
+  };
+
+  const handleSelectCompany = (option: CompanyOption) => {
+    setEditForm((prev) => (prev ? { ...prev, companyId: String(option.id) } : prev));
+    const label = getCompanyLabel(option, option.id);
+    setSelectedCompanyLabel(label);
+    setCompanySearch(label);
+    setCompanyOptions([]);
   };
 
   // PATCH na backend – prepíše všetky editované atribúty (vrátane študenta/firmy) a obnoví tabuľku.
@@ -182,29 +331,47 @@ export default function GarantInternshipsDashboard() {
     setEditError(null);
 
     const parseNumber = (value: string, fallback: number) => {
+      if (!value.trim()) return fallback;
       const parsed = Number(value);
       return Number.isNaN(parsed) ? fallback : parsed;
     };
 
-    const payload: Record<string, unknown> = {
-      rok: parseNumber(editForm.rok, editingInternship.rok),
-      semester: editForm.semester,
-      datum_zaciatku: editForm.datum_zaciatku,
-      datum_konca: editForm.datum_konca,
-      stav: editForm.stav,
-      student: parseNumber(editForm.student, editingInternship.student),
-    };
+    const payload: Record<string, unknown> = {};
 
-    const firmaValue = editForm.firma.trim().length
-      ? parseNumber(editForm.firma, editingInternship.firma ?? 0)
-      : editingInternship.firma;
+    const studentValue = parseNumber(editForm.studentId, editingInternship.student);
+    if (!Number.isNaN(studentValue) && studentValue > 0) {
+      payload.student_id = studentValue;
+    }
 
-    if (typeof firmaValue === "number" && !Number.isNaN(firmaValue) && firmaValue > 0) {
-      payload.firma = firmaValue;
+    const companyValue = editForm.companyId.trim().length
+      ? parseNumber(editForm.companyId, editingInternship.firma ?? 0)
+      : editingInternship.firma ?? 0;
+    if (!Number.isNaN(companyValue) && companyValue > 0) {
+      payload.firma_id = companyValue;
+    }
+
+    if (editForm.datum_zaciatku) {
+      payload.datum_zaciatku = editForm.datum_zaciatku;
+    }
+    if (editForm.datum_konca) {
+      payload.datum_konca = editForm.datum_konca;
+    }
+    if (editForm.stav) {
+      payload.stav = editForm.stav;
+    }
+    const note = editForm.statusNote.trim();
+    if (note.length) {
+      payload.status_note = note;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      setEditError(msgs.common.guarant.edit.nothingToUpdate);
+      setEditSaving(false);
+      return;
     }
 
     try {
-      await axiosClient.patch(`/internships/internships/${editingInternship.id}/`, payload);
+      await axiosClient.patch(`/internships/garant/internships/${editingInternship.id}/`, payload);
       notifySuccess({
         title: msgs.common.guarant.edit.title,
         description: msgs.common.guarant.edit.success,
@@ -467,49 +634,117 @@ export default function GarantInternshipsDashboard() {
             <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-400">
               {msgs.common.guarant.edit.legend}
             </p>
+            <div className="mt-3 grid grid-cols-1 gap-4 text-sm text-ink-600 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold uppercase text-ink-500">
+                  {msgs.common.guarant.filters.year}
+                </p>
+                <p className="mt-1 font-medium text-primary-900">{editingInternship.rok}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-ink-500">
+                  {msgs.common.date.semester}
+                </p>
+                <p className="mt-1 font-medium text-primary-900">
+                  {SEMESTER_LABEL[editingInternship.semester] ?? editingInternship.semester}
+                </p>
+              </div>
+            </div>
             {editError ? (
               <div className="mt-4 rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {editError}
               </div>
             ) : null}
-            <form className="mt-4 space-y-4" onSubmit={handleSubmitEdit}>
+            <form className="mt-4 space-y-6" onSubmit={handleSubmitEdit}>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-ink-500">
+                    {msgs.common.guarant.edit.studentSearch}
+                  </label>
+                  <input
+                    type="text"
+                    name="studentSearch"
+                    value={studentSearch}
+                    placeholder={msgs.common.guarant.edit.studentSearchPlaceholder}
+                    onChange={handleStudentSearchChange}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
+                  />
+                  <p className="mt-1 text-xs text-ink-400">{msgs.common.guarant.edit.searchHint}</p>
+                  {studentSearchLoading ? (
+                    <p className="mt-2 text-xs text-ink-500">{msgs.common.loading.loading}</p>
+                  ) : null}
+                  {studentOptions.length ? (
+                    <ul className="mt-2 max-h-40 divide-y divide-gray-100 overflow-y-auto rounded-md border border-gray-200">
+                      {studentOptions.map((option) => (
+                        <li key={option.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectStudent(option)}
+                            className="flex w-full flex-col items-start gap-1 px-3 py-2 text-left text-sm transition hover:bg-primary-50"
+                          >
+                            <span className="font-medium text-primary-900">
+                              {getStudentLabel(option, option.id)}
+                            </span>
+                            <span className="text-xs text-ink-500">
+                              {[option.email, option.studijny_program].filter(Boolean).join(" • ")}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {selectedStudentLabel ? (
+                    <p className="mt-2 text-xs text-ink-500">
+                      {msgs.common.guarant.edit.studentSelected}{" "}
+                      <span className="font-semibold text-primary-900">{selectedStudentLabel}</span>
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase text-ink-500">
+                    {msgs.common.guarant.edit.companySearch}
+                  </label>
+                  <input
+                    type="text"
+                    name="companySearch"
+                    value={companySearch}
+                    placeholder={msgs.common.guarant.edit.companySearchPlaceholder}
+                    onChange={handleCompanySearchChange}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
+                  />
+                  <p className="mt-1 text-xs text-ink-400">{msgs.common.guarant.edit.searchHint}</p>
+                  {companySearchLoading ? (
+                    <p className="mt-2 text-xs text-ink-500">{msgs.common.loading.loading}</p>
+                  ) : null}
+                  {companyOptions.length ? (
+                    <ul className="mt-2 max-h-40 divide-y divide-gray-100 overflow-y-auto rounded-md border border-gray-200">
+                      {companyOptions.map((option) => (
+                        <li key={option.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectCompany(option)}
+                            className="flex w-full flex-col items-start gap-1 px-3 py-2 text-left text-sm transition hover:bg-primary-50"
+                          >
+                            <span className="font-medium text-primary-900">
+                              {option.nazov || `#${option.id}`}
+                            </span>
+                            <span className="text-xs text-ink-500">
+                              {[option.kontakt_meno, option.kontakt_email].filter(Boolean).join(" • ")}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {selectedCompanyLabel ? (
+                    <p className="mt-2 text-xs text-ink-500">
+                      {msgs.common.guarant.edit.companySelected}{" "}
+                      <span className="font-semibold text-primary-900">{selectedCompanyLabel}</span>
+                    </p>
+                  ) : null}
+                </div>
+              </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="text-xs font-semibold uppercase text-ink-500">
-                    {msgs.common.guarant.filters.year}
-                  </label>
-                  <input
-                    type="number"
-                    name="rok"
-                    value={editForm.rok}
-                    onChange={handleEditFieldChange}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold uppercase text-ink-500">
-                    {msgs.common.guarant.edit.studentId}
-                  </label>
-                  <input
-                    type="number"
-                    name="student"
-                    value={editForm.student}
-                    onChange={handleEditFieldChange}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold uppercase text-ink-500">
-                    {msgs.common.guarant.edit.companyId}
-                  </label>
-                  <input
-                    type="number"
-                    name="firma"
-                    value={editForm.firma}
-                    onChange={handleEditFieldChange}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
-                  />
-                </div>
                 <div>
                   <label className="text-xs font-semibold uppercase text-ink-500">
                     {msgs.common.guarant.edit.startDate}
@@ -551,24 +786,19 @@ export default function GarantInternshipsDashboard() {
                     ))}
                   </select>
                 </div>
-                <div>
+                <div className="sm:col-span-2">
                   <label className="text-xs font-semibold uppercase text-ink-500">
-                    {msgs.common.date.semester}
+                    {msgs.common.guarant.edit.statusNote}
                   </label>
-                  <select
-                    name="semester"
-                    value={editForm.semester}
+                  <textarea
+                    name="statusNote"
+                    value={editForm.statusNote}
                     onChange={handleEditFieldChange}
+                    placeholder={msgs.common.guarant.edit.statusNotePlaceholder}
+                    rows={3}
                     className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
-                  >
-                    {(Object.entries(SEMESTER_LABEL) as [Semester, string][]).map(
-                      ([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ),
-                    )}
-                  </select>
+                  />
+                  <p className="mt-1 text-xs text-ink-400">{msgs.common.guarant.edit.statusNoteHint}</p>
                 </div>
               </div>
               <div className="flex justify-end gap-3">

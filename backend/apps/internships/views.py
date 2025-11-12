@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,17 +7,32 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
  # ak existuje
 
-from apps.internships.models import HistoriaStavovPraxe  # pridaj model histórie
 from apps.companies.models import Firma
 from apps.documents.models import Dokument
 from apps.documents.utils.pdf_generator import generate_dohoda_pdf
 from apps.documents.serializers import DocumentSerializer
 from django.db import transaction
 
+from django.db.models import Q
+
 from .models import Prax, HistoriaStavovPraxe
-from .serializers import InternshipSerializer, InternshipHistorySerializer, ExternalDefenseSerializer
+from .serializers import (
+    InternshipSerializer,
+    InternshipHistorySerializer,
+    ExternalDefenseSerializer,
+    GarantInternshipUpdateSerializer,
+)
+from .permissions import IsGarantUser
 from apps.users.serializers import UserSerializer, StudentProfileSerializer
 
+GARANT_LIST_FILTERS = [
+    openapi.Parameter('rok', openapi.IN_QUERY, description="Filtruj podľa roku", type=openapi.TYPE_INTEGER),
+    openapi.Parameter('semester', openapi.IN_QUERY, description="Filtruj podľa semestra (zimny/letny)", type=openapi.TYPE_STRING),
+    openapi.Parameter('stav', openapi.IN_QUERY, description="Filtruj podľa stavu praxe", type=openapi.TYPE_STRING),
+    openapi.Parameter('student_id', openapi.IN_QUERY, description="ID študenta", type=openapi.TYPE_INTEGER),
+    openapi.Parameter('firma_id', openapi.IN_QUERY, description="ID firmy", type=openapi.TYPE_INTEGER),
+    openapi.Parameter('search', openapi.IN_QUERY, description="Fulltext v mene študenta alebo názve firmy", type=openapi.TYPE_STRING),
+]
 
 # 🔹 CRUD pre praxe
 class InternshipViewSet(viewsets.ModelViewSet):
@@ -32,6 +47,112 @@ class InternshipViewSet(viewsets.ModelViewSet):
 class InternshipHistoryViewSet(viewsets.ModelViewSet):
     queryset = HistoriaStavovPraxe.objects.all()
     serializer_class = InternshipHistorySerializer
+
+
+class GarantInternshipViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = (
+        Prax.objects.select_related("student", "student__studentprofil", "firma", "garant")
+        .all()
+        .order_by("-vytvorene_at")
+    )
+    permission_classes = [IsAuthenticated, IsGarantUser]
+    http_method_names = ["get", "patch", "put", "head", "options"]
+
+    def get_serializer_class(self):
+        if self.action in ("update", "partial_update"):
+            return GarantInternshipUpdateSerializer
+        return InternshipSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Garant: Zoznam všetkých praxí",
+        operation_description="Vráti stránkovaný zoznam praxí vrátane študenta, firmy a dokumentov.",
+        manual_parameters=GARANT_LIST_FILTERS,
+        responses={
+            200: openapi.Response("Paginated internships", InternshipSerializer(many=True)),
+            403: "Používateľ nemá rolu garant",
+        },
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Garant: Detail praxe",
+        responses={
+            200: openapi.Response("Detail praxe", InternshipSerializer),
+            404: "Prax neexistuje",
+        },
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        params = self.request.query_params
+
+        rok = params.get("rok")
+        semester = params.get("semester")
+        stav = params.get("stav")
+        student_id = params.get("student_id")
+        firma_id = params.get("firma_id")
+        search = params.get("search")
+
+        if rok:
+            queryset = queryset.filter(rok=rok)
+        if semester:
+            queryset = queryset.filter(semester__iexact=semester)
+        if stav:
+            queryset = queryset.filter(stav__iexact=stav)
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+        if firma_id:
+            queryset = queryset.filter(firma_id=firma_id)
+        if search:
+            queryset = queryset.filter(
+                Q(student__email__icontains=search)
+                | Q(student__meno__icontains=search)
+                | Q(student__priezvisko__icontains=search)
+                | Q(firma__nazov__icontains=search)
+            )
+
+        return queryset
+
+    @swagger_auto_schema(
+        operation_summary="Garant: Aktualizácia praxe",
+        request_body=GarantInternshipUpdateSerializer,
+        responses={
+            200: openapi.Response("Aktualizovaná prax", InternshipSerializer),
+            400: "Neplatné údaje",
+            404: "Prax neexistuje",
+        },
+    )
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        updated_instance = serializer.save()
+        read_serializer = InternshipSerializer(
+            updated_instance, context=self.get_serializer_context()
+        )
+        return Response(read_serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Garant: Čiastočná aktualizácia praxe",
+        request_body=GarantInternshipUpdateSerializer,
+        responses={
+            200: openapi.Response("Aktualizovaná prax", InternshipSerializer),
+            400: "Neplatné údaje",
+            404: "Prax neexistuje",
+        },
+    )
+    def partial_update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
 
 
 # 🔹 Študent získa prehľad o svojich praxiach
@@ -300,6 +421,17 @@ def create_internship(request):
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_201_CREATED)
 
+@swagger_auto_schema(
+    method="patch",
+    operation_summary="Firma potvrdí prax",
+    operation_description="Zmení stav praxe na `potvrdena` a pridá záznam do histórie.",
+    responses={
+        200: openapi.Response("Aktualizovaná prax", InternshipSerializer),
+        400: "Prax nie je v stave 'vytvorena'",
+        403: "Len firma môže potvrdiť prax",
+        404: "Prax neexistuje alebo nepatrí firme",
+    },
+)
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
 def company_confirm_internship(request, prax_id):
@@ -344,6 +476,17 @@ def company_confirm_internship(request, prax_id):
 
 
 
+@swagger_auto_schema(
+    method="patch",
+    operation_summary="Firma zamietne prax",
+    operation_description="Zmení stav praxe na `zamietnuta` a pridá záznam do histórie.",
+    responses={
+        200: openapi.Response("Aktualizovaná prax", InternshipSerializer),
+        400: "Prax nie je v stave 'vytvorena'",
+        403: "Len firma môže zamietnuť prax",
+        404: "Prax neexistuje alebo nepatrí firme",
+    },
+)
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
 def company_reject_internship(request, prax_id):

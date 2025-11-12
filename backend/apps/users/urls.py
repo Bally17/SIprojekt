@@ -10,4 +10,5 @@ router.register(r'garant-profiles', views.GarantProfileViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('students/search/', views.search_students, name='search_students'),
 ]
