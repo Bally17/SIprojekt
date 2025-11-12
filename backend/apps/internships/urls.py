@@ -5,6 +5,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'internships', views.InternshipViewSet)
 router.register(r'history', views.InternshipHistoryViewSet)
+router.register(r'garant/internships', views.GarantInternshipViewSet, basename='garant-internships')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -3,6 +3,8 @@ from rest_framework import serializers
 
 from apps.documents.models import Dokument
 from apps.documents.serializers import DocumentSerializer
+from apps.users.models import User
+from apps.companies.models import Firma
 from .models import Prax, HistoriaStavovPraxe
 
 
@@ -140,4 +142,72 @@ class GarantInternshipIdentitySerializer(serializers.ModelSerializer):
                     )
 
         instance.refresh_from_db(fields=["student", "firma"])
+        return instance
+
+
+class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
+    firma_id = serializers.PrimaryKeyRelatedField(
+        source="firma", queryset=Firma.objects.all(), required=False
+    )
+    student_id = serializers.PrimaryKeyRelatedField(
+        source="student",
+        queryset=User.objects.filter(rola="student"),
+        required=False,
+    )
+    status_note = serializers.CharField(
+        required=False, allow_blank=True, write_only=True, max_length=500
+    )
+
+    class Meta:
+        model = Prax
+        fields = [
+            "id",
+            "firma_id",
+            "student_id",
+            "datum_zaciatku",
+            "datum_konca",
+            "stav",
+            "status_note",
+        ]
+        read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        payload = {key: value for key, value in attrs.items() if key != "status_note"}
+        if not payload:
+            raise serializers.ValidationError(
+                "Musíte zadať aspoň jedno pole na aktualizáciu."
+            )
+
+        note = attrs.get("status_note", "").strip()
+        if note and "stav" not in attrs:
+            raise serializers.ValidationError(
+                {"status_note": "Poznámku je možné pridať len pri zmene stavu."}
+            )
+
+        start = attrs.get("datum_zaciatku") or getattr(self.instance, "datum_zaciatku", None)
+        end = attrs.get("datum_konca") or getattr(self.instance, "datum_konca", None)
+
+        if start and end and end < start:
+            raise serializers.ValidationError(
+                {"datum_konca": "Dátum ukončenia nemôže byť pred dátumom začiatku."}
+            )
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        status_note = validated_data.pop("status_note", "").strip()
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request else None
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        stav_updated = "stav" in validated_data
+
+        if user and getattr(user, "is_authenticated", False):
+            instance._changed_by = user
+        if status_note and stav_updated:
+            instance._status_change_note = status_note
+
+        instance.save()
         return instance
