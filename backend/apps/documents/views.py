@@ -76,20 +76,26 @@ class DocumentViewSet(viewsets.ModelViewSet):
         # upload -> B2
         object_name = upload_file_to_b2(file)
 
-        # vytvor NOVÚ verziu dokumentu (full history)
-        new_doc = Dokument.objects.create(
-            prax=prax,
-            typ_dokumentu=old_doc.typ_dokumentu,
-            subor_url=object_name,
-            nahrane_pouzivatel_id=user.id,
-            stav_dokumentu="nahrany",
+        # aktualizuj existujúci záznam (držanie histórie riešime neskôr)
+        old_doc.subor_url = object_name
+        old_doc.nahrane_pouzivatel_id = user.id
+        old_doc.stav_dokumentu = "nahrany"
+        old_doc.skontroloval = None
+        old_doc.skontrolovane_at = None
+        old_doc.save(
+            update_fields=[
+                "subor_url",
+                "nahrane_pouzivatel_id",
+                "stav_dokumentu",
+                "skontroloval",
+                "skontrolovane_at",
+                "zmenene_at",
+            ]
         )
 
-        # 🔔 Notifikácia: nový dokument na schválenie (firma + prípadne garant podľa service)
-        # Ak chceš rozlíšiť "opravený po soft rejecte", môžeš v service rozlíšiť podľa payloadu.
-        notify_document_uploaded(new_doc)
+        notify_document_uploaded(old_doc)
 
-        return Response(DocumentSerializer(new_doc).data, status=status.HTTP_201_CREATED)
+        return Response(DocumentSerializer(old_doc).data, status=status.HTTP_200_OK)
 
     # -------------------  COMPANY APPROVE/REJECT  -------------------
     @action(detail=True, methods=["post"], url_path="approve-company")
