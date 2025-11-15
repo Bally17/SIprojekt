@@ -15,6 +15,7 @@ import type { Internship } from "@/shared/types/internship/internship";
 import type { InternshipDocument } from "@/shared/types/internship/components/InternshipDocument";
 import { Select } from "@/shared/components/select";
 import { Button } from "@/shared/components/button";
+import DocumentUploadCard from "@/features/student/components/DocumentUploadCard";
 
 type Company = { id: number; nazov: string; adresa?: string | null };
 
@@ -126,27 +127,6 @@ export default function StudentDashboardPage() {
   };
 
   // Helper: link na dokument bez IIFE a bez ternárnikov
-  const renderDocLink = (p: InternshipWithRelations) => {
-    const firstDoc = p.documents?.find(
-      (d): d is InternshipDocument & { subor_url: string } =>
-        typeof d.subor_url === "string" && d.subor_url.length > 0,
-    );
-    if (!firstDoc) return null;
-
-    const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:8000";
-
-    return (
-      <a
-        href={`${base}/media/${firstDoc.subor_url}`}
-        download={`Dohoda_prax_${p.id}.pdf`}
-        className="mt-3 inline-flex items-center gap-2 text-cyan-600 hover:text-cyan-700 text-sm font-medium"
-      >
-        <Icon name="download" size={16} />
-        {msgs.common.action.downloadAgreement}
-      </a>
-    );
-  };
-
   // Príprava obsahu zoznamu bez vnorených ternárnikov (Sonar-friendly)
   let listContent: React.ReactNode;
   if (loading) {
@@ -173,7 +153,7 @@ export default function StudentDashboardPage() {
               {p.semester} {p.rok} • {p.datum_zaciatku} → {p.datum_konca}
             </p>
 
-            {renderDocLink(p)}
+            <DocumentUploadCard internship={p} onSuccess={fetchInternships} />
           </div>
         ))}
       </div>

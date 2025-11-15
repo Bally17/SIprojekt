@@ -10,7 +10,6 @@
   "action": {
     "createPlacement": "+ Create internship",
     "generatePdf": "Generate PDF",
-    "downloadAgreement": "Download agreement (PDF)",
     "company": "Enter company name..."
   },
 
@@ -93,6 +92,38 @@
     "copyright": "© {year}. All rights reserved.",
     "logoText": "Praxy",
     "logoLetter": "P"
+  },
+  "documents": {
+    "sectionTitle": "Internship documents",
+    "sectionDescription": "Track the agreement, contract, and report – upload signed PDFs.",
+    "contractTitle": "Internship agreement",
+    "contractDescription": "Download the generated agreement and upload the signed copy.",
+    "downloadLabel": "Download",
+    "reportTitle": "Internship report",
+    "reportDescription": "Upload the report after finishing the internship so the company can verify it.",
+    "agreementTitle": "Contract",
+    "agreementDescription": "If you have a manually signed contract, upload it for record keeping.",
+    "uploadButton": "Upload PDF",
+    "uploadError": "Failed to upload the document.",
+    "successTitle": "Document uploaded",
+    "successDescription": "The document was uploaded successfully.",
+    "errorTitle": "Upload error",
+    "openUpload": "Upload documents",
+    "modalTitle": "Upload signed agreement",
+    "modalSubtitle": "PDF only, up to 10 MB. Drag & drop or choose a file.",
+    "dropTitle": "Drag a PDF or click",
+    "dropSubtitle": "Only PDF files are supported.",
+    "browseCta": "Choose file",
+    "selectedFile": "Selected file",
+    "noContractError": "This document type is not available yet.",
+    "typeLabel": "Document type",
+    "typeAgreement": "Contract",
+    "typeReport": "Report",
+    "statusMissing": "Awaiting creation",
+    "statusUploaded": "Uploaded",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "statusUnknown": "Unknown status"
   },
   "guarant": {
     "title": "Internship administration",
