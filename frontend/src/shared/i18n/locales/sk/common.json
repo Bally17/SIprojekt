@@ -10,7 +10,6 @@
   "action": {
     "createPlacement": "+ Vytvoriť prax",
     "generatePdf": "Generovať PDF",
-    "downloadAgreement": "Stiahnuť dohodu (PDF)",
     "company": "Zadaj názov firmy..."
   },
 
@@ -93,6 +92,38 @@
     "copyright": "© {year}. Všetky práva vyhradené.",
     "logoText": "Praxy",
     "logoLetter": "P"
+  },
+  "documents": {
+    "sectionTitle": "Dokumenty praxe",
+    "sectionDescription": "Sleduj stav dohody, zmluvy aj výkazu a nahrávaj dokumenty.",
+    "contractTitle": "Dohoda o praxi",
+    "contractDescription": "Stiahni systémom vygenerovanú dohodu a nahraj podpísanú verziu.",
+    "downloadLabel": "Stiahnuť",
+    "reportTitle": "Výkaz praxe",
+    "reportDescription": "Výkaz nahrávaj po ukončení praxe, firma ho následne potvrdí.",
+    "agreementTitle": "Zmluva",
+    "agreementDescription": "Ak máš ručne podpísanú zmluvu, môžeš ju nahrať pre archív.",
+    "uploadButton": "Nahrať PDF",
+    "uploadError": "Nepodarilo sa nahrať dokument.",
+    "successTitle": "Dokument nahratý",
+    "successDescription": "Dokument bol úspešne odoslaný.",
+    "errorTitle": "Chyba pri nahrávaní",
+    "openUpload": "Nahrať dokumenty",
+    "modalTitle": "Nahrať dokument",
+    "modalSubtitle": "PDF súbor do 10 MB. Môžeš pretiahnuť alebo vybrať súbor.",
+    "dropTitle": "Pretiahni PDF alebo klikni",
+    "dropSubtitle": "Podporujeme iba PDF súbory.",
+    "browseCta": "Vybrať súbor",
+    "selectedFile": "Vybraný súbor",
+    "noContractError": "Pre tento typ dokumentu zatiaľ nie je dostupný súbor.",
+    "typeLabel": "Typ dokumentu",
+    "typeAgreement": "Zmluva",
+    "typeReport": "Výkaz",
+    "statusMissing": "Čaká na vytvorenie",
+    "statusUploaded": "Nahraný",
+    "statusApproved": "Potvrdený",
+    "statusRejected": "Zamietnutý",
+    "statusUnknown": "Neznámy stav"
   },
   "guarant": {
     "title": "Správa praxí",
