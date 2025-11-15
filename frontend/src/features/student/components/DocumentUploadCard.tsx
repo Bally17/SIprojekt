@@ -27,14 +27,13 @@ const DocumentUploadCard: React.FC<Props> = ({ internship, onSuccess }) => {
   const [uploading, setUploading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedType, setSelectedType] = useState<"dohoda" | "zmluva" | "vykaz">("zmluva");
+  const [selectedType, setSelectedType] = useState<"zmluva" | "vykaz">("zmluva");
 
   // Vyhľadáme existujúce dokumenty priradené k praxi.
   const contractDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "dohoda");
   const agreementDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "zmluva");
   const reportDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "vykaz");
-  const currentDoc =
-    selectedType === "dohoda" ? contractDoc : selectedType === "zmluva" ? agreementDoc : reportDoc;
+  const currentDoc = selectedType === "zmluva" ? agreementDoc : reportDoc;
 
   // Slúži na stiahnutie existujúceho PDF.
   const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:8000";
@@ -50,7 +49,7 @@ const DocumentUploadCard: React.FC<Props> = ({ internship, onSuccess }) => {
     };
 
     const getInfo = (doc?: InternshipDocument) => {
-      if (!doc) {
+      if (!doc || !doc.subor_url) {
         return { label: msgs.common.documents.statusMissing, badge: "bg-gray-50 text-gray-500" };
       }
       const code = doc.stav_dokumentu || "nahrany";

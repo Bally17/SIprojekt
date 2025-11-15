@@ -419,6 +419,27 @@ def create_internship(request):
         document.stav_dokumentu = "potvrdeny"
         document.save(update_fields=["subor_url", "stav_dokumentu"])
 
+        # ✅ Placeholder pre zmluvu (študent ju neskôr nahrá)
+        Dokument.objects.get_or_create(
+            prax=prax,
+            typ_dokumentu="zmluva",
+            defaults={
+                "nahrane_pouzivatel": user,
+                "subor_url": "",
+                "stav_dokumentu": "nahrany",
+            },
+        )
+        # ✅ Placeholder pre výkaz (študent ho nahrá po ukončení praxe)
+        Dokument.objects.get_or_create(
+            prax=prax,
+            typ_dokumentu="vykaz",
+            defaults={
+                "nahrane_pouzivatel": user,
+                "subor_url": "",
+                "stav_dokumentu": "nahrany",
+            },
+        )
+
     return Response(InternshipSerializer(prax).data, status=status.HTTP_201_CREATED)
 
 @swagger_auto_schema(

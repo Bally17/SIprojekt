@@ -1,7 +1,11 @@
 from django.db import models
 
 class Dokument(models.Model):
-    TYP_CHOICES = [('dohoda', 'Dohoda'), ('vykaz', 'Výkaz')]
+    TYP_CHOICES = [
+        ('dohoda', 'Dohoda'),
+        ('zmluva', 'Zmluva'),
+        ('vykaz', 'Výkaz'),
+    ]
     STAV_CHOICES = [('nahrany', 'Nahraný'), ('potvrdeny', 'Potvrdený'), ('zamietnuty', 'Zamietnutý')]
     
     prax = models.ForeignKey('internships.Prax', on_delete=models.CASCADE, db_column='prax_id')
