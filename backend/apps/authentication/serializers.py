@@ -4,6 +4,21 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from apps.users.models import User, StudentProfil, validate_student_email
 from apps.companies.models import Firma
+import re
+
+# Jednoduchá kontrola telefónu (čísla, medzery, pomlčky, +)
+PHONE_REGEX = r"^[+0-9][0-9\\s\\-]{6,18}$"
+# Normalizácia firemných názvov (odstránenie právnej formy, bodiek, whitespace)
+LEGAL_FORMS_COMPACT = {"sro", "as", "vos", "ks", "spolsro"}
+
+
+def normalize_company_name(name: str) -> str:
+    base = re.sub(r"[^a-z0-9]", "", (name or "").lower())
+    for form in LEGAL_FORMS_COMPACT:
+        if base.endswith(form):
+            base = base[: -len(form)]
+            break
+    return base
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -48,7 +63,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'password', 'password_confirm', 'meno', 'priezvisko', 
+            'email', 'password', 'password_confirm', 'meno', 'priezvisko',
             'telefon', 'adresa', 'studijny_program', 'alternativny_email'
         ]
 
@@ -65,13 +80,45 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         
         return value
 
+    def validate_telefon(self, value):
+        if value and not re.match(PHONE_REGEX, value):
+            raise serializers.ValidationError("Neplatný formát telefónu.")
+        return value
+
+    def validate_meno(self, value):
+        value = (value or "").strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Meno musí mať aspoň 2 znaky.")
+        return value
+
+    def validate_priezvisko(self, value):
+        value = (value or "").strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Priezvisko musí mať aspoň 2 znaky.")
+        return value
+
+    def validate_adresa(self, value):
+        value = (value or "").strip()
+        if len(value) < 5:
+            raise serializers.ValidationError("Adresa musí mať aspoň 5 znakov.")
+        return value
+
+    def validate_studijny_program(self, value):
+        value = (value or "").strip()
+        if not value:
+            raise serializers.ValidationError("Študijný program je povinný.")
+        return value
+
     def validate(self, data):
         password = data.get('password')
         password_confirm = data.get('password_confirm')
 
-    # iba ak boli zadané manuálne (napr. pri testovaní)
         if password and password_confirm and password != password_confirm:
             raise serializers.ValidationError("Heslá sa nezhodujú.")
+
+        # Pri manuálnom sete hesla validuj silu hesla
+        if password:
+            validate_password(password)
         return data
 
 
@@ -103,6 +150,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 
 
 class CompanyRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
     nazov = serializers.CharField(write_only=True, required=True)
     kontaktna_osoba_meno = serializers.CharField(write_only=True, required=True)
     kontaktna_osoba_email = serializers.EmailField(write_only=True, required=True)
@@ -111,7 +159,7 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'nazov', 'kontaktna_osoba_meno', 'kontaktna_osoba_email',
+            'email', 'password', 'nazov', 'kontaktna_osoba_meno', 'kontaktna_osoba_email',
             'kontaktna_osoba_telefon', 'adresa'
         ]
 
@@ -121,8 +169,43 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def validate_nazov(self, value):
+        normalized = normalize_company_name(value or "")
+        existing = {
+            normalize_company_name(n)
+            for n in Firma.objects.values_list("nazov", flat=True)
+        }
+        if normalized and normalized in existing:
+            raise serializers.ValidationError("Firma s týmto názvom už existuje.")
+        return value
+
+    def validate_kontaktna_osoba_telefon(self, value):
+        if value and not re.match(PHONE_REGEX, value):
+            raise serializers.ValidationError("Neplatný formát telefónu.")
+        return value
+
+    def validate_nazov(self, value):
+        value = (value or "").strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Názov firmy musí mať aspoň 2 znaky.")
         if Firma.objects.filter(nazov__iexact=value).exists():
             raise serializers.ValidationError("Firma s týmto názvom už existuje.")
+        return value
+
+    def validate_kontaktna_osoba_meno(self, value):
+        value = (value or "").strip()
+        if len(value) < 3:
+            raise serializers.ValidationError("Meno kontaktnej osoby musí mať aspoň 3 znaky.")
+        return value
+
+    def validate_adresa(self, value):
+        value = (value or "").strip()
+        if len(value) < 5:
+            raise serializers.ValidationError("Adresa musí mať aspoň 5 znakov.")
+        return value
+
+    def validate_password(self, value):
+        if value:
+            validate_password(value)
         return value
 
     def create(self, validated_data):
@@ -131,6 +214,14 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
         kontaktna_osoba_meno = validated_data.pop('kontaktna_osoba_meno')
         kontaktna_osoba_email = validated_data.pop('kontaktna_osoba_email')
         kontaktna_osoba_telefon = validated_data.pop('kontaktna_osoba_telefon')
+
+        normalized = normalize_company_name(nazov)
+        existing = {
+            normalize_company_name(n)
+            for n in Firma.objects.values_list("nazov", flat=True)
+        }
+        if normalized in existing:
+            raise serializers.ValidationError({"nazov": "Firma s týmto názvom už existuje."})
 
         meno_parts = kontaktna_osoba_meno.split(' ', 1)
         meno = meno_parts[0]
@@ -150,6 +241,7 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
         )
 
         if password:
+            validate_password(password)
             user.set_password(password)
         else:
             user.heslo_hash = None
