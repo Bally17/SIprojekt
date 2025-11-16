@@ -125,6 +125,20 @@
     "statusRejected": "Zamietnutý",
     "statusUnknown": "Neznámy stav"
   },
+  "companyDocs": {
+    "uploadButton": "Nahrať výkaz",
+    "uploadSuccess": "Výkaz nahraný",
+    "uploadDescription": "Súbor bol úspešne odoslaný.",
+    "uploadError": "Nahrávanie zlyhalo.",
+    "approveButton": "Potvrdiť",
+    "rejectButton": "Zamietnuť",
+    "approved": "Výkaz potvrdený",
+    "rejected": "Výkaz zamietnutý",
+    "rejectPrompt": "Zadajte dôvod zamietnutia výkazu:",
+    "actionError": "Akciu sa nepodarilo vykonať.",
+    "noReport": "Výkaz zatiaľ nie je k dispozícii.",
+    "empty": "Momentálne nemáte žiadne výkazy na spracovanie."
+  },
   "guarant": {
     "title": "Správa praxí",
     "subtitle": "Kompletný prehľad o všetkých praxiach so zmenou stavov a exportom pre reporty.",

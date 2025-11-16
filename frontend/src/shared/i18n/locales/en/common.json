@@ -125,6 +125,20 @@
     "statusRejected": "Rejected",
     "statusUnknown": "Unknown status"
   },
+  "companyDocs": {
+    "uploadButton": "Upload report",
+    "uploadSuccess": "Report uploaded",
+    "uploadDescription": "The file was uploaded successfully.",
+    "uploadError": "Upload failed.",
+    "approveButton": "Approve",
+    "rejectButton": "Reject",
+    "approved": "Report approved",
+    "rejected": "Report rejected",
+    "rejectPrompt": "Provide the reason for rejecting the report:",
+    "actionError": "Action could not be completed.",
+    "noReport": "The report is not available yet.",
+    "empty": "You do not have any reports to review right now."
+  },
   "guarant": {
     "title": "Internship administration",
     "subtitle": "See every internship, change statuses, and prepare exports for reports.",
