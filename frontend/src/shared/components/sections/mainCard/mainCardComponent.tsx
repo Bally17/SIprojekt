@@ -16,7 +16,7 @@ const mainCardComponent = ({
   subtitle,
   children,
   maxWidthClassName = "max-w-5xl",
-  titleClassName = "text-4xl font-bold text-cyan-700 tracking-tight",
+  titleClassName = "text-4xl font-bold text-primary-900 tracking-tight",
 }: Props) => {
   return (
     <>
@@ -25,7 +25,7 @@ const mainCardComponent = ({
         <div className={`${maxWidthClassName} mx-auto space-y-10`}>
           <header className="text-center space-y-2">
             <h1 className={titleClassName}>{title}</h1>
-            {subtitle ? <p className="text-gray-600">{subtitle}</p> : null}
+            {subtitle ? <p className="text-primary-700">{subtitle}</p> : null}
           </header>
 
           {children}

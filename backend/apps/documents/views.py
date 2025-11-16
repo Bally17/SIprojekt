@@ -62,12 +62,20 @@ class DocumentViewSet(viewsets.ModelViewSet):
         old_doc = self.get_object()
         user = request.user
 
-        resp = _assert(_user_is_student(user), "Iba študent môže nahrávať dokument.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
-
         prax = old_doc.prax
-        resp = _assert(prax and prax.student_id == user.id, "Nemáš oprávnenie pre túto prax.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
+        is_student = _user_is_student(user) and prax and prax.student_id == user.id
+        is_company = (
+            _user_is_firma(user)
+            and prax
+            and getattr(user, "firma_id", None) == getattr(prax, "firma_id", None)
+            and old_doc.typ_dokumentu == "vykaz"
+        )
+
+        if not is_student and not is_company:
+            return Response(
+                {"detail": "Iba študent alebo firma môže nahrávať tento dokument."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         file = request.FILES.get("file")
         resp = _assert(file is not None, "Chýba súbor 'file' v requeste.")

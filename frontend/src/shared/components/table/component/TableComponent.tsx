@@ -12,6 +12,8 @@ import {
   type Stav,
   isSemester,
   isStav,
+  getStavLabel,
+  STAV_BADGE_CLASS,
 } from "@/shared/types/internship/components/StateInternship";
 
 const buildMediaUrl = (path: string) => {
@@ -40,6 +42,8 @@ const TableComponent: FC<TableProps> = (props) => {
     isLoading,
     actionMessage,
     showEmpty,
+    renderRow,
+    columnCountOverride,
   } = props;
 
   const { subTitle, title, columns } = useLoadTableData(name);
@@ -81,7 +85,20 @@ const TableComponent: FC<TableProps> = (props) => {
   };
 
   const extraCols = (document ? 2 : 0) + (rowActions ? 1 : 0);
-  const colSpan = Math.max(1, columns.length + extraCols);
+  const colSpan = columnCountOverride ?? Math.max(1, columns.length + extraCols);
+
+  const renderStavBadge = (value: string) => {
+    const normalized: Stav | null = isStav(value) ? (value as Stav) : null;
+    const badgeClass = normalized ? STAV_BADGE_CLASS[normalized] : "bg-gray-100 text-gray-600";
+    const label = normalized ? getStavLabel(normalized) : value;
+    return (
+      <span
+        className={`inline-flex min-w-[150px] items-center justify-center rounded-full px-3 py-1 text-center text-xs font-semibold leading-tight ${badgeClass}`}
+      >
+        {label}
+      </span>
+    );
+  };
 
   const shouldShowActionEmpty =
     !!showEmpty && !isLoading && !isError && data.length === 0 && !!actionMessage;
@@ -135,68 +152,80 @@ const TableComponent: FC<TableProps> = (props) => {
       </tr>
     );
   } else {
-    bodyRows = data.map((item) => (
-      <tr key={item.id} className="border-t text-sm">
-        <td className="px-4 py-3 font-medium">#{item.id}</td>
-        <td className="px-4 py-3">{item.student}</td>
-        <td className="px-4 py-3">{item.rok}</td>
-        <td className="px-4 py-3 capitalize">{item.semester}</td>
-        <td className="px-4 py-3">{item.datum_zaciatku}</td>
-        <td className="px-4 py-3">{item.datum_konca}</td>
+    bodyRows = data.map((item) => {
+      if (renderRow) {
+        const row = renderRow(item);
+        if (React.isValidElement(row)) {
+          return React.cloneElement(row, {
+            key: row.key ?? item.id,
+          });
+        }
+        return <React.Fragment key={item.id}>{row}</React.Fragment>;
+      }
 
-        {document && (
-          <>
-            <td className="px-4 py-3 capitalize">{item.stav}</td>
-            <td className="px-4 py-3">
-              {item.documents?.length ? (
-                <div className="space-y-1">
-                  {item.documents.filter(hasFileUrl).map((doc) => (
-                    <a
-                      key={doc.id}
-                      href={buildMediaUrl(doc.subor_url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-cyan-700 hover:underline"
-                    >
-                      {doc.typ_dokumentu.toUpperCase()}
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <span className="text-gray-400">-</span>
-              )}
+      return (
+        <tr key={item.id} className="border-t text-sm">
+          <td className="px-4 py-3 font-medium">#{item.id}</td>
+          <td className="px-4 py-3">{item.student}</td>
+          <td className="px-4 py-3">{item.rok}</td>
+          <td className="px-4 py-3 capitalize">{item.semester}</td>
+          <td className="px-4 py-3">{item.datum_zaciatku}</td>
+          <td className="px-4 py-3">{item.datum_konca}</td>
+
+          {document && (
+            <>
+              <td className="px-4 py-3">{renderStavBadge(String(item.stav))}</td>
+              <td className="px-4 py-3">
+                {item.documents?.length ? (
+                  <div className="space-y-1">
+                    {item.documents.filter(hasFileUrl).map((doc) => (
+                      <a
+                        key={doc.id}
+                        href={buildMediaUrl(doc.subor_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-cyan-700 hover:underline"
+                      >
+                        {doc.typ_dokumentu.toUpperCase()}
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </td>
+            </>
+          )}
+
+          {rowActions && (
+            <td className="px-4 py-3 space-x-2">
+              <Button
+                variant="success"
+                loading={busy[item.id] === "confirm"}
+                onClick={() => runAction(item.id, "confirm")}
+              >
+                {msgs.common.confirm}
+              </Button>
+              <Button
+                variant="danger"
+                loading={busy[item.id] === "reject"}
+                onClick={() => runAction(item.id, "reject")}
+              >
+                {msgs.common.reject}
+              </Button>
             </td>
-          </>
-        )}
-
-        {rowActions && (
-          <td className="px-4 py-3 space-x-2">
-            <Button
-              variant="success"
-              loading={busy[item.id] === "confirm"}
-              onClick={() => runAction(item.id, "confirm")}
-            >
-              {msgs.common.confirm}
-            </Button>
-            <Button
-              variant="danger"
-              loading={busy[item.id] === "reject"}
-              onClick={() => runAction(item.id, "reject")}
-            >
-              {msgs.common.reject}
-            </Button>
-          </td>
-        )}
-      </tr>
-    ));
+          )}
+        </tr>
+      );
+    });
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-3xl font-semibold text-cyan-700">{title}</h2>
-          <p className="text-sm text-gray-600">{subTitle}</p>
+          <h2 className="text-3xl font-semibold text-primary-900">{title}</h2>
+          <p className="text-sm text-primary-700">{subTitle}</p>
         </div>
 
         {showFilters && filters && (
