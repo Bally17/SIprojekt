@@ -22,6 +22,31 @@ export default function RegisterFormCompany() {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
+  const validateForm = () => {
+    if (form.companyName.trim().length < 2) return "Názov firmy musí mať aspoň 2 znaky.";
+    if (form.address.trim().length < 5) return "Adresa musí mať aspoň 5 znakov.";
+    if (form.contactName.trim().length < 3) return "Meno kontaktnej osoby musí mať aspoň 3 znaky.";
+    const phoneDigits = form.contactPhone.replace(/\D/g, "");
+    if (phoneDigits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
+    return null;
+  };
+
+  const getErrorMessage = (err: any) => {
+    const data = err?.response?.data;
+    if (!data) return msgs.auth.errorSubmit;
+    if (typeof data === "string") return data;
+    if (data.detail) return data.detail;
+    const parts: string[] = [];
+    Object.entries(data).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        parts.push(`${key}: ${value.join(", ")}`);
+      } else if (value) {
+        parts.push(`${key}: ${String(value)}`);
+      }
+    });
+    return parts.join(" | ") || msgs.auth.errorSubmit;
+  };
+
   // Aktualizácia vstupov → state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -31,6 +56,13 @@ export default function RegisterFormCompany() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    const clientError = validateForm();
+    if (clientError) {
+      notifyWarning({ title: msgs.auth.errorTitle, description: clientError });
+      setLoading(false);
+      return;
+    }
 
     // payload presne podľa API
     const payload = {
@@ -61,7 +93,7 @@ export default function RegisterFormCompany() {
         contactPhone: "",
       });
     } catch (err: any) {
-      const message = err.response?.data?.message || msgs.auth.errorSubmit;
+      const message = getErrorMessage(err);
       console.error("❌ Chyba registrácie:", err);
       notifyWarning({
         title: msgs.auth.errorTitle,
