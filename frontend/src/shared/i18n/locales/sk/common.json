@@ -178,7 +178,6 @@
     "edit": {
     "title": "Upraviť prax",
     "description": "Aktualizuj študenta, firmu, termíny aj stav jednej praxe.",
-    "trigger": "Otvoriť úpravu praxe",
     "legend": "Vyhľadaj študenta alebo firmu podľa mena, e-mailu či kontaktu.",
       "studentSearch": "Vyhľadaj študenta",
       "studentSearchPlaceholder": "Meno, priezvisko alebo e-mail",

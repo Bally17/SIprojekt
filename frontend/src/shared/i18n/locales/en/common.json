@@ -178,7 +178,6 @@
     "edit": {
     "title": "Edit internship",
     "description": "Update assigned student, company, term dates, and status.",
-    "trigger": "Edit internship",
     "legend": "Search for a student or company by name, email, or contact.",
       "studentSearch": "Search student",
       "studentSearchPlaceholder": "Name, surname, or email",

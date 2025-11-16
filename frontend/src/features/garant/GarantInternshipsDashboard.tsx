@@ -620,7 +620,7 @@ export default function GarantInternshipsDashboard() {
                               type="button"
                               onClick={() => openEditModal(internship)}
                               className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary-200 bg-white text-primary-900 transition hover:bg-primary-50"
-                              aria-label={`${msgs.common.guarant.edit.trigger} #${internship.id}`}
+                              aria-label={`${msgs.common.guarant.edit.title} #${internship.id}`}
                             >
                               <Icon name="pencil" className="h-4 w-4" />
                             </button>
