@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.documents.models import Dokument
@@ -211,3 +212,35 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+class StudentCreateInternshipSerializer(serializers.Serializer):
+    firma_id = serializers.IntegerField()
+    rok = serializers.IntegerField()
+    semester = serializers.CharField()
+    datum_zaciatku = serializers.DateField()
+    datum_konca = serializers.DateField()
+
+    def validate_firma_id(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("firma_id musí byť kladné číslo.")
+        if not Firma.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Firma so zadaným ID neexistuje.")
+        return value
+
+    def validate_rok(self, value):
+        current_year = timezone.now().year
+        if value < current_year - 1 or value > current_year + 2:
+            raise serializers.ValidationError("Rok praxe je mimo povoleného intervalu.")
+        return value
+
+    def validate(self, attrs):
+        start = attrs.get("datum_zaciatku")
+        end = attrs.get("datum_konca")
+        if start and end and end < start:
+            raise serializers.ValidationError(
+                {"datum_konca": "Dátum ukončenia nemôže byť pred dátumom začiatku."}
+            )
+        semester = (attrs.get("semester") or "").lower()
+        if semester not in ("zimny", "letny"):
+            raise serializers.ValidationError({"semester": "Semester musí byť zimny alebo letny."})
+        attrs["semester"] = semester
+        return attrs
