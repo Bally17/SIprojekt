@@ -1,5 +1,8 @@
+import csv
+from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import viewsets, status, mixins
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -33,6 +36,9 @@ GARANT_LIST_FILTERS = [
     openapi.Parameter('student_id', openapi.IN_QUERY, description="ID študenta", type=openapi.TYPE_INTEGER),
     openapi.Parameter('firma_id', openapi.IN_QUERY, description="ID firmy", type=openapi.TYPE_INTEGER),
     openapi.Parameter('search', openapi.IN_QUERY, description="Fulltext v mene študenta alebo názve firmy", type=openapi.TYPE_STRING),
+    openapi.Parameter('student', openapi.IN_QUERY, description="Textový filter mena alebo emailu študenta", type=openapi.TYPE_STRING),
+    openapi.Parameter('firma', openapi.IN_QUERY, description="Textový filter názvu firmy", type=openapi.TYPE_STRING),
+    openapi.Parameter('odbor', openapi.IN_QUERY, description="Filter podľa študijného programu", type=openapi.TYPE_STRING),
 ]
 
 # 🔹 CRUD pre praxe
@@ -101,6 +107,9 @@ class GarantInternshipViewSet(
         student_id = params.get("student_id")
         firma_id = params.get("firma_id")
         search = params.get("search")
+        student_text = params.get("student")
+        firma_text = params.get("firma")
+        study_program = params.get("odbor") or params.get("study_program")
 
         if rok:
             queryset = queryset.filter(rok=rok)
@@ -112,6 +121,18 @@ class GarantInternshipViewSet(
             queryset = queryset.filter(student_id=student_id)
         if firma_id:
             queryset = queryset.filter(firma_id=firma_id)
+        if student_text:
+            queryset = queryset.filter(
+                Q(student__email__icontains=student_text)
+                | Q(student__meno__icontains=student_text)
+                | Q(student__priezvisko__icontains=student_text)
+            )
+        if firma_text:
+            queryset = queryset.filter(firma__nazov__icontains=firma_text)
+        if study_program:
+            queryset = queryset.filter(
+                student__studentprofil__studijny_program__icontains=study_program
+            )
         if search:
             queryset = queryset.filter(
                 Q(student__email__icontains=search)
@@ -154,6 +175,82 @@ class GarantInternshipViewSet(
     def partial_update(self, request, *args, **kwargs):
         kwargs["partial"] = True
         return self.update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        method="get",
+        operation_summary="Garant: Export praxí do CSV",
+        operation_description=(
+            "Stiahne CSV so všetkými praxami, ktoré spĺňajú zvolené filtre. "
+            "Používa rovnaké parametre ako zoznam praxí."
+        ),
+        manual_parameters=GARANT_LIST_FILTERS,
+        responses={
+            200: "CSV súbor s praxami",
+            403: "Používateľ nemá rolu garant",
+        },
+    )
+    @action(detail=False, methods=["get"], url_path="export")
+    def export(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"internships_export_{timestamp}.csv"
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
+
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                "ID",
+                "Rok",
+                "Semester",
+                "Stav",
+                "Študent",
+                "E-mail študenta",
+                "Študijný program",
+                "Firma",
+                "Garant",
+                "Dátum začiatku",
+                "Dátum konca",
+                "Vytvorené",
+                "Naposledy zmenené",
+            ]
+        )
+
+        for prax in queryset:
+            student = getattr(prax, "student", None)
+            firma = getattr(prax, "firma", None)
+            garant = getattr(prax, "garant", None)
+            study_program = ""
+            if student and hasattr(student, "studentprofil"):
+                study_program = student.studentprofil.studijny_program or ""
+
+            full_name = ""
+            if student:
+                full_name = f"{student.meno or ''} {student.priezvisko or ''}".strip()
+                if not full_name:
+                    full_name = student.email or ""
+
+            writer.writerow(
+                [
+                    prax.id,
+                    prax.rok,
+                    prax.semester,
+                    prax.stav,
+                    full_name,
+                    getattr(student, "email", "") or "",
+                    study_program,
+                    getattr(firma, "nazov", "") or "",
+                    getattr(garant, "email", "") or "",
+                    getattr(prax, "datum_zaciatku", "") or "",
+                    getattr(prax, "datum_konca", "") or "",
+                    getattr(prax, "vytvorene_at", "") or "",
+                    getattr(prax, "zmenene_at", "") or "",
+                ]
+            )
+
+        return response
 
 
 # 🔹 Študent získa prehľad o svojich praxiach

@@ -100,19 +100,26 @@ export default function GarantInternshipsDashboard() {
   const [companySearchLoading, setCompanySearchLoading] = useState(false);
   const [selectedStudentLabel, setSelectedStudentLabel] = useState("");
   const [selectedCompanyLabel, setSelectedCompanyLabel] = useState("");
+  const [exporting, setExporting] = useState(false);
+
+  const apiFilters = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(queryFilters)
+          .filter(([, value]) => value !== "")
+          .map(([key, value]) => [key, value]),
+      ),
+    [queryFilters],
+  );
 
   // Načíta všetky praxe podľa aktuálne aplikovaných filtrov
   const fetchInternships = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = Object.fromEntries(
-        Object.entries(queryFilters)
-          .filter(([, value]) => value !== "")
-          .map(([key, value]) => [key, value]),
-      );
-
-      const response = await axiosClient.get("/internships/garant/internships/", { params });
+      const response = await axiosClient.get("/internships/garant/internships/", {
+        params: apiFilters,
+      });
       const rawPayload =
         response.data?.results ??
         response.data?.internships ??
@@ -129,7 +136,7 @@ export default function GarantInternshipsDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [queryFilters, msgs.common.error.errorLoadInternships, notifyWarning]);
+  }, [apiFilters, msgs.common.error.errorLoadInternships, notifyWarning]);
 
   // Prvé načítanie hneď po prihlásení/otvorení dashboardu
   useEffect(() => {
@@ -225,27 +232,61 @@ export default function GarantInternshipsDashboard() {
   // Dodatočné klientské filtrovanie – textové polia, rok aj stav sa kombinujú klientsky.
   const filteredInternships = useMemo(() => {
     if (!Array.isArray(internships)) return [];
+    const { firma, student, odbor, rok, stav } = queryFilters;
     return internships.filter((internship) => {
-      const matchFirma = filters.firma
-        ? (internship.company_name || "").toLowerCase().includes(filters.firma.toLowerCase())
+      const matchFirma = firma
+        ? (internship.company_name || "").toLowerCase().includes(firma.toLowerCase())
         : true;
-      const matchStudent = filters.student
-        ? (internship.student_full_name || "").toLowerCase().includes(filters.student.toLowerCase())
+      const matchStudent = student
+        ? (internship.student_full_name || "").toLowerCase().includes(student.toLowerCase())
         : true;
-      const matchOdbor = filters.odbor
-        ? (internship.study_program || "").toLowerCase().includes(filters.odbor.toLowerCase())
+      const matchOdbor = odbor
+        ? (internship.study_program || "").toLowerCase().includes(odbor.toLowerCase())
         : true;
-      const matchYear = filters.rok ? String(internship.rok) === filters.rok.trim() : true;
-      const matchState = filters.stav ? internship.stav === filters.stav : true;
+      const matchYear = rok ? String(internship.rok) === rok.trim() : true;
+      const matchState = stav ? internship.stav === stav : true;
       return matchFirma && matchStudent && matchOdbor && matchYear && matchState;
     });
-  }, [internships, filters.firma, filters.student, filters.odbor, filters.rok, filters.stav]);
+  }, [internships, queryFilters]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    setExporting(true);
     notifyInfo({
       title: msgs.common.guarant.exportTitle,
       description: msgs.common.guarant.exportPending,
     });
+
+    try {
+      const response = await axiosClient.get("/internships/garant/internships/export/", {
+        params: apiFilters,
+        responseType: "blob",
+      });
+
+      const disposition: string = response.headers?.["content-disposition"] || "";
+      const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
+      const filename = filenameMatch?.[1] ? decodeURIComponent(filenameMatch[1]) : "internships_export.csv";
+
+      const blob = new Blob([response.data], { type: "text/csv;charset=utf-8" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      notifySuccess({
+        title: msgs.common.guarant.exportTitle,
+        description: msgs.common.guarant.exportSuccess,
+      });
+    } catch (err: any) {
+      const description =
+        err?.response?.data?.error || err?.response?.data?.detail || msgs.common.guarant.exportError;
+      notifyWarning({ title: msgs.common.guarant.exportError, description });
+    } finally {
+      setExporting(false);
+    }
   };
 
   // Pripraví modálne okno s údajmi vybranej praxe – hodnoty zobrazíme aj v editačnom formulári.
@@ -605,9 +646,13 @@ export default function GarantInternshipsDashboard() {
           <button
             type="button"
             onClick={handleExport}
-            className="inline-flex items-center justify-center rounded-md border border-primary-200 px-4 py-2 text-sm font-semibold text-primary-900 transition hover:bg-white"
+            disabled={exporting}
+            aria-busy={exporting}
+            className={`inline-flex items-center justify-center rounded-md border border-primary-200 px-4 py-2 text-sm font-semibold text-primary-900 transition ${
+              exporting ? "cursor-not-allowed opacity-60" : "hover:bg-white"
+            }`}
           >
-            {msgs.common.guarant.exportButton}
+            {exporting ? msgs.common.guarant.exporting : msgs.common.guarant.exportButton}
           </button>
         </section>
       </div>
