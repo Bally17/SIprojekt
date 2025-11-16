@@ -5,4 +5,5 @@ export const DESC = "desc";
 export const TABLE_NAMES = {
   ALL_INTERNSHIPS: "AllInternships",
   PENDING_INTERNSHIPS: "PendingInternships",
+  COMPANY_DOCUMENTS: "CompanyDocuments",
 } as const;

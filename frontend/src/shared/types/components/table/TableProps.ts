@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { Internship } from "../../internship/internship";
 import { TableFilters } from "./components/TableFilters";
 import { TableNameValues } from "./components/TableNameValues";
@@ -21,6 +22,8 @@ interface TableProps {
   isError?: string | null;
   actionMessage?: string | null;
   showEmpty?: boolean;
+  renderRow?: (item: Internship) => ReactElement;
+  columnCountOverride?: number;
 }
 
 export default TableProps;

@@ -57,10 +57,12 @@ const DocumentUploadCard: React.FC<Props> = ({ internship, onSuccess }) => {
     };
 
     return {
+      contract: getInfo(contractDoc),
       agreement: getInfo(agreementDoc),
       report: getInfo(reportDoc),
     };
   }, [
+    contractDoc,
     agreementDoc,
     reportDoc,
     msgs.common.documents.statusMissing,
@@ -160,7 +162,7 @@ const DocumentUploadCard: React.FC<Props> = ({ internship, onSuccess }) => {
               </div>
               <p className="text-xs text-cyan-700">{msgs.common.documents.agreementDescription}</p>
               <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusInfo.agreement.badge}`}
+                className={`inline-flex min-w-[150px] flex-col items-center justify-center rounded-full px-3 py-0.5 text-center text-[11px] font-semibold leading-tight ${statusInfo.agreement.badge}`}
               >
                 {statusInfo.agreement.label}
               </span>
@@ -176,7 +178,7 @@ const DocumentUploadCard: React.FC<Props> = ({ internship, onSuccess }) => {
               </div>
               <p className="text-xs text-cyan-700">{msgs.common.documents.reportDescription}</p>
               <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusInfo.report.badge}`}
+                className={`inline-flex min-w-[150px] flex-col items-center justify-center rounded-full px-3 py-0.5 text-center text-[11px] font-semibold leading-tight ${statusInfo.report.badge}`}
               >
                 {statusInfo.report.label}
               </span>

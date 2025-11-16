@@ -11,7 +11,7 @@ const base =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500";
 
 const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
-  primary: "bg-cyan-700 text-white hover:bg-cyan-800",
+  primary: "bg-primary-900 text-white hover:bg-primary-700",
   danger: "bg-red-600 text-white hover:bg-red-700",
   ghost: "border border-gray-300 hover:bg-gray-50",
   success: "bg-green-600 text-white hover:bg-green-700 border border-green-600/20",

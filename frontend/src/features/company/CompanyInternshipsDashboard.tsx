@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axiosClient from "@/lib/axiosClient";
 import PendingInternships from "@/features/company/components/PendingInternships";
+import CompanyDocumentsCard from "@/features/company/components/CompanyDocumentsCard";
 import { useLocalization } from "@/shared/i18n/client";
 import { Table } from "@/shared/components/table";
 import { TABLE_NAMES } from "@/constants/Table";
@@ -108,6 +109,20 @@ export default function CompanyInternshipsDashboard() {
           stavOptions={STAV_OPTIONS}
           isLoading={loading}
           isError={error || null}
+        />
+      </section>
+      <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
+        <Table
+          data={displayedInternships}
+          name={TABLE_NAMES.COMPANY_DOCUMENTS}
+          isLoading={loading}
+          isError={error || null}
+          showEmpty
+          actionMessage={msgs.common.companyDocs.empty}
+          columnCountOverride={5}
+          renderRow={(internship) => (
+            <CompanyDocumentsCard internship={internship} onChange={fetchInternships} />
+          )}
         />
       </section>
     </div>
