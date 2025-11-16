@@ -32,8 +32,10 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
   const [uploading, setUploading] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const reportDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "vykaz");
   const uploadInputId = useMemo(() => `company-doc-upload-${internship.id}`, [internship.id]);
+  const closeActions = () => setActionsOpen(false);
 
   const statusLabel = (doc?: InternshipDocument) => {
     if (!doc || !doc.subor_url) return msgs.common.documents.statusMissing;
@@ -70,6 +72,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
         description: msgs.common.companyDocs.uploadDescription,
       });
       onChange?.();
+      closeActions();
     } catch (error: any) {
       notifyWarning({
         title: msgs.common.companyDocs.uploadError,
@@ -87,6 +90,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
       await axiosClient.post(`/documents/${reportDoc.id}/approve-company/`);
       notifySuccess({ title: msgs.common.companyDocs.approved, description: "" });
       onChange?.();
+      closeActions();
     } catch (error: any) {
       notifyWarning({
         title: msgs.common.companyDocs.actionError,
@@ -103,6 +107,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
       await axiosClient.post(`/documents/${reportDoc.id}/reject-company/`, { reason });
       notifySuccess({ title: msgs.common.companyDocs.rejected, description: "" });
       onChange?.();
+      closeActions();
     } catch (error: any) {
       notifyWarning({
         title: msgs.common.companyDocs.actionError,
@@ -160,37 +165,91 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
       </td>
       <td className="px-4 py-4 align-top">
         <div className="flex flex-wrap gap-2">
-          <label
-            htmlFor={uploadInputId}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary-200 px-3 py-1 text-xs font-semibold text-primary-800 hover:bg-primary-50"
-          >
-            <Icon name="upload" className="h-4 w-4" />
-            {uploading ? msgs.common.loading.loading : msgs.common.companyDocs.uploadButton}
-          </label>
-          <input
-            id={uploadInputId}
-            type="file"
-            accept="application/pdf"
-            className="sr-only"
-            disabled={uploading}
-            onChange={handleUpload}
-          />
           <button
             type="button"
-            onClick={handleApprove}
-            disabled={!reportDoc?.subor_url}
-            className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
+            onClick={() => setActionsOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition hover:bg-gray-50"
+            aria-haspopup="dialog"
+            aria-expanded={actionsOpen}
           >
-            {msgs.common.companyDocs.approveButton}
+            <Icon name="more-horizontal" className="h-5 w-5" />
           </button>
-          <button
-            type="button"
-            onClick={handleReject}
-            disabled={!reportDoc?.subor_url}
-            className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
-          >
-            {msgs.common.companyDocs.rejectButton}
-          </button>
+          {actionsOpen ? (
+            <div
+              className="fixed inset-0 z-[10] flex items-center justify-center bg-black/50 px-4 py-6"
+              onClick={closeActions}
+            >
+              <div
+                className="w-full max-w-md rounded-2xl bg-white p-6 text-sm shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      {msgs.common.companyDocs.sectionTitle}
+                    </p>
+                    <h4 className="mt-1 text-base font-semibold text-primary-900">
+                      {internship.student_full_name || `#${internship.student}`}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {msgs.common.companyDocs.termLabel}: {internship.rok} • {internship.semester}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeActions}
+                    className="rounded-full p-1 text-gray-500 transition hover:bg-gray-100"
+                    aria-label={msgs.common.close}
+                  >
+                    <Icon name="x" className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="mt-5 space-y-3">
+                  <div>
+                    <label
+                      htmlFor={uploadInputId}
+                      className="flex cursor-pointer items-center justify-between rounded-lg border border-primary-100 px-3 py-2 text-xs font-semibold text-primary-900 transition hover:bg-primary-50"
+                    >
+                      <span>
+                        {uploading
+                          ? msgs.common.loading.loading
+                          : msgs.common.companyDocs.uploadButton}
+                      </span>
+                      <Icon name="upload" className="h-4 w-4" />
+                    </label>
+                    <input
+                      id={uploadInputId}
+                      type="file"
+                      accept="application/pdf"
+                      className="sr-only"
+                      disabled={uploading}
+                      onChange={handleUpload}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApprove}
+                    disabled={!reportDoc?.subor_url}
+                    className="flex w-full items-center justify-between rounded-lg border border-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
+                  >
+                    {msgs.common.companyDocs.approveButton}
+                    <Icon name="check-circle-2" className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReject}
+                    disabled={!reportDoc?.subor_url}
+                    className="flex w-full items-center justify-between rounded-lg border border-rose-100 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
+                  >
+                    {msgs.common.companyDocs.rejectButton}
+                    <Icon name="x" className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </td>
     </tr>
