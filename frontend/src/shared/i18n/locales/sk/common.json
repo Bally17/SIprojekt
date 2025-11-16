@@ -165,9 +165,12 @@
       "actions": "Akcie"
     },
     "exportTitle": "Export pre reporty",
-    "exportDescription": "Pripravíme export praxí podľa vybraných filtrov (CSV / XLSX).",
-    "exportButton": "Pripraviť export",
-    "exportPending": "Export pripravíme čoskoro.",
+    "exportDescription": "Stiahni CSV s praxami podľa aktuálne nastavených filtrov.",
+    "exportButton": "Exportovať CSV",
+    "exporting": "Pripravujem CSV...",
+    "exportPending": "Spúšťam export podľa filtrov.",
+    "exportSuccess": "CSV export bol vytvorený a sťahuje sa.",
+    "exportError": "Export sa nepodarilo dokončiť.",
     "edit": {
       "title": "Upraviť prax",
       "description": "Aktualizuj študenta, firmu, termíny aj stav jednej praxe.",

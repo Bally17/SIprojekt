@@ -9,6 +9,7 @@ All endpoints below require JWT authentication (`Authorization: Bearer <token>`)
 | `GET` | `/api/internships/garant/internships/` | Paginated list of all internships | Garant | `200 OK` → `InternshipSerializer` list |
 | `GET` | `/api/internships/garant/internships/{id}/` | Detail of a single internship | Garant | `200 OK` → `InternshipSerializer` |
 | `PATCH` | `/api/internships/garant/internships/{id}/` | Partial update of company, student, dates, or status | Garant | `200 OK` → updated `InternshipSerializer` |
+| `GET` | `/api/internships/garant/internships/export/` | CSV export of internships that match filters | Garant | `200 OK` → CSV attachment |
 
 `InternshipSerializer` returns the complete `Prax` record plus denormalized fields:
 
@@ -48,6 +49,9 @@ Returns a paginated collection (`count`, `next`, `previous`, `results`). Each it
 | `student_id` | integer | Filter by student foreign key |
 | `firma_id` | integer | Filter by company |
 | `search` | string | Case-insensitive search in student name/email or company name |
+| `student` | string | Case-insensitive match in student name or email |
+| `firma` | string | Case-insensitive match in company name |
+| `odbor` | string | Filter by `studentprofil.studijny_program` |
 
 **Responses**
 
@@ -102,3 +106,19 @@ On success, the response mirrors `GET` detail. Status history entries and notifi
 * `401 Unauthorized`
 * `403 Forbidden`
 * `404 Not Found`
+
+---
+
+### `GET /api/internships/garant/internships/export/`
+
+Returns a CSV attachment with internships that match the same filters as the list endpoint (see the table above). The CSV headers are:
+
+```
+ID, Rok, Semester, Stav, Študent, E-mail študenta, Študijný program, Firma, Garant, Dátum začiatku, Dátum konca, Vytvorené, Naposledy zmenené
+```
+
+**Responses**
+
+* `200 OK` – CSV download (Content-Disposition header set)
+* `401 Unauthorized`
+* `403 Forbidden`
