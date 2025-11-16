@@ -176,9 +176,9 @@
     "exportSuccess": "The CSV export is ready and downloading.",
     "exportError": "Failed to generate the export.",
     "edit": {
-      "title": "Edit internship",
-      "description": "Update assigned student, company, term dates, and status.",
-      "legend": "Search for a student or company by name, email, or contact.",
+    "title": "Edit internship",
+    "description": "Update assigned student, company, term dates, and status.",
+    "legend": "Search for a student or company by name, email, or contact.",
       "studentSearch": "Search student",
       "studentSearchPlaceholder": "Name, surname, or email",
       "studentSelected": "Selected student:",

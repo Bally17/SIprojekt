@@ -708,7 +708,7 @@ def profile(request):
     return Response({'user': user_data})
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def logout_view(request):
     """
     Logout user:

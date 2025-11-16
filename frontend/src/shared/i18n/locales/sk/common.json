@@ -176,9 +176,9 @@
     "exportSuccess": "CSV export bol vytvorený a sťahuje sa.",
     "exportError": "Export sa nepodarilo dokončiť.",
     "edit": {
-      "title": "Upraviť prax",
-      "description": "Aktualizuj študenta, firmu, termíny aj stav jednej praxe.",
-      "legend": "Vyhľadaj študenta alebo firmu podľa mena, e-mailu či kontaktu.",
+    "title": "Upraviť prax",
+    "description": "Aktualizuj študenta, firmu, termíny aj stav jednej praxe.",
+    "legend": "Vyhľadaj študenta alebo firmu podľa mena, e-mailu či kontaktu.",
       "studentSearch": "Vyhľadaj študenta",
       "studentSearchPlaceholder": "Meno, priezvisko alebo e-mail",
       "studentSelected": "Vybraný študent:",
