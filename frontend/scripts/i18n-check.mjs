@@ -2,7 +2,7 @@
 // Node 18+ (ESM). Potrebuje: glob, @babel/parser, @babel/traverse
 import fs from "node:fs";
 import path from "node:path";
-import globPkg from "glob";
+const globMod = await import("glob");
 import * as babel from "@babel/parser";
 import traverseModule from "@babel/traverse";
 const traverse = typeof traverseModule === "function" ? traverseModule : traverseModule.default;
@@ -70,7 +70,7 @@ const namespacedKeys = (nsMap) =>
 const toSet = (arr) => new Set(arr);
 
 // === Load locales ===
-const globSync = globPkg.sync;
+const globSync = globMod.globSync || globMod.sync || globMod.default?.globSync || globMod.default?.sync;
 
 const locales = {};
 for (const lang of LANGS) locales[lang] = loadLangNamespaces(lang);
