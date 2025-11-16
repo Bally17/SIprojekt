@@ -123,9 +123,13 @@
     "statusUploaded": "Nahraný",
     "statusApproved": "Potvrdený",
     "statusRejected": "Zamietnutý",
-    "statusUnknown": "Neznámy stav"
+    "statusUnknown": "Neznámy stav",
+    "openPreview": "Zobraziť dokumenty",
+    "noDocuments": "Žiadne dokumenty zatiaľ nie sú k dispozícii."
   },
   "companyDocs": {
+    "sectionTitle": "Výkazy a dokumenty",
+    "termLabel": "Obdobie",
     "uploadButton": "Nahrať výkaz",
     "uploadSuccess": "Výkaz nahraný",
     "uploadDescription": "Súbor bol úspešne odoslaný.",

@@ -123,9 +123,13 @@
     "statusUploaded": "Uploaded",
     "statusApproved": "Approved",
     "statusRejected": "Rejected",
-    "statusUnknown": "Unknown status"
+    "statusUnknown": "Unknown status",
+    "openPreview": "View documents",
+    "noDocuments": "No documents are available yet."
   },
   "companyDocs": {
+    "sectionTitle": "Reports & documents",
+    "termLabel": "Term",
     "uploadButton": "Upload report",
     "uploadSuccess": "Report uploaded",
     "uploadDescription": "The file was uploaded successfully.",
