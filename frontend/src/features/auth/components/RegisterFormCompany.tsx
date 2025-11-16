@@ -33,7 +33,7 @@ export default function RegisterFormCompany() {
 
   const getErrorMessage = (err: any) => {
     const data = err?.response?.data;
-    if (!data) return msgs.auth.errorSubmit;
+    if (!data) return msgs.auth.error;
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
     const parts: string[] = [];
@@ -44,7 +44,7 @@ export default function RegisterFormCompany() {
         parts.push(`${key}: ${String(value)}`);
       }
     });
-    return parts.join(" | ") || msgs.auth.errorSubmit;
+    return parts.join(" | ") || msgs.auth.error;
   };
 
   // Aktualizácia vstupov → state
