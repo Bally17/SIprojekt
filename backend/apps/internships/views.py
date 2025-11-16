@@ -26,8 +26,9 @@ from .serializers import (
     GarantInternshipUpdateSerializer,
     StudentCreateInternshipSerializer,
 )
-from .permissions import IsGarantUser
+from .permissions import IsGarantUser, IsGarantOrRelatedInternship
 from apps.users.serializers import UserSerializer, StudentProfileSerializer
+from django.conf import settings
 
 GARANT_LIST_FILTERS = [
     openapi.Parameter('rok', openapi.IN_QUERY, description="Filtruj podľa roku", type=openapi.TYPE_INTEGER),
@@ -41,6 +42,29 @@ GARANT_LIST_FILTERS = [
     openapi.Parameter('odbor', openapi.IN_QUERY, description="Filter podľa študijného programu", type=openapi.TYPE_STRING),
 ]
 
+
+def _pick_garant():
+    """
+    Ak existuje aspoň jeden garant, uprednostníme ne-defaultného.
+    Inak použijeme defaultného garanta podľa ENV, ak existuje.
+    """
+    from apps.users.models import User
+
+    default_email = getattr(settings, "DEFAULT_GARANT_EMAIL", None)
+    garants = User.objects.filter(rola="garant", aktivny=True)
+    if not garants.exists():
+        return None
+
+    non_default = garants
+    if default_email:
+        non_default = garants.exclude(email__iexact=default_email)
+
+    candidate = non_default.order_by("id").first()
+    if candidate:
+        return candidate
+    return garants.order_by("id").first()
+
+
 # 🔹 CRUD pre praxe
 class InternshipViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -48,12 +72,44 @@ class InternshipViewSet(viewsets.ModelViewSet):
         .all()
     )
     serializer_class = InternshipSerializer
+    permission_classes = [IsAuthenticated, IsGarantOrRelatedInternship]
+
+    def get_queryset(self):
+        """Limit praxe na tie, kde je používateľ účastníkom, alebo garant vidí všetko."""
+        user = getattr(self.request, "user", None)
+        qs = super().get_queryset()
+        role = getattr(user, "rola", "") or ""
+
+        if role == "garant":
+            return qs
+        if role == "student":
+            return qs.filter(student_id=user.id)
+        if role == "firma":
+            firma_id = getattr(user, "firma_id", None)
+            return qs.filter(firma_id=firma_id) if firma_id else qs.none()
+        return qs.none()
 
 
 # 🔹 CRUD pre históriu praxí
 class InternshipHistoryViewSet(viewsets.ModelViewSet):
     queryset = HistoriaStavovPraxe.objects.all()
     serializer_class = InternshipHistorySerializer
+    permission_classes = [IsAuthenticated, IsGarantOrRelatedInternship]
+
+    def get_queryset(self):
+        """História len pre praxe, kde je používateľ účastníkom, alebo garant."""
+        user = getattr(self.request, "user", None)
+        qs = super().get_queryset().select_related("prax")
+        role = getattr(user, "rola", "") or ""
+
+        if role == "garant":
+            return qs
+        if role == "student":
+            return qs.filter(prax__student_id=user.id)
+        if role == "firma":
+            firma_id = getattr(user, "firma_id", None)
+            return qs.filter(prax__firma_id=firma_id) if firma_id else qs.none()
+        return qs.none()
 
 
 class GarantInternshipViewSet(
@@ -477,10 +533,13 @@ def create_internship(request):
 
     # 🔒 Transakcia: prax + história
     with transaction.atomic():
+        garant = _pick_garant()
+
         # 🧱 Vytvor novú prax
         prax = Prax.objects.create(
             student_id=user.id,
             firma_id=firma.id,
+            garant=garant,
             rok=rok,
             semester=semester,
             datum_zaciatku=datum_zaciatku,

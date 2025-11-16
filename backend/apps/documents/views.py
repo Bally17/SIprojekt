@@ -6,6 +6,7 @@ from django.http import FileResponse
 from django.utils import timezone
 
 from apps.internships.models import Prax
+from apps.internships.permissions import IsGarantOrRelatedDocument
 from services.storage import upload_file_to_b2, generate_presigned_url
 
 # 🔔 notification services (firm + garant)
@@ -50,7 +51,22 @@ class DocumentViewSet(viewsets.ModelViewSet):
     """
     queryset = Dokument.objects.all()
     serializer_class = DocumentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGarantOrRelatedDocument]
+
+    def get_queryset(self):
+        """Limit dokumenty na príbuzné praxe podľa roly používateľa."""
+        user = getattr(self.request, "user", None)
+        qs = super().get_queryset()
+        role = getattr(user, "rola", "") or ""
+
+        if role == "garant":
+            return qs
+        if role == "student":
+            return qs.filter(prax__student_id=user.id)
+        if role == "firma":
+            firma_id = getattr(user, "firma_id", None)
+            return qs.filter(prax__firma_id=firma_id) if firma_id else qs.none()
+        return qs.none()
 
     # ----------------------  UPLOAD (študent)  ----------------------
     @action(detail=True, methods=["post"], url_path="upload")

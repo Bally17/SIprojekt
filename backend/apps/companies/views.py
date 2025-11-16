@@ -13,11 +13,28 @@ from .serializers import CompanySerializer
 from apps.internships.models import Prax
 from apps.users.serializers import StudentProfileSerializer
 from apps.internships.serializers import InternshipSerializer
+from apps.internships.permissions import IsGarantOrReadOnlyCompany
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Firma.objects.all()
     serializer_class = CompanySerializer
+    permission_classes = [IsAuthenticated, IsGarantOrReadOnlyCompany]
+
+    def get_queryset(self):
+        """
+        Garant vidí všetky firmy, firemný používateľ len svoju firmu.
+        """
+        user = getattr(self.request, "user", None)
+        if not user or not user.is_authenticated:
+            return Firma.objects.none()
+        role = getattr(user, "rola", "") or ""
+        if role == "garant":
+            return Firma.objects.all()
+        if role == "firma":
+            firma_id = getattr(user, "firma_id", None)
+            return Firma.objects.filter(id=firma_id) if firma_id else Firma.objects.none()
+        return Firma.objects.none()
 
 
 @swagger_auto_schema(
@@ -42,11 +59,24 @@ class CompanyViewSet(viewsets.ModelViewSet):
     ],
 )
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def company_internships_overview(request, company_id):
     try:
         company = Firma.objects.get(id=company_id)
     except Firma.DoesNotExist:
         return Response({"error": "Firma neexistuje"}, status=status.HTTP_404_NOT_FOUND)
+
+    user = request.user
+    role = getattr(user, "rola", "") or ""
+    if role == "garant":
+        allowed = True
+    elif role == "firma" and getattr(user, "firma_id", None) == company.id:
+        allowed = True
+    else:
+        allowed = False
+    if not allowed:
+        return Response({"error": "Prístup povolený len garantom alebo firme ku vlastným praxiam."},
+                        status=status.HTTP_403_FORBIDDEN)
 
     internships = Prax.objects.filter(firma=company).select_related('student')
 
@@ -136,6 +166,13 @@ def search_companies(request):
     """
     🔍 Vyhľadávanie firiem (čiastočné aj úplné, vhodné pre autocomplete).
     """
+    user = request.user
+    role = getattr(user, "rola", "") or ""
+    # Vyhľadávanie firiem potrebujú aj študenti pri zakladaní praxe
+    if role not in ("garant", "firma", "student"):
+        return Response({"error": "Prístup povolený len prihláseným používateľom (študent/firma/garant)."},
+                        status=status.HTTP_403_FORBIDDEN)
+
     query = request.query_params.get('q', '').strip()
     if not query:
         return Response({"results": []}, status=status.HTTP_200_OK)
