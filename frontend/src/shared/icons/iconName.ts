@@ -25,6 +25,7 @@ type IconName =
   | "refresh-cw"
   | "lock-keyhole"
   | "arrow-right"
-  | "pencil";
+  | "pencil"
+  | "more-horizontal";
 
 export default IconName;

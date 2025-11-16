@@ -26,6 +26,7 @@ import {
   ArrowRight,
   RefreshCw,
   Pencil,
+  MoreHorizontal,
 } from "lucide-react";
 import IconName from "./iconName";
 import { IconType } from "../types/icons/iconTypes";
@@ -58,6 +59,7 @@ const iconMap = {
   "lock-keyhole": LockKeyhole,
   "arrow-right": ArrowRight,
   pencil: Pencil,
+  "more-horizontal": MoreHorizontal,
 };
 
 export const ICON_NAMES = Object.keys(iconMap) as (keyof typeof iconMap)[];
