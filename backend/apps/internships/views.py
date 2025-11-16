@@ -21,6 +21,7 @@ from .serializers import (
     InternshipHistorySerializer,
     ExternalDefenseSerializer,
     GarantInternshipUpdateSerializer,
+    StudentCreateInternshipSerializer,
 )
 from .permissions import IsGarantUser
 from apps.users.serializers import UserSerializer, StudentProfileSerializer
@@ -367,20 +368,15 @@ def create_internship(request):
     if user.rola != "student":
         return Response({"error": "Len študent môže vytvoriť prax."}, status=status.HTTP_403_FORBIDDEN)
 
-    firma_id = request.data.get("firma_id")
-    rok = request.data.get("rok")
-    semester = request.data.get("semester")
-    datum_zaciatku = request.data.get("datum_zaciatku")
-    datum_konca = request.data.get("datum_konca")
+    serializer = StudentCreateInternshipSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    firma_id = serializer.validated_data["firma_id"]
+    rok = serializer.validated_data["rok"]
+    semester = serializer.validated_data["semester"]
+    datum_zaciatku = serializer.validated_data["datum_zaciatku"]
+    datum_konca = serializer.validated_data["datum_konca"]
 
-    # ✅ Validácia vstupov
-    if not all([firma_id, rok, semester, datum_zaciatku, datum_konca]):
-        return Response({"error": "Všetky polia sú povinné."}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        firma = Firma.objects.get(id=firma_id)
-    except Firma.DoesNotExist:
-        return Response({"error": "Firma so zadaným ID neexistuje."}, status=status.HTTP_404_NOT_FOUND)
+    firma = Firma.objects.get(id=firma_id)
 
     # 🔒 Transakcia: prax + história
     with transaction.atomic():

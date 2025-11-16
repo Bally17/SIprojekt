@@ -24,6 +24,38 @@ export default function RegisterFormStudent() {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
+  const allowedStudentDomains = ["student.ukf.sk", "ukf.sk"];
+
+  const validateForm = () => {
+    if (form.firstName.trim().length < 2) return "Meno musí mať aspoň 2 znaky.";
+    if (form.lastName.trim().length < 2) return "Priezvisko musí mať aspoň 2 znaky.";
+    if (form.address.trim().length < 5) return "Adresa musí mať aspoň 5 znakov.";
+    if (!form.studyField.trim()) return "Študijný program je povinný.";
+    const emailDomain = form.studentEmail.split("@")[1]?.toLowerCase() || "";
+    if (!allowedStudentDomains.includes(emailDomain)) {
+      return `Email musí byť z domény ${allowedStudentDomains.join(", ")}.`;
+    }
+    const phoneDigits = form.phone.replace(/\\D/g, "");
+    if (phoneDigits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
+    return null;
+  };
+
+  const getErrorMessage = (err: any) => {
+    const data = err?.response?.data;
+    if (!data) return msgs.auth.error;
+    if (typeof data === "string") return data;
+    if (data.detail) return data.detail;
+    const parts: string[] = [];
+    Object.entries(data).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        parts.push(`${key}: ${value.join(", ")}`);
+      } else if (value) {
+        parts.push(`${key}: ${String(value)}`);
+      }
+    });
+    return parts.join(" | ") || msgs.auth.error;
+  };
+
   // Aktualizácia vstupov → state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -34,12 +66,19 @@ export default function RegisterFormStudent() {
     e.preventDefault();
     setLoading(true);
 
+    const clientError = validateForm();
+    if (clientError) {
+      notifyWarning({ title: msgs.auth.errorTitle, description: clientError });
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       meno: form.firstName,
       priezvisko: form.lastName,
       adresa: form.address,
       email: form.studentEmail,
-      alt_email: form.altEmail || "",
+      alternativny_email: form.altEmail || "",
       telefon: form.phone,
       studijny_program: form.studyField,
     };
@@ -65,7 +104,7 @@ export default function RegisterFormStudent() {
         studyField: "",
       });
     } catch (err: any) {
-      const message = err.response?.data?.message || msgs.auth.errorSubmit;
+      const message = getErrorMessage(err);
       console.error("❌ Chyba pri registrácii:", err.response?.data || err);
       notifyWarning({
         title: msgs.auth.errorTitle,

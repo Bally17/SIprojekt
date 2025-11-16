@@ -104,6 +104,31 @@ export default function StudentDashboardPage() {
     setCreating(true);
 
     try {
+      if (!form.firma_id.trim()) {
+        notifyWarning({ title: "Chýba firma", description: "Vyberte firmu zo zoznamu." });
+        setCreating(false);
+        return;
+      }
+
+      if (form.datum_zaciatku && form.datum_konca && form.datum_konca < form.datum_zaciatku) {
+        notifyWarning({
+          title: "Chybný dátum",
+          description: "Dátum ukončenia musí byť po dátume začiatku.",
+        });
+        setCreating(false);
+        return;
+      }
+
+      const currentYear = new Date().getFullYear();
+      if (form.rok < currentYear - 1 || form.rok > currentYear + 2) {
+        notifyWarning({
+          title: "Chybný rok",
+          description: "Rok praxe je mimo povoleného intervalu.",
+        });
+        setCreating(false);
+        return;
+      }
+
       const payload: CreateInternshipPayload = {
         ...form,
         firma_id: Number(form.firma_id),
@@ -114,6 +139,15 @@ export default function StudentDashboardPage() {
         title: "Prax vytvorená",
         description: "Dohoda bola automaticky vygenerovaná.",
       });
+      setForm((prev) => ({
+        ...prev,
+        firma_id: "",
+        datum_zaciatku: "",
+        datum_konca: "",
+        searchQuery: "",
+      }));
+      setSearchQuery("");
+      setCompanies([]);
       await fetchInternships();
     } catch (err) {
       console.error(err);
