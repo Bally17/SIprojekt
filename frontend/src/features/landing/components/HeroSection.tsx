@@ -32,7 +32,7 @@ export default function HeroSection() {
 
         <div className="mt-10 md:mt-0">
           <Image
-            src="/images/landingPict.png"
+            src="/images/hero1.jpg"
             alt="Hero"
             width={500}
             height={400}

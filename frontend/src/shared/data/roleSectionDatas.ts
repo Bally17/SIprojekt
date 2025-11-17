@@ -20,3 +20,9 @@ export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
     { a: "Reporty", b: "Semestre / programy" },
   ],
 };
+
+export const rolePreviewImages: Record<RoleType, string> = {
+  student: "/images/student_dash.jpg",
+  firma: "/images/firma_dash.jpg",
+  garant: "/images/garant_dash.jpg",
+};

@@ -1,5 +1,6 @@
 "use client";
-import { roleSectionDatas } from "@/shared/data/roleSectionDatas";
+import Image from "next/image";
+import { roleSectionDatas, rolePreviewImages } from "@/shared/data/roleSectionDatas";
 import { useLocalization } from "@/shared/i18n/client";
 import { useState } from "react";
 import "@utils/idUsing";
@@ -91,31 +92,14 @@ export default function RolesSection() {
               <div>
                 <div className="text-sm text-slate-500 mb-2">{msgs.common.role.previewTitle}</div>
                 <div className="rounded-xl border bg-white p-4">
-                  <div className="grid gap-2">
-                    {roleSectionDatas[tab].map((r) => (
-                      <div
-                        key={r.a.idUsing()}
-                        className="flex items-center justify-between rounded-lg border px-3 py-2"
-                      >
-                        <span className="text-sm">{r.b}</span>
-                        <Button variant="ghost" className="text-xs">
-                          {msgs.common.role.action}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex gap-2">
-                    <Button variant="primary" className="text-sm">
-                      {msgs.common.action.createPlacement}
-                    </Button>
-                    <Button variant="ghost" className="text-sm">
-                      {msgs.common.action.generatePdf}
-                    </Button>
-                    <Button variant="ghost" className="text-sm">
-                      {msgs.common.role.preview}
-                    </Button>
-                  </div>
+                  <Image
+                    src={rolePreviewImages[tab]}
+                    alt={`${tabs.find((t) => t.key === tab)?.label} dashboard preview`}
+                    width={960}
+                    height={600}
+                    className="w-full rounded-lg border border-slate-100 shadow-soft"
+                    priority={tab === "student"}
+                  />
                 </div>
               </div>
             </div>

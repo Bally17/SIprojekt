@@ -106,7 +106,7 @@ export default function LoginForm() {
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto">
-      <h2 className="text-2xl font-semibold text-cyan-700 text-center">{msgs.auth.title}</h2>
+      <h2 className="text-2xl font-semibold text-primary-900 text-center">{msgs.auth.title}</h2>
 
       {/* Prepínač typu používateľa – ovplyvňuje len placeholder a zobrazenie OAuth blokov */}
       <div className="flex justify-center gap-3 mb-4 flex-wrap">

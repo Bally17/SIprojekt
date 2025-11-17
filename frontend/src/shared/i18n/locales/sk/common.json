@@ -8,8 +8,6 @@
   "questionMark": "?",
 
   "action": {
-    "createPlacement": "+ Vytvoriť prax",
-    "generatePdf": "Generovať PDF",
     "company": "Zadaj názov firmy..."
   },
 
@@ -30,9 +28,7 @@
     "subtitle": "Prepínaj roly a pozri ich oprávnenia a náhľad.",
     "note": "Pozn.: Garant a Firma majú odlišné oprávnenia.",
     "permissions": "Oprávnenia roly",
-    "previewTitle": "Náhľad rozhrania",
-    "preview": "Náhľad",
-    "action": "Akcia"
+    "previewTitle": "Náhľad rozhrania"
   },
 
   "hero": {
@@ -176,9 +172,9 @@
     "exportSuccess": "CSV export bol vytvorený a sťahuje sa.",
     "exportError": "Export sa nepodarilo dokončiť.",
     "edit": {
-    "title": "Upraviť prax",
-    "description": "Aktualizuj študenta, firmu, termíny aj stav jednej praxe.",
-    "legend": "Vyhľadaj študenta alebo firmu podľa mena, e-mailu či kontaktu.",
+      "title": "Upraviť prax",
+      "description": "Aktualizuj študenta, firmu, termíny aj stav jednej praxe.",
+      "legend": "Vyhľadaj študenta alebo firmu podľa mena, e-mailu či kontaktu.",
       "studentSearch": "Vyhľadaj študenta",
       "studentSearchPlaceholder": "Meno, priezvisko alebo e-mail",
       "studentSelected": "Vybraný študent:",
