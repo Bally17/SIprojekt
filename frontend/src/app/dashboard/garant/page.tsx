@@ -1,7 +1,8 @@
 "use client";
-import GarantInternshipsDashboard from "@/features/garant/GarantInternshipsDashboard";
-import { Card } from "@/shared/components/sections";
-import { useLocalization } from "@/shared/i18n/client";
+
+import { Card } from "@components/sections";
+import { GarantInternshipsDashboard } from "@features/garant";
+import { useLocalization } from "@i18n/client";
 
 export default function GarantDashboardPage() {
   const { msgs } = useLocalization();

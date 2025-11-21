@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useMemo } from "react";
-import type { Messages, Locale } from "@i18n/getMessages";
+import type { Messages } from "@i18n/getMessages";
+import { Locale } from "@type/props/common/globalTypes";
 
 type Ctx = { locale: Locale; messages: Messages };
 const I18nCtx = createContext<Ctx | null>(null);

@@ -1,4 +1,4 @@
-import IconName from "@/shared/icons/iconName";
+import IconName from "@icons/iconName";
 
 export interface FeatureDatasItem {
   icon: IconName;

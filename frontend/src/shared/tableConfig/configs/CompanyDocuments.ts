@@ -1,4 +1,4 @@
-import TableConfig from "@/shared/types/tableConfig/TableConfig";
+import { TableConfig } from "@type/props/tableConfig";
 
 const tableConfig: TableConfig = {
   tableName: [

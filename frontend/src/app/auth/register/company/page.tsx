@@ -1,5 +1,4 @@
-import RegisterFormCompany from "@/features/auth/components/RegisterFormCompany";
-import { BackButton } from "@features/auth";
+import { BackButton, RegisterFormCompany } from "@features/auth";
 import { Footer, Navbar } from "@features/landing";
 
 export default function RegisterCompanyPage() {

@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useLocalization } from "@/shared/i18n/client";
-import { Button } from "@/shared/components/button";
+import { Button } from "@components/button";
+import { useLocalization } from "@i18n/client";
 
 export default function Navbar() {
   const { msgs } = useLocalization();

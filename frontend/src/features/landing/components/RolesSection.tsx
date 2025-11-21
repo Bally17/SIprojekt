@@ -1,25 +1,22 @@
 "use client";
 import Image from "next/image";
-import { roleSectionDatas, rolePreviewImages } from "@/shared/data/roleSectionDatas";
-import { useLocalization } from "@/shared/i18n/client";
+
 import { useState } from "react";
 import "@utils/idUsing";
-import Icon from "@/shared/icons";
-import { Button } from "@/shared/components/button";
-import { RoleType } from "@/shared/types/roleTypes";
+import { roleSectionDatas, rolePreviewImages } from "@data/roleSectionDatas";
+import { useLocalization } from "@i18n/client";
+import { RoleType } from "@type/props/roles/roleTypes";
+import Icon from "@icons/index";
 
 export default function RolesSection() {
   const { msgs } = useLocalization();
   const [tab, setTab] = useState<RoleType>("student");
 
-  // kľúče sú v súlade s RoleType; label môže ostať "Firma"
   const tabs: { key: RoleType; label: string; icon: React.ReactNode }[] = [
     { key: "student", label: "Študent", icon: <Icon name="graduation-cap" className="h-4 w-4" /> },
-    { key: "firma", label: "Firma", icon: <Icon name="building-2" className="h-4 w-4" /> },
+    { key: "company", label: "Firma", icon: <Icon name="building-2" className="h-4 w-4" /> },
     { key: "garant", label: "Garant", icon: <Icon name="shield" className="h-4 w-4" /> },
   ];
-
-  const isActive = (k: RoleType) => tab === k;
 
   return (
     <section id="roles" className="section">
@@ -28,51 +25,32 @@ export default function RolesSection() {
         <p className="text-ink-500 mb-6">{msgs.common.role.subtitle}</p>
 
         <div className="grid md:grid-cols-[220px,1fr] gap-5">
-          {/* ľavý zoznam tabov */}
-          <div className="card p-0" role="tablist" aria-orientation="vertical">
+          <div className="card p-0">
             {tabs.map((t) => (
-              <Button
+              <button
                 key={t.key}
-                type="button"
                 onClick={() => setTab(t.key)}
-                variant={isActive(t.key) ? "soft" : "ghost"}
-                role="tab"
-                aria-selected={isActive(t.key)}
-                className={`w-full justify-start px-4 py-3 border-b last:border-b-0 text-left ${
-                  isActive(t.key)
-                    ? "bg-primary-50 text-primary-700 font-medium"
-                    : "hover:bg-slate-50"
-                }`}
+                className={`w-full text-left px-4 py-3 flex items-center gap-2 border-b last:border-b-0 ${tab === t.key ? "bg-primary-50 text-primary-700 font-medium" : "hover:bg-slate-50"}`}
               >
                 <span className="h-6 w-6 grid place-items-center rounded-full bg-slate-100">
                   {t.icon}
                 </span>
                 {t.label}
-              </Button>
+              </button>
             ))}
             <div className="px-4 py-3 text-xs text-slate-500">{msgs.common.role.note}</div>
           </div>
 
-          {/* pravý panel */}
           <div className="card">
-            {/* horné toggle pilule */}
-            <div className="flex flex-wrap gap-2 mb-4" role="tablist" aria-orientation="horizontal">
+            <div className="flex flex-wrap gap-2 mb-4">
               {tabs.map((t) => (
-                <Button
+                <button
                   key={t.key}
-                  type="button"
                   onClick={() => setTab(t.key)}
-                  variant={isActive(t.key) ? "primary" : "ghost"}
-                  role="tab"
-                  aria-selected={isActive(t.key)}
-                  className={`rounded-lg px-3 py-2 text-sm border ${
-                    isActive(t.key)
-                      ? "bg-primary-600 text-white border-primary-600"
-                      : "hover:bg-slate-50"
-                  }`}
+                  className={`px-3 py-2 rounded-lg border text-sm ${tab === t.key ? "bg-primary-600 text-white border-primary-600" : "hover:bg-slate-50"}`}
                 >
                   {t.label}
-                </Button>
+                </button>
               ))}
             </div>
 
@@ -88,7 +66,6 @@ export default function RolesSection() {
                   ))}
                 </ul>
               </div>
-
               <div>
                 <div className="text-sm text-slate-500 mb-2">{msgs.common.role.previewTitle}</div>
                 <div className="rounded-xl border bg-white p-4">
@@ -100,6 +77,26 @@ export default function RolesSection() {
                     className="w-full rounded-lg border border-slate-100 shadow-soft"
                     priority={tab === "student"}
                   />
+                  <div className="grid gap-2">
+                    {roleSectionDatas[tab].map((r, i) => (
+                      <div
+                        key={r.a.idUsing()}
+                        className="flex items-center justify-between rounded-lg border px-3 py-2"
+                      >
+                        <span className="text-sm">{r.b}</span>
+                        <button className="btn btn-ghost text-xs">{msgs.common.role.action}</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <button className="btn btn-primary text-sm">
+                      {msgs.common.action.createPlacement}
+                    </button>
+                    <button className="btn btn-ghost text-sm">
+                      {msgs.common.action.generatePdf}
+                    </button>
+                    <button className="btn btn-ghost text-sm">{msgs.common.role.preview}</button>
+                  </div>
                 </div>
               </div>
             </div>

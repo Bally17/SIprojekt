@@ -2,13 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import axiosClient, { clearAuthTokens } from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import Icon from "@/shared/icons";
-import { Button } from "../../button";
-
-type DashboardRole = "student" | "firma" | "garant" | string;
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import axiosClient, { clearAuthTokens } from "@lib/axiosClient";
+import Icon from "@icons/index";
+import { RoleType } from "@type/props/roles/roleTypes";
 
 type DashboardUser = {
   id: number;
@@ -18,8 +17,8 @@ type DashboardUser = {
   meno?: string;
   priezvisko?: string;
   full_name?: string;
-  rola?: DashboardRole;
-  role?: DashboardRole;
+  rola?: RoleType;
+  role?: RoleType;
   firma?: {
     nazov?: string | null;
   };

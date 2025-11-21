@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import axiosClient from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import Icon from "@icons/index";
+import axiosClient from "@lib/axiosClient";
 import {
+  Internship,
+  Stav,
+  STAV_OPTIONS,
+  STAV_LABEL,
   SEMESTER_LABEL,
   STAV_BADGE_CLASS,
-  STAV_LABEL,
-  STAV_OPTIONS,
-  type Stav,
-} from "@/shared/types/internship/components/StateInternship";
-import type { Internship } from "@/shared/types/internship/internship";
-import Icon from "@/shared/icons";
+} from "@type/props/internship";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Default prázdne filtre – slúžia aj na resetovanie formulára.
 const DEFAULT_FILTERS = {
@@ -264,7 +264,9 @@ export default function GarantInternshipsDashboard() {
 
       const disposition: string = response.headers?.["content-disposition"] || "";
       const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
-      const filename = filenameMatch?.[1] ? decodeURIComponent(filenameMatch[1]) : "internships_export.csv";
+      const filename = filenameMatch?.[1]
+        ? decodeURIComponent(filenameMatch[1])
+        : "internships_export.csv";
 
       const blob = new Blob([response.data], { type: "text/csv;charset=utf-8" });
       const url = window.URL.createObjectURL(blob);
@@ -282,7 +284,9 @@ export default function GarantInternshipsDashboard() {
       });
     } catch (err: any) {
       const description =
-        err?.response?.data?.error || err?.response?.data?.detail || msgs.common.guarant.exportError;
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        msgs.common.guarant.exportError;
       notifyWarning({ title: msgs.common.guarant.exportError, description });
     } finally {
       setExporting(false);
@@ -301,9 +305,12 @@ export default function GarantInternshipsDashboard() {
       statusNote: "",
     });
     const studentLabel =
-      internship.student_full_name || internship.student_email || (internship.student ? `#${internship.student}` : "");
+      internship.student_full_name ||
+      internship.student_email ||
+      (internship.student ? `#${internship.student}` : "");
     const companyLabel =
-      internship.company_name || (typeof internship.firma === "number" ? `#${internship.firma}` : "");
+      internship.company_name ||
+      (typeof internship.firma === "number" ? `#${internship.firma}` : "");
     setStudentSearch(studentLabel);
     setCompanySearch(companyLabel);
     setSelectedStudentLabel(studentLabel);
@@ -386,7 +393,7 @@ export default function GarantInternshipsDashboard() {
 
     const companyValue = editForm.companyId.trim().length
       ? parseNumber(editForm.companyId, editingInternship.firma ?? 0)
-      : editingInternship.firma ?? 0;
+      : (editingInternship.firma ?? 0);
     if (!Number.isNaN(companyValue) && companyValue > 0) {
       payload.firma_id = companyValue;
     }
@@ -774,7 +781,9 @@ export default function GarantInternshipsDashboard() {
                               {option.nazov || `#${option.id}`}
                             </span>
                             <span className="text-xs text-ink-500">
-                              {[option.kontakt_meno, option.kontakt_email].filter(Boolean).join(" • ")}
+                              {[option.kontakt_meno, option.kontakt_email]
+                                .filter(Boolean)
+                                .join(" • ")}
                             </span>
                           </button>
                         </li>
@@ -843,7 +852,9 @@ export default function GarantInternshipsDashboard() {
                     rows={3}
                     className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
                   />
-                  <p className="mt-1 text-xs text-ink-400">{msgs.common.guarant.edit.statusNoteHint}</p>
+                  <p className="mt-1 text-xs text-ink-400">
+                    {msgs.common.guarant.edit.statusNoteHint}
+                  </p>
                 </div>
               </div>
               <div className="flex justify-end gap-3">

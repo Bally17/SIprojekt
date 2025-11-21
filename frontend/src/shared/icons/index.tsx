@@ -1,7 +1,7 @@
+import ClassNameParamType from "@type/props/icons/ClassNameParamType";
 import React, { FC } from "react";
-import IconName from "./iconName";
 import getIconByName from "./getIconByName";
-import ClassNameParamType from "../types/icons/ClassNameParamType";
+import IconName from "./iconName";
 
 interface IconProps {
   name: IconName;

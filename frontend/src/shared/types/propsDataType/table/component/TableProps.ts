@@ -1,9 +1,8 @@
+import { Action } from "@type/props/common/globalTypes";
+import { Internship } from "@type/props/internship";
 import type { ReactElement } from "react";
-import { Internship } from "../../internship/internship";
 import { TableFilters } from "./components/TableFilters";
 import { TableNameValues } from "./components/TableNameValues";
-
-export type Action = "confirm" | "reject";
 
 interface TableProps {
   name: TableNameValues;

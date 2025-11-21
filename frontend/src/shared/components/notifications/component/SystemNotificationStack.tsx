@@ -1,7 +1,7 @@
 "use client";
 
+import { useLocalization } from "@i18n/client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useLocalization } from "@/shared/i18n/client";
 import SystemNotification, { SystemNotificationProps } from "./SystemNotification";
 
 export type NotificationStackItem = {

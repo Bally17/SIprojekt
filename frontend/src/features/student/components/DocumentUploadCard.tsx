@@ -1,10 +1,9 @@
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import Icon from "@icons/index";
+import axiosClient from "@lib/axiosClient";
+import { Internship, InternshipDocument } from "@type/props/internship";
 import React, { useMemo, useState } from "react";
-import axiosClient from "@/lib/axiosClient";
-import type { Internship } from "@/shared/types/internship/internship";
-import type { InternshipDocument } from "@/shared/types/internship/components/InternshipDocument";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import Icon from "@/shared/icons";
 
 type Props = {
   internship: Internship & { documents?: InternshipDocument[] };

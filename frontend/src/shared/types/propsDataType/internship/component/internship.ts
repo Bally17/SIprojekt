@@ -1,4 +1,4 @@
-import type { InternshipDocument } from "./components/InternshipDocument";
+import InternshipDocument from "./components/InternshipDocument";
 import { Semester, Stav } from "./components/StateInternship";
 
 export interface Internship {

@@ -1,5 +1,4 @@
-import ForgotPasswordForm from "@/features/auth/components/ForgotPasswordForm";
-import { BackButton } from "@features/auth";
+import { BackButton, ForgotPasswordForm } from "@features/auth";
 import { Footer, Navbar } from "@features/landing";
 
 export default function ForgotPasswordPage() {
