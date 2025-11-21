@@ -63,41 +63,70 @@ def generate_dohoda_pdf(prax):
     existing_pdf = PdfReader(open(template_path, "rb"))
     output = PdfWriter()
 
-    packet = io.BytesIO()
-    can = canvas.Canvas(packet, pagesize=A4)
-    can.setFont("Helvetica", 10.5)
+    overlay_data = {}
 
-    # 🔹 Firma
-    can.drawString(130 * mm, 197 * mm, safe_str(firma.nazov))
-    can.drawString(130 * mm, 191 * mm, safe_str(firma.adresa))
+    def get_canvas(page_index: int):
+        entry = overlay_data.get(page_index)
+        if entry is None:
+            packet = io.BytesIO()
+            can = canvas.Canvas(packet, pagesize=A4)
+            can.setFont("Helvetica", 10.5)
+            overlay_data[page_index] = {"packet": packet, "canvas": can}
+            return can
+        entry["canvas"].setFont("Helvetica", 10.5)
+        return entry["canvas"]
 
-    # 🔹 Študent
-    can.drawString(125 * mm, 177 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
-    can.drawString(125 * mm, 172 * mm, safe_str(student.adresa))
-    can.drawString(125 * mm, 167 * mm, safe_str(student.email))
+    # prva strana
+    # 🔹 Firma #dobre
+    first_page = get_canvas(0)
+    first_page.drawString(83 * mm, 206 * mm, safe_str(firma.nazov))
+    first_page.drawString(115 * mm, 206 * mm, safe_str(firma.adresa))
+    company_contact = safe_str(getattr(firma, "kontakt_meno", "") or "")
+    if company_contact:
+        first_page.drawString(83 * mm, 201 * mm, company_contact)
 
-    # 🔹 Garant
-    if garant:
-        can.drawString(125 * mm, 158 * mm, safe_str(f"Garant: {garant.meno} {garant.priezvisko}"))
+    # 🔹 Študent # dobre
+    first_page.drawString(125 * mm, 177 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
+    first_page.drawString(125 * mm, 172 * mm, safe_str(student.adresa))
+    first_page.drawString(125 * mm, 167 * mm, safe_str(student.email))
 
-    # 🔹 Termíny praxe
-    can.drawString(120 * mm, 142 * mm, safe_str(zaciatok_str))
-    can.drawString(160 * mm, 142 * mm, safe_str(koniec_str))
+    # 🔹 Garant dobre
+    #if garant:
+    #   first_page.drawString(125 * mm, 152 * mm, safe_str(f"Garant: {garant.meno} {garant.priezvisko}"))
+
+    # 🔹 Termíny praxe # dobre
+    first_page.drawString(80 * mm, 118 * mm, safe_str(zaciatok_str))
+    first_page.drawString(125 * mm, 118 * mm, safe_str(koniec_str))
+
+
+
+    # druha tretia strana 
 
     # 🔹 Dátum a podpis
-    can.drawString(72 * mm, 112 * mm, safe_str(f"V Nitre, dňa {datum_dnes}"))
-    can.drawString(145 * mm, 70 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
+    second_page = get_canvas(1)
+    second_page.drawString(52 * mm, 24 * mm, safe_str(f"{datum_dnes}"))
 
-    can.save()
-    packet.seek(0)
-    overlay_pdf = PdfReader(packet)
+    if company_contact:
+        second_page = get_canvas(1)
+        second_page.drawString(75 * mm, 230 * mm, company_contact)
 
-    first_page = existing_pdf.pages[0]
-    first_page.merge_page(overlay_pdf.pages[0])
-    output.add_page(first_page)
+        third_page = get_canvas(2)
+        third_page.drawString(142 * mm, 270 * mm, company_contact)
 
-    for i in range(1, len(existing_pdf.pages)):
-        output.add_page(existing_pdf.pages[i])
+    third_page = get_canvas(2)
+    third_page.drawString(140 * mm, 234 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
+
+    overlays = {}
+    for index, data in overlay_data.items():
+        data["canvas"].save()
+        data["packet"].seek(0)
+        overlay_pdf = PdfReader(data["packet"])
+        overlays[index] = overlay_pdf.pages[0]
+
+    for i, page in enumerate(existing_pdf.pages):
+        if i in overlays:
+            page.merge_page(overlays[i])
+        output.add_page(page)
 
     output_dir = os.path.join(settings.MEDIA_ROOT, "dohody")
     os.makedirs(output_dir, exist_ok=True)
