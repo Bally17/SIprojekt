@@ -5,6 +5,8 @@ from rest_framework.test import APIClient
 
 from apps.users.models import User
 from apps.companies.models import Firma
+from apps.internships.models import Prax
+from apps.documents.models import Dokument
 
 
 @pytest.mark.django_db
@@ -135,3 +137,68 @@ class TestCreateInternshipValidation:
 
         assert response.status_code == 400
         assert "nazov" in response.data
+
+
+@pytest.mark.django_db
+class TestDocumentRequirementValidation:
+    def setup_method(self):
+        self.client = APIClient()
+        self.garant = User.objects.create_user(
+            email="garant@example.com",
+            password="StrongPass123!",
+            rola="garant",
+        )
+        self.student = User.objects.create_user(
+            email="student2@student.ukf.sk",
+            password="StrongPass123!",
+            rola="student",
+        )
+        self.firma = Firma.objects.create(
+            nazov="Valid Firma",
+            adresa="Adresa 123",
+            kontakt_meno="Kontakt",
+            kontakt_email="kontakt@example.com",
+        )
+        today = timezone.now().date()
+        self.prax = Prax.objects.create(
+            student=self.student,
+            firma=self.firma,
+            garant=self.garant,
+            rok=today.year,
+            semester="zimny",
+            datum_zaciatku=today,
+            datum_konca=today,
+            stav="potvrdena",
+        )
+        self.contract = Dokument.objects.create(
+            prax=self.prax,
+            typ_dokumentu="zmluva",
+            subor_url="contract.pdf",
+            nahrane_pouzivatel=self.student,
+            stav_dokumentu="nahrany",
+        )
+
+    def test_garant_cannot_mark_schvalena_without_confirmed_contract(self):
+        self.client.force_authenticate(user=self.garant)
+        response = self.client.patch(
+            f"/api/internships/garant/internships/{self.prax.id}/",
+            {"stav": "schvalena"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert "stav" in response.data
+
+    def test_garant_can_mark_schvalena_with_confirmed_contract(self):
+        self.contract.stav_dokumentu = "potvrdeny"
+        self.contract.save(update_fields=["stav_dokumentu"])
+
+        self.client.force_authenticate(user=self.garant)
+        response = self.client.patch(
+            f"/api/internships/garant/internships/{self.prax.id}/",
+            {"stav": "schvalena"},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        assert response.data["stav"] == "schvalena"

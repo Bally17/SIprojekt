@@ -6,6 +6,7 @@ from apps.documents.models import Dokument
 from apps.documents.serializers import DocumentSerializer
 from apps.users.models import User
 from apps.companies.models import Firma
+from .document_requirements import missing_required_documents
 from .models import Prax, HistoriaStavovPraxe
 
 
@@ -192,6 +193,21 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"datum_konca": "Dátum ukončenia nemôže byť pred dátumom začiatku."}
             )
+
+        target_state = (attrs.get("stav") or "").lower()
+        instance_state = (getattr(self.instance, "stav", "") or "").lower()
+        if target_state and target_state != instance_state and self.instance:
+            missing_docs = missing_required_documents(self.instance, target_state)
+            if missing_docs:
+                docs_text = ", ".join(missing_docs)
+                raise serializers.ValidationError(
+                    {
+                        "stav": (
+                            f"Pred zmenou stavu na '{target_state}' musia byť potvrdené dokumenty: "
+                            f"{docs_text}."
+                        )
+                    }
+                )
 
         return attrs
 
