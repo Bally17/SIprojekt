@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { TableFilters } from "./components/TableFilters";
 import { TableNameValues } from "./components/TableNameValues";
 
-interface TableProps {
+export default interface TableProps {
   name: TableNameValues;
   data: Internship[];
   document?: boolean;
@@ -24,5 +24,3 @@ interface TableProps {
   renderRow?: (item: Internship) => ReactElement;
   columnCountOverride?: number;
 }
-
-export default TableProps;

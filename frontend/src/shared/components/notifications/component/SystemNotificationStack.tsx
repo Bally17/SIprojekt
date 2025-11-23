@@ -44,13 +44,13 @@ const spacingClasses: Record<NonNullable<SystemNotificationStackProps["spacing"]
   compact: "gap-2",
 };
 
-const SystemNotificationStack: React.FC<SystemNotificationStackProps> = ({
+export const SystemNotificationStack = ({
   items,
   position = "top-right",
   spacing = "default",
   toastWidth = DEFAULT_TOAST_WIDTH,
   onDismiss,
-}) => {
+}: SystemNotificationStackProps) => {
   const { msgs } = useLocalization();
   const defaultCloseLabel =
     msgs.common?.notifications?.toast?.close ?? msgs.common?.close ?? "Close notification";
@@ -137,12 +137,7 @@ const useProgressTimer = ({
   }, [durationMs, enabled, paused, onComplete]);
 };
 
-const ToastItem: React.FC<ToastItemProps> = ({
-  item,
-  toastWidth,
-  fallbackCloseLabel,
-  onDismiss,
-}) => {
+export const ToastItem = ({ item, toastWidth, fallbackCloseLabel, onDismiss }: ToastItemProps) => {
   const [hovered, setHovered] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const autoClose = item.autoClose !== false;

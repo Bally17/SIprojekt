@@ -1,9 +1,8 @@
-import React, { FC, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@components/button";
 import { Select } from "@components/select";
 import { useLocalization } from "@i18n/client";
 import { Action } from "@type/props/common/globalTypes";
-import { TableProps } from "@type/props/table";
 import useLoadTableData from "@utils/actions";
 import {
   getStavLabel,
@@ -18,6 +17,7 @@ import {
   STAV_OPTIONS,
 } from "@type/props/internship";
 import Icon from "@icons/index";
+import { TableProps } from "@type/props/table";
 
 const buildMediaUrl = (path: string) => {
   const backend = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(
@@ -27,28 +27,26 @@ const buildMediaUrl = (path: string) => {
   return `${backend}/media/${path.replace(/^\/?/, "")}`;
 };
 
-const TableComponent: FC<TableProps> = (props) => {
-  const {
-    data,
-    name,
-    document = false,
-    rowActions = false,
-    onAction,
-    showFilters = false,
-    filters,
-    onFiltersChange,
-    onApplyFilters,
-    onResetFilters,
-    semesterOptions = [],
-    stavOptions = [],
-    isError,
-    isLoading,
-    actionMessage,
-    showEmpty,
-    renderRow,
-    columnCountOverride,
-  } = props;
-
+export const TableComponent = ({
+  data,
+  name,
+  document = false,
+  rowActions = false,
+  onAction,
+  showFilters = false,
+  filters,
+  onFiltersChange,
+  onApplyFilters,
+  onResetFilters,
+  semesterOptions = [],
+  stavOptions = [],
+  isError,
+  isLoading,
+  actionMessage,
+  showEmpty,
+  renderRow,
+  columnCountOverride,
+}: TableProps) => {
   const { subTitle, title, columns } = useLoadTableData(name);
   const { msgs } = useLocalization();
   const [busy, setBusy] = useState<Record<number, Action | undefined>>({});

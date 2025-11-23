@@ -11,7 +11,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ./backend:/app  # len raz!
+      - ./backend:/app # len raz!
     entrypoint: ["/app/entrypoint.sh"]
 
   # PostgreSQL Database

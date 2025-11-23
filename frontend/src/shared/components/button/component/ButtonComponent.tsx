@@ -1,8 +1,10 @@
 "use client";
-import React, { FC } from "react";
+import React from "react";
+
+export type ButtonVariant = "primary" | "danger" | "ghost" | "success" | "soft";
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "danger" | "ghost" | "success" | "soft";
+  variant?: ButtonVariant;
   loading?: boolean;
 };
 
@@ -18,22 +20,24 @@ const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
   soft: "bg-white text-ink-900 shadow-soft hover:shadow-md",
 };
 
-export const Button: FC<ButtonProps> = ({
+export const Button = ({
   variant = "ghost",
   loading = false,
   className = "",
   children,
   disabled,
   ...rest
-}) => (
-  <button
-    {...rest}
-    disabled={disabled || loading}
-    className={`${base} ${variants[variant]} ${className}`}
-  >
-    {loading ? <span className="mr-2 inline-block animate-spin">⏳</span> : null}
-    {children}
-  </button>
-);
+}: ButtonProps) => {
+  return (
+    <button
+      {...rest}
+      disabled={disabled || loading}
+      className={`${base} ${variants[variant]} ${className}`}
+    >
+      {loading ? <span className="mr-2 inline-block animate-spin">⏳</span> : null}
+      {children}
+    </button>
+  );
+};
 
 export default Button;

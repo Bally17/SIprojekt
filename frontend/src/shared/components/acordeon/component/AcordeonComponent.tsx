@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { useState } from "react";
 import "@utils/idUsing";
 import { FaqData } from "@type/props/common/globalTypes";
 
@@ -45,7 +45,7 @@ const variantClasses: Record<
   },
 };
 
-const AcordeonComponent: FC<AcordeonComponentProps> = ({
+export const AcordeonComponent = ({
   data,
   variant = "light",
   defaultOpen = null,
@@ -55,7 +55,7 @@ const AcordeonComponent: FC<AcordeonComponentProps> = ({
   titleClassName,
   chevronClassName,
   contentClassName,
-}) => {
+}: AcordeonComponentProps) => {
   const v = variantClasses[variant];
   const [open, setOpen] = useState<number | null>(defaultOpen);
 

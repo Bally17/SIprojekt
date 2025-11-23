@@ -1,9 +1,4 @@
-import IconName from "@icons/iconName";
-
-export interface FeatureDatasItem {
-  icon: IconName;
-  title: string;
-}
+import { FeatureDatasItem } from "@type/props/common/globalTypes";
 
 export const featureDatas: readonly FeatureDatasItem[] = [
   { icon: "file-spreadsheet", title: "Evidencia praxí" },

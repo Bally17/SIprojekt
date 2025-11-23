@@ -5,8 +5,12 @@ import axiosClient from "@lib/axiosClient";
 import { Internship, InternshipDocument } from "@type/props/internship";
 import React, { useMemo, useState } from "react";
 
-type Props = {
-  internship: Internship & { documents?: InternshipDocument[] };
+type InternshipWithDocuments = Internship & {
+  documents?: InternshipDocument[];
+};
+
+type DocumentUploadCardProps = {
+  internship: InternshipWithDocuments;
   onSuccess?: () => void;
 };
 
@@ -17,7 +21,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 // Komponent slúži ako mini dashboard dokumentov praxe.
-const DocumentUploadCard: React.FC<Props> = ({ internship, onSuccess }) => {
+const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) => {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 

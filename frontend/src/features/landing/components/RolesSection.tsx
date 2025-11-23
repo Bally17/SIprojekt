@@ -1,9 +1,8 @@
 "use client";
 import Image from "next/image";
-
 import { useState } from "react";
 import "@utils/idUsing";
-import { roleSectionDatas, rolePreviewImages } from "@data/roleSectionDatas";
+import { roleSectionDatas, rolePreviewImages, tabs } from "@data/roleSectionDatas";
 import { useLocalization } from "@i18n/client";
 import { RoleType } from "@type/props/roles/roleTypes";
 import Icon from "@icons/index";
@@ -11,12 +10,6 @@ import Icon from "@icons/index";
 export default function RolesSection() {
   const { msgs } = useLocalization();
   const [tab, setTab] = useState<RoleType>("student");
-
-  const tabs: { key: RoleType; label: string; icon: React.ReactNode }[] = [
-    { key: "student", label: "Študent", icon: <Icon name="graduation-cap" className="h-4 w-4" /> },
-    { key: "company", label: "Firma", icon: <Icon name="building-2" className="h-4 w-4" /> },
-    { key: "garant", label: "Garant", icon: <Icon name="shield" className="h-4 w-4" /> },
-  ];
 
   return (
     <section id="roles" className="section">
@@ -33,7 +26,7 @@ export default function RolesSection() {
                 className={`w-full text-left px-4 py-3 flex items-center gap-2 border-b last:border-b-0 ${tab === t.key ? "bg-primary-50 text-primary-700 font-medium" : "hover:bg-slate-50"}`}
               >
                 <span className="h-6 w-6 grid place-items-center rounded-full bg-slate-100">
-                  {t.icon}
+                  <Icon name={t.icon} className="h-4 w-4" />
                 </span>
                 {t.label}
               </button>
@@ -77,26 +70,6 @@ export default function RolesSection() {
                     className="w-full rounded-lg border border-slate-100 shadow-soft"
                     priority={tab === "student"}
                   />
-                  <div className="grid gap-2">
-                    {roleSectionDatas[tab].map((r, i) => (
-                      <div
-                        key={r.a.idUsing()}
-                        className="flex items-center justify-between rounded-lg border px-3 py-2"
-                      >
-                        <span className="text-sm">{r.b}</span>
-                        <button className="btn btn-ghost text-xs">{msgs.common.role.action}</button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <button className="btn btn-primary text-sm">
-                      {msgs.common.action.createPlacement}
-                    </button>
-                    <button className="btn btn-ghost text-sm">
-                      {msgs.common.action.generatePdf}
-                    </button>
-                    <button className="btn btn-ghost text-sm">{msgs.common.role.preview}</button>
-                  </div>
                 </div>
               </div>
             </div>

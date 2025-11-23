@@ -1,6 +1,6 @@
 import { TableConfig } from "@type/props/tableConfig";
 
-const tableConfig: TableConfig = {
+const tableConfig = {
   tableName: [
     {
       name: "Všetky praxe",
@@ -119,6 +119,6 @@ const tableConfig: TableConfig = {
       ],
     },
   ],
-};
+} satisfies TableConfig;
 
 export default tableConfig;

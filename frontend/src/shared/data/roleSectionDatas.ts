@@ -1,3 +1,4 @@
+import IconName from "@icons/iconName";
 import { RoleType, RoleDataType } from "@type/props/roles/roleTypes";
 
 export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
@@ -20,6 +21,12 @@ export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
     { a: "Reporty", b: "Semestre / programy" },
   ],
 };
+
+export const tabs: { key: RoleType; label: string; icon: IconName }[] = [
+  { key: "student", label: "Študent", icon: "graduation-cap" },
+  { key: "company", label: "Firma", icon: "building-2" },
+  { key: "garant", label: "Garant", icon: "shield" },
+];
 
 export const rolePreviewImages: Record<RoleType, string> = {
   student: "/images/student_dash.jpg",
