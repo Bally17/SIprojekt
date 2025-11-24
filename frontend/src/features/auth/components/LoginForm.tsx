@@ -2,13 +2,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
-// axiosClient má baseURL z NEXT_PUBLIC_API_URL
-import axiosClient, { setAuthTokens } from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
-import { Button } from "@/shared/components/button";
-import { RoleType } from "@/shared/types/components/button/RoleTypes";
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import axiosClient, { setAuthTokens } from "@lib/axiosClient";
+import { RoleType } from "@type/props/common/globalTypes";
 
 export default function LoginForm() {
   const router = useRouter();

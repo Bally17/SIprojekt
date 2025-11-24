@@ -1,22 +1,23 @@
-import { useLocalization } from "@/shared/i18n/client";
-import TableProps, { Action } from "@/shared/types/components/table/TableProps";
-import { useLoadTableData } from "@/shared/utils/actions";
-import React, { FC, useState } from "react";
-import { Button } from "../../button";
-import { InternshipDocument } from "@/shared/types/internship/components/InternshipDocument";
-import Select from "../../select/component/SelectComponent";
-import Icon from "@/shared/icons";
-import type { Internship } from "@/shared/types/internship/internship";
+import React, { useState } from "react";
+import { Button } from "@components/button";
+import { Select } from "@components/select";
+import { useLocalization } from "@i18n/client";
+import { Action } from "@type/props/common/globalTypes";
+import useLoadTableData from "@utils/actions";
+import Icon from "@icons/index";
+import { TableProps } from "@type/props/table";
+import { Internship } from "@type/backend/Internship";
+import InternshipDocument from "@type/backend/InternshipDocument";
 import {
+  Semester,
+  isSemester,
+  Stav,
+  isStav,
   SEMESTER_OPTIONS,
   STAV_OPTIONS,
-  type Semester,
-  type Stav,
-  isSemester,
-  isStav,
-  getStavLabel,
   STAV_BADGE_CLASS,
-} from "@/shared/types/internship/components/StateInternship";
+  getStavLabel,
+} from "@type/props/common/StateInternship";
 
 const buildMediaUrl = (path: string) => {
   const backend = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(
@@ -26,28 +27,26 @@ const buildMediaUrl = (path: string) => {
   return `${backend}/media/${path.replace(/^\/?/, "")}`;
 };
 
-const TableComponent: FC<TableProps> = (props) => {
-  const {
-    data,
-    name,
-    document = false,
-    rowActions = false,
-    onAction,
-    showFilters = false,
-    filters,
-    onFiltersChange,
-    onApplyFilters,
-    onResetFilters,
-    semesterOptions = [],
-    stavOptions = [],
-    isError,
-    isLoading,
-    actionMessage,
-    showEmpty,
-    renderRow,
-    columnCountOverride,
-  } = props;
-
+export const TableComponent = ({
+  data,
+  name,
+  document = false,
+  rowActions = false,
+  onAction,
+  showFilters = false,
+  filters,
+  onFiltersChange,
+  onApplyFilters,
+  onResetFilters,
+  semesterOptions = [],
+  stavOptions = [],
+  isError,
+  isLoading,
+  actionMessage,
+  showEmpty,
+  renderRow,
+  columnCountOverride,
+}: TableProps) => {
   const { subTitle, title, columns } = useLoadTableData(name);
   const { msgs } = useLocalization();
   const [busy, setBusy] = useState<Record<number, Action | undefined>>({});

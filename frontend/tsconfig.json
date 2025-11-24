@@ -15,21 +15,25 @@
     "jsx": "preserve",
     "incremental": true,
     "types": ["node"],
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
       "@features/*": ["src/features/*"],
-      "@entities/*": ["src/entities/*"],
       "@lib/*": ["src/lib/*"],
-      "@i18n/*": ["src/shared/i18n/*"],
-      "@data/*": ["src/shared/data/*"],
-      "@data_types/*": ["src/shared/types/*"],
-      "@utils/*": ["src/shared/utils/*"],
       "@components/*": ["src/shared/components/*"],
-      "@table_config/*": ["src/shared/tableConfig/*"]
+      "@data/*": ["src/shared/data/*"],
+      "@i18n/*": ["src/shared/i18n/*"],
+      "@table_config/*": ["src/shared/tableConfig/*"],
+      "@type/backend/*": ["src/shared/types/backendDataType/*"],
+      "@type/props/*": ["src/shared/types/propsDataType/*"],
+      "@utils/*": ["src/shared/utils/*"],
+      "@icons/*": ["src/shared/icons/*"]
     }
   },
-  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules", ".next", "dist", "build", "coverage", "scripts"]
 }

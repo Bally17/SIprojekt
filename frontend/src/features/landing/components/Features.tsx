@@ -1,7 +1,8 @@
 "use client";
-import { featureDatas } from "@/shared/data/featureDatas";
-import { useLocalization } from "@/shared/i18n/client";
-import Icon from "@/shared/icons";
+
+import { featureDatas } from "@data/featureDatas";
+import { useLocalization } from "@i18n/client";
+import Icon from "@icons/index";
 
 export default function Features() {
   const { msgs } = useLocalization();

@@ -1,3 +1,7 @@
+networks:
+  moja-network:
+    driver: bridge
+
 services:
   # Django Backend
   backend:
@@ -11,20 +15,24 @@ services:
     depends_on:
       - db
     volumes:
-      - ./backend:/app  # len raz!
+      - ./backend:/app # len raz!
     entrypoint: ["/app/entrypoint.sh"]
+    networks:
+      - moja-network
 
   # PostgreSQL Database
   db:
-    image: postgres:18
+    image: postgres:17
     environment:
       - POSTGRES_DB=praxy_db
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
+    networks:
+      - moja-network
 
   # React Frontend
   frontend:
@@ -44,6 +52,8 @@ services:
     command: npm run dev
     depends_on:
       - backend
+    networks:
+      - moja-network
 
 volumes:
   postgres_data:

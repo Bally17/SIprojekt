@@ -1,6 +1,6 @@
 "use client";
 
-import Icon from "@/shared/icons";
+import Icon from "@icons/index";
 import Link from "next/link";
 
 type BackButtonProps = {
@@ -8,7 +8,10 @@ type BackButtonProps = {
   label?: string;
 };
 
-export default function BackButton({ className = "", label = "Úvodná stránka" }: BackButtonProps) {
+export default function BackButton({
+  className = "",
+  label = "Úvodná stránka",
+}: Readonly<BackButtonProps>) {
   return (
     <Link
       href="/"

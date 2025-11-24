@@ -1,4 +1,5 @@
-import { RoleDataType, RoleType } from "@/shared/types/roleTypes";
+import IconName from "@icons/iconName";
+import { RoleType, RoleDataType } from "@type/props/common/globalTypes";
 
 export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
   student: [
@@ -7,7 +8,7 @@ export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
     { a: "Nahlásiť zmluvu (podmieň. pri stave Schválená)", b: "Zmluva s praxí (PDF) — upload" },
     { a: "Nahrať výkaz praxe (potvrdenie firmy)", b: "Výkaz praxe (nahranie)" },
   ],
-  firma: [
+  company: [
     { a: "Schválenie dohody o praxi", b: "Podpis / potvrdenie" },
     { a: "Overenie výkazu praxe", b: "Komentár a potvrdenie" },
     { a: "Export reportov", b: "CSV / PDF" },
@@ -21,8 +22,14 @@ export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
   ],
 };
 
+export const tabs: { key: RoleType; label: string; icon: IconName }[] = [
+  { key: "student", label: "Študent", icon: "graduation-cap" },
+  { key: "company", label: "Firma", icon: "building-2" },
+  { key: "garant", label: "Garant", icon: "shield" },
+];
+
 export const rolePreviewImages: Record<RoleType, string> = {
   student: "/images/student_dash.jpg",
-  firma: "/images/firma_dash.jpg",
+  company: "/images/firma_dash.jpg",
   garant: "/images/garant_dash.jpg",
 };

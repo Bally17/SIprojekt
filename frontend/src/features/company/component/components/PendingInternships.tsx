@@ -1,0 +1,114 @@
+"use client";
+
+import { Button } from "@components/button";
+import { useSystemNotifications } from "@components/notifications";
+import { Table } from "@components/table";
+import { useLocalization } from "@i18n/client";
+import axiosClient from "@lib/axiosClient";
+import { Internship } from "@type/backend/Internship";
+import { useEffect, useState, useCallback } from "react";
+import { TABLE_NAMES } from "src/constants/Table";
+
+type PendingResponse = {
+  results?: {
+    firma?: {
+      meno?: string | null;
+      priezvisko?: string | null;
+      email: string;
+    };
+    internships?: Internship[];
+  };
+};
+
+type PendingInternshipsProps = {
+  onChange?: () => void;
+};
+
+export default function PendingInternships({ onChange }: Readonly<PendingInternshipsProps>) {
+  const [internships, setInternships] = useState<Internship[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
+
+  const { msgs } = useLocalization();
+  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+
+  // Volá API endpoint, ukladá načítané praxe do state
+  const fetchPending = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await axiosClient.get<PendingResponse>(
+        "/internships/company/me/internships/pending/",
+      );
+      const list = res.data.results?.internships ?? [];
+      setInternships(list);
+    } catch (err: any) {
+      const message =
+        err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships;
+      setError(message);
+      notifyWarning({
+        title: msgs.common.error.errorLoadInternships,
+        description: message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [msgs.common.error.errorLoadInternships, notifyWarning]);
+
+  // Načíta čakajúce praxe po načítaní komponentu
+  useEffect(() => {
+    fetchPending();
+  }, [fetchPending]);
+
+  // Potvrdí alebo zamietne prax a odstráni ju zo zoznamu
+  const handleAction = async (id: number, action: "confirm" | "reject") => {
+    setError("");
+    try {
+      const endpoint = `/internships/company/${action}/${id}/`;
+      await axiosClient.patch(endpoint, {});
+      setInternships((prev) => prev.filter((item) => item.id !== id));
+      onChange?.();
+      notifySuccess({
+        title:
+          action === "confirm" ? msgs.common.internships.management : msgs.common.error.errorAction,
+        description:
+          action === "confirm" ? msgs.common.internships.new : msgs.common.error.errorAction,
+      });
+    } catch (err: any) {
+      const message = err.response?.data?.error || err.message || msgs.common.error.errorAction;
+      setError(message);
+      notifyWarning({
+        title: msgs.common.error.errorAction,
+        description: message,
+      });
+    }
+  };
+
+  if (loading) {
+    return <p className="text-center text-gray-500">{msgs.common.loading.pending}</p>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center">
+        <p className="text-red-600">{error}</p>
+        <Button type="button" variant="primary" className="mt-4" onClick={fetchPending}>
+          {msgs.common.tryAgain}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Table
+      data={internships}
+      name={TABLE_NAMES.PENDING_INTERNSHIPS}
+      rowActions
+      onAction={handleAction}
+      actionMessage={msgs.common.internships.empty}
+      isLoading={loading}
+      isError={error || null}
+      showEmpty
+    />
+  );
+}

@@ -1,6 +1,6 @@
-import Icon from "@/shared/icons";
+import { Button } from "@components/button";
+import Icon from "@icons/index";
 import React from "react";
-import { Button } from "../../button";
 
 export type SystemNotificationVariant = "success" | "info" | "warning";
 
@@ -13,9 +13,6 @@ export type SystemNotificationProps = {
   onAction?: () => void;
   onClose?: () => void;
   className?: string;
-  /**
-   * Celkové trvanie progresu v ms (animácia z prava doľava).
-   */
   progressDuration?: number;
   progressPaused?: boolean;
   closeLabel?: string;
@@ -65,7 +62,7 @@ const variantStyles: Record<SystemNotificationVariant, VariantStyles> = {
   },
 };
 
-const SystemNotification: React.FC<SystemNotificationProps> = ({
+export const SystemNotification = ({
   variant = "info",
   title,
   description,
@@ -77,7 +74,7 @@ const SystemNotification: React.FC<SystemNotificationProps> = ({
   progressDuration,
   progressPaused = false,
   closeLabel,
-}) => {
+}: SystemNotificationProps) => {
   const styles = variantStyles[variant];
   const role = variant === "warning" ? "alert" : "status";
   const showProgress = typeof progressDuration === "number" && progressDuration > 0;

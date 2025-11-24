@@ -1,16 +1,16 @@
 "use client";
 
+import { Locale } from "@type/props/common/globalTypes";
+import { TableNameValues } from "@type/props/table";
+import { TableConfig } from "@type/props/tableConfig";
 import { useEffect, useMemo, useState } from "react";
-import type TableConfig from "@/shared/types/tableConfig/TableConfig";
-import type { TableNameValues } from "@/shared/types/components/table/components/TableNameValues";
-export type Lang = "sk" | "en";
 
-function pickName(items: readonly { name: string; lang: Lang }[] | undefined, lang: Lang) {
+function pickName(items: readonly { name: string; lang: Locale }[] | undefined, lang: Locale) {
   if (!items?.length) return "";
   return items.find((i) => i.lang === lang)?.name ?? items[0]?.name ?? "";
 }
 
-export function useLoadTableData(name: TableNameValues, lang: Lang = "sk") {
+export function useLoadTableData(name: TableNameValues, lang: Locale = "sk") {
   const [config, setConfig] = useState<TableConfig | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +22,7 @@ export function useLoadTableData(name: TableNameValues, lang: Lang = "sk") {
 
     (async () => {
       try {
-        const mod = await import("@/shared/tableConfig");
+        const mod = await import("@table_config/index");
         const cfg = (mod as Record<string, unknown>)[name] as TableConfig | undefined;
 
         if (!cfg) throw new Error(`Unknown table config: ${name}`);

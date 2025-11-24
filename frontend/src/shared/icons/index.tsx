@@ -1,7 +1,7 @@
-import React, { FC } from "react";
-import IconName from "./iconName";
+import ClassNameParamType from "@type/props/icons/ClassNameParamType";
+import React from "react";
 import getIconByName from "./getIconByName";
-import ClassNameParamType from "../types/icons/ClassNameParamType";
+import IconName from "./iconName";
 
 interface IconProps {
   name: IconName;
@@ -9,7 +9,7 @@ interface IconProps {
   size?: number;
 }
 
-const Icon: FC<IconProps> = ({ name, className, size, ...rest }) => {
+export const Icon = ({ name, className, size, ...rest }: IconProps) => {
   const IconCmp = getIconByName(name);
 
   if (IconCmp != null) {

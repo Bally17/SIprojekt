@@ -1,18 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import axiosClient from "@/lib/axiosClient";
-import { useLocalization } from "@/shared/i18n/client";
-import { useSystemNotifications } from "@/shared/components/notifications";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
+import Icon from "@icons/index";
+import axiosClient from "@lib/axiosClient";
+import { Company } from "@type/backend/Company";
+import { GarantInternshipUpdate } from "@type/backend/GarantInternshipUpdate";
+import { Internship } from "@type/backend/Internship";
+import { StudentProfile } from "@type/backend/StudentProfile";
 import {
+  Stav,
+  STAV_OPTIONS,
+  STAV_LABEL,
   SEMESTER_LABEL,
   STAV_BADGE_CLASS,
-  STAV_LABEL,
-  STAV_OPTIONS,
-  type Stav,
-} from "@/shared/types/internship/components/StateInternship";
-import type { Internship } from "@/shared/types/internship/internship";
-import Icon from "@/shared/icons";
+} from "@type/props/common/StateInternship";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Default prázdne filtre – slúžia aj na resetovanie formulára.
 const DEFAULT_FILTERS = {
@@ -26,30 +30,6 @@ const DEFAULT_FILTERS = {
 type Filters = typeof DEFAULT_FILTERS;
 
 type GarantInternship = Internship;
-
-type EditFormState = {
-  datum_zaciatku: string;
-  datum_konca: string;
-  stav: Stav;
-  studentId: string;
-  companyId: string;
-  statusNote: string;
-};
-
-type StudentOption = {
-  id: number;
-  meno?: string | null;
-  priezvisko?: string | null;
-  email?: string | null;
-  studijny_program?: string | null;
-};
-
-type CompanyOption = {
-  id: number;
-  nazov: string;
-  kontakt_meno?: string | null;
-  kontakt_email?: string | null;
-};
 
 const getStudentLabel = (
   data: { meno?: string | null; priezvisko?: string | null; email?: string | null } | null,
@@ -89,13 +69,13 @@ export default function GarantInternshipsDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingInternship, setEditingInternship] = useState<GarantInternship | null>(null);
-  const [editForm, setEditForm] = useState<EditFormState | null>(null);
+  const [editForm, setEditForm] = useState<GarantInternshipUpdate | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [studentSearch, setStudentSearch] = useState("");
   const [companySearch, setCompanySearch] = useState("");
-  const [studentOptions, setStudentOptions] = useState<StudentOption[]>([]);
-  const [companyOptions, setCompanyOptions] = useState<CompanyOption[]>([]);
+  const [studentOptions, setStudentOptions] = useState<StudentProfile[]>([]);
+  const [companyOptions, setCompanyOptions] = useState<Company[]>([]);
   const [studentSearchLoading, setStudentSearchLoading] = useState(false);
   const [companySearchLoading, setCompanySearchLoading] = useState(false);
   const [selectedStudentLabel, setSelectedStudentLabel] = useState("");
@@ -264,7 +244,9 @@ export default function GarantInternshipsDashboard() {
 
       const disposition: string = response.headers?.["content-disposition"] || "";
       const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
-      const filename = filenameMatch?.[1] ? decodeURIComponent(filenameMatch[1]) : "internships_export.csv";
+      const filename = filenameMatch?.[1]
+        ? decodeURIComponent(filenameMatch[1])
+        : "internships_export.csv";
 
       const blob = new Blob([response.data], { type: "text/csv;charset=utf-8" });
       const url = window.URL.createObjectURL(blob);
@@ -282,7 +264,9 @@ export default function GarantInternshipsDashboard() {
       });
     } catch (err: any) {
       const description =
-        err?.response?.data?.error || err?.response?.data?.detail || msgs.common.guarant.exportError;
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        msgs.common.guarant.exportError;
       notifyWarning({ title: msgs.common.guarant.exportError, description });
     } finally {
       setExporting(false);
@@ -295,15 +279,18 @@ export default function GarantInternshipsDashboard() {
     setEditForm({
       datum_zaciatku: internship.datum_zaciatku,
       datum_konca: internship.datum_konca,
-      stav: internship.stav,
-      studentId: internship.student ? String(internship.student) : "",
-      companyId: internship.firma ? String(internship.firma) : "",
-      statusNote: "",
+      stav: internship.stav ?? STAV_OPTIONS[0].value,
+      student_id: internship.student ? String(internship.student) : "",
+      firma_id: internship.firma ? String(internship.firma) : "",
+      status_note: "",
     });
     const studentLabel =
-      internship.student_full_name || internship.student_email || (internship.student ? `#${internship.student}` : "");
+      internship.student_full_name ||
+      internship.student_email ||
+      (internship.student ? `#${internship.student}` : "");
     const companyLabel =
-      internship.company_name || (typeof internship.firma === "number" ? `#${internship.firma}` : "");
+      internship.company_name ||
+      (typeof internship.firma === "number" ? `#${internship.firma}` : "");
     setStudentSearch(studentLabel);
     setCompanySearch(companyLabel);
     setSelectedStudentLabel(studentLabel);
@@ -335,7 +322,7 @@ export default function GarantInternshipsDashboard() {
       if (name === "stav") {
         return { ...prev, stav: value as Stav };
       }
-      return { ...prev, [name]: value } as EditFormState;
+      return { ...prev, [name]: value } as GarantInternshipUpdate;
     });
   };
 
@@ -347,16 +334,16 @@ export default function GarantInternshipsDashboard() {
     setCompanySearch(event.target.value);
   };
 
-  const handleSelectStudent = (option: StudentOption) => {
-    setEditForm((prev) => (prev ? { ...prev, studentId: String(option.id) } : prev));
+  const handleSelectStudent = (option: StudentProfile) => {
+    setEditForm((prev) => (prev ? { ...prev, student_id: String(option.id) } : prev));
     const label = getStudentLabel(option, option.id);
     setSelectedStudentLabel(label);
     setStudentSearch(label);
     setStudentOptions([]);
   };
 
-  const handleSelectCompany = (option: CompanyOption) => {
-    setEditForm((prev) => (prev ? { ...prev, companyId: String(option.id) } : prev));
+  const handleSelectCompany = (option: Company) => {
+    setEditForm((prev) => (prev ? { ...prev, firma_id: String(option.id) } : prev));
     const label = getCompanyLabel(option, option.id);
     setSelectedCompanyLabel(label);
     setCompanySearch(label);
@@ -379,14 +366,14 @@ export default function GarantInternshipsDashboard() {
 
     const payload: Record<string, unknown> = {};
 
-    const studentValue = parseNumber(editForm.studentId, editingInternship.student);
+    const studentValue = parseNumber(editForm.student_id, editingInternship.student);
     if (!Number.isNaN(studentValue) && studentValue > 0) {
       payload.student_id = studentValue;
     }
 
-    const companyValue = editForm.companyId.trim().length
-      ? parseNumber(editForm.companyId, editingInternship.firma ?? 0)
-      : editingInternship.firma ?? 0;
+    const companyValue = editForm.firma_id.trim().length
+      ? parseNumber(editForm.firma_id, editingInternship.firma ?? 0)
+      : (editingInternship.firma ?? 0);
     if (!Number.isNaN(companyValue) && companyValue > 0) {
       payload.firma_id = companyValue;
     }
@@ -400,7 +387,7 @@ export default function GarantInternshipsDashboard() {
     if (editForm.stav) {
       payload.stav = editForm.stav;
     }
-    const note = editForm.statusNote.trim();
+    const note = editForm.status_note.trim();
     if (note.length) {
       payload.status_note = note;
     }
@@ -607,11 +594,12 @@ export default function GarantInternshipsDashboard() {
                         <td className="px-4 py-4 text-sm">
                           <span
                             className={`inline-flex min-w-[120px] items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${
-                              STAV_BADGE_CLASS[internship.stav as Stav] ||
-                              "bg-gray-100 text-gray-600"
+                              internship.stav
+                                ? STAV_BADGE_CLASS[internship.stav]
+                                : "bg-gray-100 text-gray-600"
                             }`}
                           >
-                            {STAV_LABEL[internship.stav] || internship.stav}
+                            {internship.stav ? STAV_LABEL[internship.stav] : internship.stav}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-sm">
@@ -774,7 +762,9 @@ export default function GarantInternshipsDashboard() {
                               {option.nazov || `#${option.id}`}
                             </span>
                             <span className="text-xs text-ink-500">
-                              {[option.kontakt_meno, option.kontakt_email].filter(Boolean).join(" • ")}
+                              {[option.kontakt_meno, option.kontakt_email]
+                                .filter(Boolean)
+                                .join(" • ")}
                             </span>
                           </button>
                         </li>
@@ -836,14 +826,16 @@ export default function GarantInternshipsDashboard() {
                     {msgs.common.guarant.edit.statusNote}
                   </label>
                   <textarea
-                    name="statusNote"
-                    value={editForm.statusNote}
+                    name="status_note"
+                    value={editForm.status_note}
                     onChange={handleEditFieldChange}
                     placeholder={msgs.common.guarant.edit.statusNotePlaceholder}
                     rows={3}
                     className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
                   />
-                  <p className="mt-1 text-xs text-ink-400">{msgs.common.guarant.edit.statusNoteHint}</p>
+                  <p className="mt-1 text-xs text-ink-400">
+                    {msgs.common.guarant.edit.statusNoteHint}
+                  </p>
                 </div>
               </div>
               <div className="flex justify-end gap-3">

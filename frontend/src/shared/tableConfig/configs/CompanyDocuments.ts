@@ -1,6 +1,6 @@
-import TableConfig from "@/shared/types/tableConfig/TableConfig";
+import { TableConfig } from "@type/props/tableConfig";
 
-const tableConfig: TableConfig = {
+const tableConfig = {
   tableName: [
     { name: "Výkazy a dokumenty", lang: "sk" },
     { name: "Reports & Documents", lang: "en" },
@@ -47,6 +47,6 @@ const tableConfig: TableConfig = {
       ],
     },
   ],
-};
+} satisfies TableConfig;
 
 export default tableConfig;

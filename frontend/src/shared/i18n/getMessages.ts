@@ -1,5 +1,5 @@
-// src/shared/i18n/getMessages.ts
-export type Locale = "sk" | "en";
+import { Locale } from "@type/props/common/globalTypes";
+
 export type Messages = Record<string, any>;
 
 export async function getMessages(locale: Locale, namespaces: string[] = []) {
