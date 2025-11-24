@@ -76,10 +76,10 @@ export default function LoginForm() {
       }
     } catch (err: any) {
       const message =
+        err.response?.data?.message ||
         err.response?.data?.error_description ||
         err.response?.data?.error ||
         err.response?.data?.detail ||
-        err.response?.data?.message ||
         msgs.auth.errorMsg;
       console.error(msgs.auth.errorTitle, err.response?.data || err.message);
       notifyWarning({
