@@ -19,3 +19,10 @@ export interface Localized {
   byLocale: Record<Locale, string>;
   defaultLocale: Locale;
 }
+
+export type RoleType = "student" | "company" | "garant";
+
+export interface RoleDataType<TQ = string, TA = string> {
+  a: TQ;
+  b: TA;
+}

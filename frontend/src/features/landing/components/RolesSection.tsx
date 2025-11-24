@@ -4,8 +4,8 @@ import { useState } from "react";
 import "@utils/idUsing";
 import { roleSectionDatas, rolePreviewImages, tabs } from "@data/roleSectionDatas";
 import { useLocalization } from "@i18n/client";
-import { RoleType } from "@type/props/roles/roleTypes";
 import Icon from "@icons/index";
+import { RoleType } from "@type/props/common/globalTypes";
 
 export default function RolesSection() {
   const { msgs } = useLocalization();

@@ -1,5 +1,5 @@
 import IconName from "@icons/iconName";
-import { RoleType, RoleDataType } from "@type/props/roles/roleTypes";
+import { RoleType, RoleDataType } from "@type/props/common/globalTypes";
 
 export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
   student: [

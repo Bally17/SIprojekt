@@ -1,5 +1,5 @@
 import { Action } from "@type/props/common/globalTypes";
-import { Internship } from "@type/props/internship";
+import { Internship } from "@type/backend/Internship";
 import type { ReactElement } from "react";
 import { TableFilters } from "./components/TableFilters";
 import { TableNameValues } from "./components/TableNameValues";

@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import axiosClient from "@lib/axiosClient";
+import { TokenVerify } from "@type/backend/TokenVerify";
 
-type Props = { token: string };
-
-export default function ActivateClient({ token }: Readonly<Props>) {
+export default function ActivateClient({ token }: Readonly<TokenVerify>) {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");

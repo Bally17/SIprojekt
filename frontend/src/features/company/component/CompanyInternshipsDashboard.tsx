@@ -6,10 +6,11 @@ import { useLocalization } from "@i18n/client";
 import axiosClient from "@lib/axiosClient";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PendingInternships from "./components/PendingInternships";
-import { Internship, SEMESTER_OPTIONS, STAV_OPTIONS } from "@type/props/internship";
 import { TableFilters } from "@type/props/table";
 import { TABLE_NAMES } from "src/constants/Table";
 import CompanyDocumentsCard from "./components/CompanyDocumentsCard";
+import { Internship } from "@type/backend/Internship";
+import { SEMESTER_OPTIONS, STAV_OPTIONS } from "@type/props/common/StateInternship";
 
 type CompanyInternshipsResponse = {
   firma: {
@@ -37,14 +38,6 @@ export default function CompanyInternshipsDashboard() {
   const { msgs } = useLocalization();
   const { warning: notifyWarning } = useSystemNotifications();
 
-  const getAuthHeaders = useCallback(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    if (!token) {
-      throw new Error("Chýba access token – prihláste sa ako firma.");
-    }
-    return { Authorization: `Bearer ${token}` };
-  }, []);
-
   const fetchInternships = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -55,7 +48,6 @@ export default function CompanyInternshipsDashboard() {
       const res = await axiosClient.get<
         CompanyInternshipsResponse | PaginatedCompanyInternshipsResponse
       >("/internships/company/me/internships/", {
-        headers: getAuthHeaders(),
         params,
       });
 
@@ -76,7 +68,7 @@ export default function CompanyInternshipsDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [filters, getAuthHeaders, msgs.common.error.errorLoadInternships, notifyWarning]);
+  }, [filters, msgs.common.error.errorLoadInternships, notifyWarning]);
 
   useEffect(() => {
     fetchInternships();

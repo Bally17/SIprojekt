@@ -6,17 +6,12 @@ import { Select } from "@components/select";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
 import axiosClient from "@lib/axiosClient";
-import {
-  Internship,
-  InternshipDocument,
-  STAV_BADGE_CLASS,
-  Semester,
-  SEMESTER_OPTIONS,
-} from "@type/props/internship";
 import { useState, useCallback, useEffect } from "react";
 import DocumentUploadCard from "../components/DocumentUploadCard";
-
-type Company = { id: number; nazov: string; adresa?: string | null };
+import { Internship } from "@type/backend/Internship";
+import InternshipDocument from "@type/backend/InternshipDocument";
+import { STAV_BADGE_CLASS, Semester, SEMESTER_OPTIONS } from "@type/props/common/StateInternship";
+import { Company } from "@type/backend/Company";
 
 type InternshipWithRelations = Internship & {
   firma?: Company | null;
@@ -178,7 +173,11 @@ export default function StudentDashboardPage() {
               <h3 className="font-semibold text-lg text-cyan-700">
                 {p.firma?.nazov || "Neznáma firma"}
               </h3>
-              <span className={`text-sm font-medium px-2 py-1 rounded ${STAV_BADGE_CLASS[p.stav]}`}>
+              <span
+                className={`text-sm font-medium px-2 py-1 rounded ${
+                  p.stav ? STAV_BADGE_CLASS[p.stav] : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 {p.stav}
               </span>
             </div>

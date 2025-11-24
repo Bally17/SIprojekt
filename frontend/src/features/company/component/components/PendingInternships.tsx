@@ -5,7 +5,7 @@ import { useSystemNotifications } from "@components/notifications";
 import { Table } from "@components/table";
 import { useLocalization } from "@i18n/client";
 import axiosClient from "@lib/axiosClient";
-import { Internship } from "@type/props/internship";
+import { Internship } from "@type/backend/Internship";
 import { useEffect, useState, useCallback } from "react";
 import { TABLE_NAMES } from "src/constants/Table";
 
@@ -32,15 +32,6 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
-  // Získa access_token z localStorage a vráti ho v hlavičke Authorization, ak chýba, vyhodí chybu
-  const getAuthHeaders = useCallback(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    if (!token) {
-      throw new Error("Chýba access token – prihláste sa ako firma.");
-    }
-    return { Authorization: `Bearer ${token}` };
-  }, []);
-
   // Volá API endpoint, ukladá načítané praxe do state
   const fetchPending = useCallback(async () => {
     setLoading(true);
@@ -48,7 +39,6 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
     try {
       const res = await axiosClient.get<PendingResponse>(
         "/internships/company/me/internships/pending/",
-        { headers: getAuthHeaders() },
       );
       const list = res.data.results?.internships ?? [];
       setInternships(list);
@@ -63,7 +53,7 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeaders, msgs.common.error.errorLoadInternships, notifyWarning]);
+  }, [msgs.common.error.errorLoadInternships, notifyWarning]);
 
   // Načíta čakajúce praxe po načítaní komponentu
   useEffect(() => {
@@ -75,7 +65,7 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
     setError("");
     try {
       const endpoint = `/internships/company/${action}/${id}/`;
-      await axiosClient.patch(endpoint, {}, { headers: getAuthHeaders() });
+      await axiosClient.patch(endpoint, {});
       setInternships((prev) => prev.filter((item) => item.id !== id));
       onChange?.();
       notifySuccess({

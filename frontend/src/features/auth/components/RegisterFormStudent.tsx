@@ -4,7 +4,6 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import axiosClient from "@lib/axiosClient";
 import { useState } from "react";
-// axiosClient = centrálna inštancia s baseURL (NEXT_PUBLIC_API_URL)
 
 export default function RegisterFormStudent() {
   // Lokálny stav formulára

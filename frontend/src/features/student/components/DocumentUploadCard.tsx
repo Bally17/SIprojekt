@@ -2,7 +2,8 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
 import axiosClient from "@lib/axiosClient";
-import { Internship, InternshipDocument } from "@type/props/internship";
+import { Internship } from "@type/backend/Internship";
+import InternshipDocument from "@type/backend/InternshipDocument";
 import React, { useMemo, useState } from "react";
 
 type InternshipWithDocuments = Internship & {

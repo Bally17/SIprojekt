@@ -7,7 +7,7 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import axiosClient, { clearAuthTokens } from "@lib/axiosClient";
 import Icon from "@icons/index";
-import { RoleType } from "@type/props/roles/roleTypes";
+import { RoleType } from "@type/props/common/globalTypes";
 
 type DashboardUser = {
   id: number;

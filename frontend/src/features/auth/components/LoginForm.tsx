@@ -6,7 +6,7 @@ import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import axiosClient, { setAuthTokens } from "@lib/axiosClient";
-import { RoleType } from "@type/props/roles/roleTypes";
+import { RoleType } from "@type/props/common/globalTypes";
 
 export default function LoginForm() {
   const router = useRouter();

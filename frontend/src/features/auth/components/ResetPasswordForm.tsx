@@ -4,13 +4,10 @@ import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import axiosClient from "@lib/axiosClient";
+import { TokenVerify } from "@type/backend/TokenVerify";
 import { useState } from "react";
 
-type Props = {
-  token: string;
-};
-
-export default function ResetPasswordForm({ token }: Readonly<Props>) {
+export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
   const [form, setForm] = useState({ newPassword: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
   const { msgs } = useLocalization();

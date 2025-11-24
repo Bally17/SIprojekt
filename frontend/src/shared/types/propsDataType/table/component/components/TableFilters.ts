@@ -1,4 +1,4 @@
-import { Semester, Stav } from "@type/props/internship";
+import { Semester, Stav } from "@type/props/common/StateInternship";
 
 export type TableFilters = {
   rok?: number | string;

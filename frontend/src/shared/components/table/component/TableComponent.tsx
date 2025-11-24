@@ -4,20 +4,20 @@ import { Select } from "@components/select";
 import { useLocalization } from "@i18n/client";
 import { Action } from "@type/props/common/globalTypes";
 import useLoadTableData from "@utils/actions";
-import {
-  getStavLabel,
-  Internship,
-  InternshipDocument,
-  isSemester,
-  isStav,
-  Semester,
-  SEMESTER_OPTIONS,
-  Stav,
-  STAV_BADGE_CLASS,
-  STAV_OPTIONS,
-} from "@type/props/internship";
 import Icon from "@icons/index";
 import { TableProps } from "@type/props/table";
+import { Internship } from "@type/backend/Internship";
+import InternshipDocument from "@type/backend/InternshipDocument";
+import {
+  Semester,
+  isSemester,
+  Stav,
+  isStav,
+  SEMESTER_OPTIONS,
+  STAV_OPTIONS,
+  STAV_BADGE_CLASS,
+  getStavLabel,
+} from "@type/props/common/StateInternship";
 
 const buildMediaUrl = (path: string) => {
   const backend = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(
