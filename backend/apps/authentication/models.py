@@ -19,6 +19,19 @@ class OAuthClient(models.Model):
     is_active = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False, help_text="Indicates if the client is public (PKCE required, no secret).")
     allow_password_grant = models.BooleanField(default=False, help_text="Allow this client to use the password grant (first-party only).")
+    service_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Service account used for client_credentials grant.",
+        related_name="oauth_service_clients",
+    )
+    allow_private_jwt = models.BooleanField(
+        default=False,
+        help_text="Allow client_assertion (private_key_jwt) in token endpoint.",
+    )
+    public_key = models.TextField(blank=True, null=True, help_text="PEM encoded public key for verifying client_assertion.")
     
     def get_redirect_uris_list(self):
         return json.loads(self.redirect_uris)

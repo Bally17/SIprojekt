@@ -759,3 +759,60 @@ def external_mark_defended(request):
         return Response({"error": "Prax so zadaným ID neexistuje."}, status=status.HTTP_404_NOT_FOUND)
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Externý systém: prehľad praxí",
+    operation_description="Read-only prehľad praxí dostupný pre rolu externy/garant. Možno filtrovať podľa stavu, roku, semestra a fulltextu vo firme/študentovi.",
+    manual_parameters=[
+        openapi.Parameter('stav', openapi.IN_QUERY, description="Filter podľa stavu praxe", type=openapi.TYPE_STRING),
+        openapi.Parameter('rok', openapi.IN_QUERY, description="Filter podľa roka", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('semester', openapi.IN_QUERY, description="Filter podľa semestra (zimny/letny)", type=openapi.TYPE_STRING),
+        openapi.Parameter('search', openapi.IN_QUERY, description="Fulltext v študentovi alebo firme", type=openapi.TYPE_STRING),
+    ],
+    responses={200: openapi.Response("Zoznam praxí", InternshipSerializer(many=True)), 403: "Zakázané"},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def external_list_internships(request):
+    """Externý integrátor alebo garant získa prehľad praxí."""
+    user = request.user
+    if user.rola not in ("externy", "garant"):
+        return Response({"error": "Prístup povolený len pre externých integrátorov."}, status=status.HTTP_403_FORBIDDEN)
+
+    qs = (
+        Prax.objects.select_related("student", "student__studentprofil", "firma", "garant")
+        .all()
+        .order_by("-vytvorene_at")
+    )
+
+    stav = request.query_params.get("stav")
+    if stav:
+        qs = qs.filter(stav__iexact=stav)
+
+    rok = request.query_params.get("rok")
+    if rok:
+        try:
+            qs = qs.filter(rok=int(rok))
+        except (TypeError, ValueError):
+            return Response({"error": "rok musí byť číslo"}, status=status.HTTP_400_BAD_REQUEST)
+
+    semester = request.query_params.get("semester")
+    if semester:
+        qs = qs.filter(semester__iexact=semester)
+
+    search = request.query_params.get("search")
+    if search:
+        qs = qs.filter(
+            Q(firma__nazov__icontains=search)
+            | Q(student__email__icontains=search)
+            | Q(student__meno__icontains=search)
+            | Q(student__priezvisko__icontains=search)
+        )
+
+    paginator = PageNumberPagination()
+    paginator.page_size = getattr(settings, "REST_FRAMEWORK", {}).get("PAGE_SIZE", 20)
+    page = paginator.paginate_queryset(qs, request)
+    serializer = InternshipSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
