@@ -22,5 +22,6 @@ urlpatterns = [
     path('company/confirm/<int:prax_id>/', views.company_confirm_internship, name='company_confirm_internship'),
     path('company/reject/<int:prax_id>/', views.company_reject_internship, name='company_reject_internship'),
     path('external/defense/', views.external_mark_defended, name='external_mark_defended'),
+    path('external/internships/', views.external_list_internships, name='external_list_internships'),
 
 ]

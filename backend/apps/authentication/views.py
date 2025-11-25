@@ -17,6 +17,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 import json
 import base64
 import hashlib
+import jwt
+from jwt import InvalidTokenError
 
 from .serializers import (
     LoginSerializer,
@@ -829,6 +831,8 @@ def oauth_token(request):
     grant_type = validated_data['grant_type']
     client_id = validated_data['client_id']
     client_secret = validated_data.get('client_secret')
+    client_assertion_type = validated_data.get('client_assertion_type')
+    client_assertion = validated_data.get('client_assertion')
     code = validated_data.get('code')
     redirect_uri = validated_data.get('redirect_uri')
     refresh_token_str = validated_data.get('refresh_token')
@@ -836,15 +840,47 @@ def oauth_token(request):
     password = validated_data.get('password')
     code_verifier = validated_data.get('code_verifier')
     
-    # Validácia client credentials
+    # Validácia client credentials / assertion
     try:
         client = OAuthClient.objects.get(client_id=client_id, is_active=True)
-        if client.is_public:
-            if client.client_secret and client_secret and client.client_secret != client_secret:
-                return Response({'error': 'invalid_client'}, status=401)
-        else:
-            if not client_secret or client.client_secret != client_secret:
-                return Response({'error': 'invalid_client'}, status=401)
+        client_assertion_valid = False
+
+        assertion_requested = (
+            client_assertion_type == "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+            and bool(client_assertion)
+        )
+
+        if assertion_requested:
+            if client.is_public:
+                return Response({'error': 'unauthorized_client', 'error_description': 'Public clients cannot use private_key_jwt.'}, status=400)
+            if not client.allow_private_jwt:
+                return Response({'error': 'unauthorized_client', 'error_description': 'client_assertion not allowed for this client.'}, status=400)
+            if not client.public_key:
+                return Response({'error': 'invalid_client', 'error_description': 'Missing public key for client_assertion validation.'}, status=401)
+            audience = request.build_absolute_uri(request.path)
+            try:
+                claims = jwt.decode(
+                    client_assertion,
+                    client.public_key,
+                    algorithms=["RS256"],
+                    audience=audience,
+                )
+            except InvalidTokenError as exc:
+                return Response({'error': 'invalid_client', 'error_description': f'Invalid client_assertion: {exc}'}, status=401)
+
+            if claims.get("iss") != client_id or claims.get("sub") != client_id:
+                return Response({'error': 'invalid_client', 'error_description': 'client_assertion iss/sub mismatch.'}, status=401)
+            client_assertion_valid = True
+
+        if not assertion_requested:
+            if client.is_public:
+                if client.client_secret and client_secret and client.client_secret != client_secret:
+                    return Response({'error': 'invalid_client'}, status=401)
+            else:
+                if not client_secret or client.client_secret != client_secret:
+                    return Response({'error': 'invalid_client'}, status=401)
+        elif not client_assertion_valid:
+            return Response({'error': 'invalid_client'}, status=401)
     except OAuthClient.DoesNotExist:
         return Response({'error': 'invalid_client'}, status=401)
     
@@ -966,6 +1002,49 @@ def oauth_token(request):
             'scope': scope,
             'user': user_data,
             'tokens': tokens,
+        })
+    
+    elif grant_type == 'client_credentials':
+        if client.is_public:
+            return Response({'error': 'unauthorized_client', 'error_description': 'Public clients cannot use client_credentials grant.'}, status=400)
+
+        service_user = getattr(client, "service_user", None)
+        if not service_user:
+            return Response(
+                {
+                    'error': 'invalid_client',
+                    'error_description': 'Service user is not configured for this client.',
+                },
+                status=401,
+            )
+
+        if not service_user.is_active:
+            return Response({'error': 'invalid_grant', 'error_description': 'Service user is inactive.'}, status=403)
+
+        if service_user.rola not in ('externy', 'garant'):
+            return Response(
+                {
+                    'error': 'invalid_role',
+                    'error_description': 'Service user must have role externy or garant.',
+                },
+                status=403,
+            )
+
+        tokens = get_tokens_for_user(service_user)
+        access_lifetime = settings.SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME', timedelta(minutes=15))
+        try:
+            expires_in = int(access_lifetime.total_seconds())
+        except AttributeError:
+            expires_in = 900
+
+        scope = client.scope or 'read profile'
+
+        return Response({
+            'access_token': tokens['access'],
+            'token_type': 'Bearer',
+            'expires_in': expires_in,
+            'refresh_token': tokens['refresh'],
+            'scope': scope,
         })
     
     return Response({'error': 'unsupported_grant_type'}, status=400)

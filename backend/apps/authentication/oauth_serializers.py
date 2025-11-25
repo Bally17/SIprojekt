@@ -46,6 +46,8 @@ class OAuthTokenSerializer(serializers.Serializer):
     grant_type = serializers.CharField(required=True, max_length=50)
     client_id = serializers.CharField(required=True, max_length=100)
     client_secret = serializers.CharField(required=False, max_length=100, allow_blank=True)
+    client_assertion_type = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    client_assertion = serializers.CharField(required=False, allow_blank=True)
     code = serializers.CharField(required=False, max_length=100)
     redirect_uri = serializers.CharField(required=False, max_length=300)
     refresh_token = serializers.CharField(required=False, max_length=255)
@@ -54,7 +56,7 @@ class OAuthTokenSerializer(serializers.Serializer):
     code_verifier = serializers.CharField(required=False, max_length=128)
     
     def validate_grant_type(self, value):
-        allowed_grants = ['authorization_code', 'refresh_token', 'password']
+        allowed_grants = ['authorization_code', 'refresh_token', 'password', 'client_credentials']
         if value not in allowed_grants:
             raise serializers.ValidationError(f'Unsupported grant_type. Allowed: {allowed_grants}')
         return value
@@ -77,5 +79,10 @@ class OAuthTokenSerializer(serializers.Serializer):
                 raise serializers.ValidationError({'username': 'This field is required for password grant'})
             if not data.get('password'):
                 raise serializers.ValidationError({'password': 'This field is required for password grant'})
+        
+        elif grant_type == 'client_credentials':
+            # Client credentials grant does not need user credentials or code/redirect_uri.
+            # client_id + client_secret are validated in the view.
+            pass
         
         return data
