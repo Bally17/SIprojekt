@@ -1,54 +1,33 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.http import FileResponse
 from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from apps.internships.models import Prax
 from apps.internships.permissions import IsGarantOrRelatedDocument
 from services.storage import upload_file_to_b2, generate_presigned_url
-
-# 🔔 notification services (firm + garant)
 from apps.notifications.service import (
-    notify_document_uploaded,                         # → firma (+ garant pri tvojej špecifikácii)
-    notify_document_reviewed,                         # company: approved / hard-rejected
-    # doplň do service ak ešte nemáš:
-    notify_document_soft_rejected_by_company,         # company: soft reject (reason povinný, stav sa NEMENÍ)
-    notify_document_reviewed_by_garant,               # garant: approve (Študent + Firma)
-    notify_document_soft_rejected_by_garant,          # garant: soft reject (reason povinný, stav sa NEMENÍ)
-    notify_document_hard_rejected_by_garant,          # garant: hard reject (reason povinný, stav -> zamietnuty)
+    notify_document_uploaded,
+    notify_document_reviewed,
+    notify_document_soft_rejected_by_company,
+    notify_document_reviewed_by_garant,
+    notify_document_soft_rejected_by_garant,
+    notify_document_hard_rejected_by_garant,
 )
 
-from .models import Dokument
-from .serializers import DocumentSerializer
-from .utils.pdf_generator import generate_dohoda_pdf
-
-
-# --- Pomocné funkcie ---------------------------------------------------------
-
-def _user_is_student(user): return getattr(user, "rola", "").lower() == "student"
-def _user_is_firma(user):   return getattr(user, "rola", "").lower() == "firma"
-def _user_is_garant(user):  return getattr(user, "rola", "").lower() == "garant"
-
-def _assert(cond, msg, code=status.HTTP_400_BAD_REQUEST):
-    if not cond:
-        return Response({"detail": msg}, status=code)
+from ..models import Dokument
+from ..serializers import DocumentSerializer
+from ..utils.pdf_generator import generate_dohoda_pdf
+from .helpers import _assert, _user_is_firma, _user_is_garant, _user_is_student
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
     """
-    Endpoints:
-    - POST   /documents/{id}/upload               (študent)  → vytvorí NOVÚ verziu (nový záznam)
-    - POST   /documents/{id}/approve-company      (firma)
-    - POST   /documents/{id}/reject-company       (firma)    → HARD (stav -> zamietnuty)
-    - POST   /documents/{id}/reject-company-soft  (firma)    → SOFT (stav sa nemení, reason povinný)
-    - POST   /documents/{id}/approve-garant       (garant)   → stav sa nemení (audit)
-    - POST   /documents/{id}/reject-garant-soft   (garant)   → SOFT (stav sa nemení, reason povinný)
-    - POST   /documents/{id}/reject-garant-hard   (garant)   → HARD (stav -> zamietnuty, reason povinný)
-    - GET    /documents/{id}/download
-    - GET    /documents/{id}/generate_dohoda
+    Dokumenty a ich workflow (upload, schválenie, zamietnutie, stiahnutie, generovanie dohody).
     """
+
     queryset = Dokument.objects.all()
     serializer_class = DocumentSerializer
     permission_classes = [IsAuthenticated, IsGarantOrRelatedDocument]
@@ -72,8 +51,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="upload")
     def upload(self, request, pk=None):
         """
-        Študent nahrá PDF → upload do B2 → vytvorí sa NOVÝ záznam Dokument (full history).
-        Stav novej verzie: 'nahrany'. Pošleme notifikáciu firme (+ garantovi podľa tvojej špecifikácie).
+        Študent alebo firma (len výkaz) nahrá PDF, uloží sa do B2 a aktualizuje dokument.
+        Stav novej verzie: 'nahrany'. Posiela sa notifikácia.
         """
         old_doc = self.get_object()
         user = request.user
@@ -95,12 +74,11 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
         file = request.FILES.get("file")
         resp = _assert(file is not None, "Chýba súbor 'file' v requeste.")
-        if resp: return resp
+        if resp:
+            return resp
 
-        # upload -> B2
         object_name = upload_file_to_b2(file)
 
-        # aktualizuj existujúci záznam (držanie histórie riešime neskôr)
         old_doc.subor_url = object_name
         old_doc.nahrane_pouzivatel_id = user.id
         old_doc.stav_dokumentu = "nahrany"
@@ -124,95 +102,104 @@ class DocumentViewSet(viewsets.ModelViewSet):
     # -------------------  COMPANY APPROVE/REJECT  -------------------
     @action(detail=True, methods=["post"], url_path="approve-company")
     def approve_company(self, request, pk=None):
-        """
-        Firma schváli dokument → stav 'potvrdeny', audit -> skontroloval(+čas).
-        Maily: Študent + Garant (zabezpečí service).
-        """
+        """Firma schváli dokument (stav 'potvrdeny', audit)."""
         document = self.get_object()
         user = request.user
         prax = document.prax
 
         resp = _assert(_user_is_firma(user), "Iba firma môže schváliť dokument.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
+        if resp:
+            return resp
 
-        # ak má Používateľ pole firma_id, skontroluj zhodu
         if hasattr(user, "firma_id"):
-            resp = _assert(user.firma_id == getattr(prax, "firma_id", None), "Toto nie je vaša prax.", status.HTTP_403_FORBIDDEN)
-            if resp: return resp
+            resp = _assert(
+                user.firma_id == getattr(prax, "firma_id", None),
+                "Toto nie je vaša prax.",
+                status.HTTP_403_FORBIDDEN,
+            )
+            if resp:
+                return resp
 
         resp = _assert(document.stav_dokumentu == "nahrany", "Firma môže schváliť len dokument v stave 'nahrany'.")
-        if resp: return resp
+        if resp:
+            return resp
 
         document.stav_dokumentu = "potvrdeny"
         document.skontroloval_id = user.id
         document.skontrolovane_at = timezone.now()
         document.save(update_fields=["stav_dokumentu", "skontroloval_id", "skontrolovane_at", "zmenene_at"])
 
-        # 🔔 Notifikácia: company approved (service pošle: študent + garant)
         notify_document_reviewed(document, approved=True)
 
         return Response({"detail": "Schválené firmou."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="reject-company")
     def reject_company(self, request, pk=None):
-        """
-        Firma HARD zamietne → stav 'zamietnuty', reason POVINNÝ (len v emaili).
-        Maily: iba Študent (service).
-        """
+        """Firma HARD zamietne → stav 'zamietnuty', reason povinný."""
         document = self.get_object()
         user = request.user
         prax = document.prax
 
         resp = _assert(_user_is_firma(user), "Iba firma môže zamietnuť dokument.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
+        if resp:
+            return resp
 
         if hasattr(user, "firma_id"):
-            resp = _assert(user.firma_id == getattr(prax, "firma_id", None), "Toto nie je vaša prax.", status.HTTP_403_FORBIDDEN)
-            if resp: return resp
+            resp = _assert(
+                user.firma_id == getattr(prax, "firma_id", None),
+                "Toto nie je vaša prax.",
+                status.HTTP_403_FORBIDDEN,
+            )
+            if resp:
+                return resp
 
         resp = _assert(document.stav_dokumentu in ["nahrany", "potvrdeny"], "Neplatný stav na zamietnutie.")
-        if resp: return resp
+        if resp:
+            return resp
 
         reason = (request.data.get("reason") or "").strip()
         resp = _assert(bool(reason), "Pole 'reason' je povinné.")
-        if resp: return resp
+        if resp:
+            return resp
 
         document.stav_dokumentu = "zamietnuty"
         document.skontroloval_id = user.id
         document.skontrolovane_at = timezone.now()
         document.save(update_fields=["stav_dokumentu", "skontroloval_id", "skontrolovane_at", "zmenene_at"])
 
-        # 🔔 Notifikácia: company HARD reject (service pošle: študent; reason v emaili)
         notify_document_reviewed(document, approved=False, reason=reason)
 
         return Response({"detail": "Zamietnuté firmou (hard)."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="reject-company-soft")
     def reject_company_soft(self, request, pk=None):
-        """
-        Firma SOFT zamietne → stav sa NEMENÍ (zostáva 'nahrany'), reason POVINNÝ (len email).
-        Maily: Študent (service).
-        """
+        """Firma SOFT zamietne → stav sa nemení, reason povinný."""
         document = self.get_object()
         user = request.user
         prax = document.prax
 
         resp = _assert(_user_is_firma(user), "Iba firma môže zamietnuť dokument.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
+        if resp:
+            return resp
 
         if hasattr(user, "firma_id"):
-            resp = _assert(user.firma_id == getattr(prax, "firma_id", None), "Toto nie je vaša prax.", status.HTTP_403_FORBIDDEN)
-            if resp: return resp
+            resp = _assert(
+                user.firma_id == getattr(prax, "firma_id", None),
+                "Toto nie je vaša prax.",
+                status.HTTP_403_FORBIDDEN,
+            )
+            if resp:
+                return resp
 
-        # v company fáze býva 'nahrany' – soft reject stav NEMENÍME
         resp = _assert(document.stav_dokumentu == "nahrany", "Soft reject je dostupný len pre stav 'nahrany'.")
-        if resp: return resp
+        if resp:
+            return resp
 
         reason = (request.data.get("reason") or "").strip()
         resp = _assert(bool(reason), "Pole 'reason' je povinné.")
-        if resp: return resp
+        if resp:
+            return resp
 
-        # 🔔 Notifikácia: company SOFT reject (service pošle: študent; reason v emaili)
         notify_document_soft_rejected_by_company(document, reason=reason)
 
         return Response({"detail": "Soft zamietnutie firmou (stav sa nemení)."}, status=status.HTTP_200_OK)
@@ -220,87 +207,83 @@ class DocumentViewSet(viewsets.ModelViewSet):
     # --------------------  GARANT APPROVE/REJECT  --------------------
     @action(detail=True, methods=["post"], url_path="approve-garant")
     def approve_garant(self, request, pk=None):
-        """
-        Garant schváli → stav dokumentu sa NEMENÍ (ostáva 'potvrdeny'), zapisuje sa audit.
-        Maily: Študent + Firma (rieši service).
-        """
+        """Garant schváli (stav sa nemení, zapisuje audit)."""
         document = self.get_object()
         user = request.user
-        prax = document.prax
 
         resp = _assert(_user_is_garant(user), "Iba garant môže schváliť dokument.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
+        if resp:
+            return resp
 
-        resp = _assert(document.stav_dokumentu == "potvrdeny",
-                       "Garant môže schváliť až po schválení firmou (stav 'potvrdeny').")
-        if resp: return resp
+        resp = _assert(
+            document.stav_dokumentu == "potvrdeny",
+            "Garant môže schváliť až po schválení firmou (stav 'potvrdeny').",
+        )
+        if resp:
+            return resp
 
         document.skontroloval_id = user.id
         document.skontrolovane_at = timezone.now()
         document.save(update_fields=["skontroloval_id", "skontrolovane_at", "zmenene_at"])
 
-        # 🔔 Notifikácia: garant approved (service pošle: študent + firma)
         notify_document_reviewed_by_garant(document)
 
         return Response({"detail": "Schválené garantom."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="reject-garant-soft")
     def reject_garant_soft(self, request, pk=None):
-        """
-        Garant SOFT zamietne → stav sa NEMENÍ (ostáva 'potvrdeny'), reason POVINNÝ.
-        Maily: Študent (service).
-        """
+        """Garant SOFT zamietne → stav sa nemení, reason povinný."""
         document = self.get_object()
         user = request.user
-        prax = document.prax
 
         resp = _assert(_user_is_garant(user), "Iba garant môže zamietnuť dokument.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
+        if resp:
+            return resp
 
-        resp = _assert(document.stav_dokumentu == "potvrdeny",
-                       "Soft reject je dostupný až po schválení firmou (stav 'potvrdeny').")
-        if resp: return resp
+        resp = _assert(
+            document.stav_dokumentu == "potvrdeny",
+            "Soft reject je dostupný až po schválení firmou (stav 'potvrdeny').",
+        )
+        if resp:
+            return resp
 
         reason = (request.data.get("reason") or "").strip()
         resp = _assert(bool(reason), "Pole 'reason' je povinné.")
-        if resp: return resp
+        if resp:
+            return resp
 
-        # stav sa NEMENÍ
         document.skontroloval_id = user.id
         document.skontrolovane_at = timezone.now()
         document.save(update_fields=["skontroloval_id", "skontrolovane_at", "zmenene_at"])
 
-        # 🔔 Notifikácia: garant SOFT reject (service pošle: študent; reason v emaili)
         notify_document_soft_rejected_by_garant(document, reason=reason)
 
         return Response({"detail": "Soft zamietnutie garantom (stav sa nemení)."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="reject-garant-hard")
     def reject_garant_hard(self, request, pk=None):
-        """
-        Garant HARD zamietne → stav 'zamietnuty', reason POVINNÝ.
-        Maily: Študent + Firma (service).
-        """
+        """Garant HARD zamietne → stav 'zamietnuty', reason povinný."""
         document = self.get_object()
         user = request.user
-        prax = document.prax
 
         resp = _assert(_user_is_garant(user), "Iba garant môže zamietnuť dokument.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
+        if resp:
+            return resp
 
         resp = _assert(document.stav_dokumentu in ["nahrany", "potvrdeny"], "Neplatný stav na zamietnutie.")
-        if resp: return resp
+        if resp:
+            return resp
 
         reason = (request.data.get("reason") or "").strip()
         resp = _assert(bool(reason), "Pole 'reason' je povinné.")
-        if resp: return resp
+        if resp:
+            return resp
 
         document.stav_dokumentu = "zamietnuty"
         document.skontroloval_id = user.id
         document.skontrolovane_at = timezone.now()
         document.save(update_fields=["stav_dokumentu", "skontroloval_id", "skontrolovane_at", "zmenene_at"])
 
-        # 🔔 Notifikácia: garant HARD reject (service pošle: študent + firma; reason v emaili)
         notify_document_hard_rejected_by_garant(document, reason=reason)
 
         return Response({"detail": "Hard zamietnutie garantom."}, status=status.HTTP_200_OK)
@@ -308,27 +291,24 @@ class DocumentViewSet(viewsets.ModelViewSet):
     # ---------------------------  DOWNLOAD  --------------------------
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, pk=None):
-        """
-        Vráti presigned URL (GET) pre oprávnených:
-        - študent danej praxe
-        - firma danej praxe
-        - garant praxe
-        """
+        """Vráti presigned URL pre oprávnených (študent, firma, garant)."""
         document = self.get_object()
         prax = document.prax
         user = request.user
 
         allowed = (
-            (_user_is_student(user) and prax and prax.student_id == user.id) or
-            (_user_is_firma(user) and hasattr(user, "firma_id") and user.firma_id == getattr(prax, "firma_id", None)) or
-            (_user_is_garant(user) and prax and getattr(prax, "garant_id", None) == user.id)
+            (_user_is_student(user) and prax and prax.student_id == user.id)
+            or (_user_is_firma(user) and hasattr(user, "firma_id") and user.firma_id == getattr(prax, "firma_id", None))
+            or (_user_is_garant(user) and prax and getattr(prax, "garant_id", None) == user.id)
         )
 
         resp = _assert(allowed, "Nemáš oprávnenie stiahnuť tento dokument.", status.HTTP_403_FORBIDDEN)
-        if resp: return resp
+        if resp:
+            return resp
 
         resp = _assert(bool(document.subor_url), "Dokument zatiaľ nemá nahratý súbor.")
-        if resp: return resp
+        if resp:
+            return resp
 
         url = generate_presigned_url(document.subor_url)
         return Response({"url": url}, status=status.HTTP_200_OK)
@@ -336,6 +316,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     # -----------------------  EXISTUJÚCE: PDF  -----------------------
     @action(detail=True, methods=["get"], url_path="generate_dohoda")
     def generate_dohoda(self, request, pk=None):
+        """Študent vygeneruje PDF dohodu pre prax v stave vytvorena/potvrdena."""
         try:
             document = self.get_object()
             if not document.prax_id:
@@ -345,16 +326,24 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
             user = request.user
             if getattr(user, "rola", None) != "student":
-                return Response({"detail": "Iba študent môže generovať PDF dokument."},
-                                status=status.HTTP_403_FORBIDDEN)
+                return Response(
+                    {"detail": "Iba študent môže generovať PDF dokument."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             if prax.student_id != user.id:
-                return Response({"detail": "Nemáš oprávnenie generovať dokument pre túto prax."},
-                                status=status.HTTP_403_FORBIDDEN)
+                return Response(
+                    {"detail": "Nemáš oprávnenie generovať dokument pre túto prax."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
             if prax.stav.lower() not in ["vytvorena", "potvrdena"]:
-                return Response({"detail": f"PDF možno generovať len pre prax v stave 'vytvorena' alebo 'potvrdena'. "
-                                           f"Aktuálny stav: {prax.stav}"},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {
+                        "detail": "PDF možno generovať len pre prax v stave 'vytvorena' alebo 'potvrdena'. "
+                        f"Aktuálny stav: {prax.stav}"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             pdf_buffer, relative_path = generate_dohoda_pdf(prax)
             document.subor_url = relative_path
@@ -374,8 +363,12 @@ class DocumentViewSet(viewsets.ModelViewSet):
         except Dokument.DoesNotExist:
             return Response({"detail": "Dokument neexistuje."}, status=status.HTTP_404_NOT_FOUND)
         except FileNotFoundError as e:
-            return Response({"detail": f"Šablóna PDF sa nenašla: {str(e)}"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"detail": f"Šablóna PDF sa nenašla: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         except Exception as e:
-            return Response({"detail": f"❌ Chyba pri generovaní PDF: {str(e)}"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"detail": f"❌ Chyba pri generovaní PDF: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
