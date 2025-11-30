@@ -1,11 +1,20 @@
 from django.db import models
 
 class Prax(models.Model):
-    SEMESTER_CHOICES = [('zimny', 'Zimný'), ('letny', 'Letný')]
+    SEMESTER_ZIMNY = "zimny"
+    SEMESTER_LETNY = "letny"
+    SEMESTER_CHOICES = [(SEMESTER_ZIMNY, 'Zimný'), (SEMESTER_LETNY, 'Letný')]
+
+    STAV_VYTVORENA = "vytvorena"
+    STAV_POTVRDENA = "potvrdena"
+    STAV_ZAMIETNUTA = "zamietnuta"
+    STAV_SCHVALENA = "schvalena"
+    STAV_OBHAJENA = "obhajena"
+    STAV_NEOBHAJENA = "neobhajena"
     STAV_CHOICES = [
-        ('vytvorena', 'Vytvorená'), ('potvrdena', 'Potvrdená'),
-        ('zamietnuta', 'Zamietnutá'), ('schvalena', 'Schválená'),
-        ('obhajena', 'Obhájená'), ('neobhajena', 'Neobhájená')
+        (STAV_VYTVORENA, 'Vytvorená'), (STAV_POTVRDENA, 'Potvrdená'),
+        (STAV_ZAMIETNUTA, 'Zamietnutá'), (STAV_SCHVALENA, 'Schválená'),
+        (STAV_OBHAJENA, 'Obhájená'), (STAV_NEOBHAJENA, 'Neobhájená')
     ]
     
     student = models.ForeignKey('users.User', on_delete=models.CASCADE, db_column='student_id')
@@ -15,7 +24,7 @@ class Prax(models.Model):
     semester = models.CharField(max_length=10, choices=SEMESTER_CHOICES)
     datum_zaciatku = models.DateField()
     datum_konca = models.DateField()
-    stav = models.CharField(max_length=20, choices=STAV_CHOICES, default='vytvorena')
+    stav = models.CharField(max_length=20, choices=STAV_CHOICES, default=STAV_VYTVORENA)
     vytvorene_at = models.DateTimeField(auto_now_add=True)
     zmenene_at = models.DateTimeField(auto_now=True)
 
@@ -24,12 +33,7 @@ class Prax(models.Model):
         db_table = 'praxe'
 
 class HistoriaStavovPraxe(models.Model):
-    # Pridajte STAV_CHOICES aj sem alebo importujte z Prax
-    STAV_CHOICES = [
-        ('vytvorena', 'Vytvorená'), ('potvrdena', 'Potvrdená'),
-        ('zamietnuta', 'Zamietnutá'), ('schvalena', 'Schválená'),
-        ('obhajena', 'Obhájená'), ('neobhajena', 'Neobhájená')
-    ]
+    STAV_CHOICES = Prax.STAV_CHOICES
     
     prax = models.ForeignKey(Prax, on_delete=models.CASCADE, db_column='prax_id')
     stary_stav = models.CharField(max_length=20, choices=STAV_CHOICES, blank=True, null=True)
