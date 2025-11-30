@@ -2,6 +2,8 @@
 from rest_framework import serializers
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
+from apps.authentication.models import OAuthClient
+from apps.users.models import User
 
 class OAuthAuthorizeSerializer(serializers.Serializer):
     client_id = serializers.CharField(required=True, max_length=100)
@@ -42,6 +44,8 @@ class OAuthAuthorizeSerializer(serializers.Serializer):
             raise serializers.ValidationError({'code_challenge_method': 'Only plain or S256 are supported'})
         data['code_challenge_method'] = method
         return data
+
+
 class OAuthTokenSerializer(serializers.Serializer):
     grant_type = serializers.CharField(required=True, max_length=50)
     client_id = serializers.CharField(required=True, max_length=100)
@@ -86,3 +90,46 @@ class OAuthTokenSerializer(serializers.Serializer):
             pass
         
         return data
+
+
+class OAuthClientCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(required=True, max_length=200)
+    redirect_uris = serializers.ListField(child=serializers.URLField(), allow_empty=False)
+    scope = serializers.CharField(required=False, max_length=200, default='read write')
+    client_id = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    client_secret = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    is_public = serializers.BooleanField(required=False, default=False)
+    allow_password_grant = serializers.BooleanField(required=False, default=False)
+    allow_private_jwt = serializers.BooleanField(required=False, default=False)
+    public_key = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    service_user_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate_client_id(self, value):
+        if value and OAuthClient.objects.filter(client_id=value).exists():
+            raise serializers.ValidationError("client_id už existuje.")
+        return value
+
+    def validate_service_user_id(self, value):
+        if value is None:
+            return None
+        try:
+            user = User.objects.get(id=value)
+        except User.DoesNotExist as exc:
+            raise serializers.ValidationError("Zadaný service user neexistuje.") from exc
+
+        if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
+            raise serializers.ValidationError("Service user musí mať rolu externy alebo garant.")
+        return user
+
+    def validate(self, attrs):
+        allow_private_jwt = attrs.get('allow_private_jwt')
+        public_key = attrs.get('public_key')
+        if allow_private_jwt and not public_key:
+            raise serializers.ValidationError({'public_key': 'Pre private_key_jwt musí byť zadaný public key.'})
+
+        # map validated service_user instance
+        attrs['service_user'] = attrs.pop('service_user_id', None)
+        # Normalize scope default when empty string is passed
+        if not attrs.get('scope'):
+            attrs['scope'] = 'read write'
+        return attrs
