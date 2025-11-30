@@ -5,6 +5,13 @@ class Prax(models.Model):
     SEMESTER_LETNY = "letny"
     SEMESTER_CHOICES = [(SEMESTER_ZIMNY, 'Zimný'), (SEMESTER_LETNY, 'Letný')]
 
+    FORMA_DOHODA = "dohoda"
+    FORMA_ZAMESTNANIE = "zamestnanie"
+    FORMA_CHOICES = [
+        (FORMA_DOHODA, 'Dohoda o odbornej praxi'),
+        (FORMA_ZAMESTNANIE, 'Platené zamestnanie'),
+    ]
+
     STAV_VYTVORENA = "vytvorena"
     STAV_POTVRDENA = "potvrdena"
     STAV_ZAMIETNUTA = "zamietnuta"
@@ -24,6 +31,7 @@ class Prax(models.Model):
     semester = models.CharField(max_length=10, choices=SEMESTER_CHOICES)
     datum_zaciatku = models.DateField()
     datum_konca = models.DateField()
+    forma = models.CharField(max_length=20, choices=FORMA_CHOICES, default=FORMA_DOHODA)
     stav = models.CharField(max_length=20, choices=STAV_CHOICES, default=STAV_VYTVORENA)
     vytvorene_at = models.DateTimeField(auto_now_add=True)
     zmenene_at = models.DateTimeField(auto_now=True)

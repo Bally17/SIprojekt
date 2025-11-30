@@ -238,6 +238,7 @@ class StudentCreateInternshipSerializer(serializers.Serializer):
     semester = serializers.CharField()
     datum_zaciatku = serializers.DateField()
     datum_konca = serializers.DateField()
+    forma = serializers.CharField(required=False, allow_blank=True, default=Prax.FORMA_DOHODA)
 
     def validate_firma_id(self, value):
         if value <= 0:
@@ -263,4 +264,9 @@ class StudentCreateInternshipSerializer(serializers.Serializer):
         if semester not in ("zimny", "letny"):
             raise serializers.ValidationError({"semester": "Semester musí byť zimny alebo letny."})
         attrs["semester"] = semester
+
+        forma = (attrs.get("forma") or Prax.FORMA_DOHODA).lower()
+        if forma not in (Prax.FORMA_DOHODA, Prax.FORMA_ZAMESTNANIE):
+            raise serializers.ValidationError({"forma": "Forma praxe musí byť 'dohoda' alebo 'zamestnanie'."})
+        attrs["forma"] = forma
         return attrs
