@@ -25,6 +25,7 @@ urlpatterns = [
     path('oauth/token/', views.oauth_token, name='oauth-token'),
     path('oauth/userinfo/', views.oauth_userinfo, name='oauth-userinfo'),
     path('oauth/clients/', views.oauth_clients, name='oauth-clients'),
+    path('oauth/clients/<str:client_id>/', views.oauth_client_detail, name='oauth-client-detail'),
 
     # Student and Company registration
     path('register/student/', StudentRegistrationView.as_view(), name='student-registration'),

@@ -1,3 +1,5 @@
+import json
+import secrets
 from datetime import timedelta
 
 import jwt
@@ -14,9 +16,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import User
 
 from ..models import AuthorizationCode, OAuthClient
-from ..oauth_serializers import OAuthAuthorizeSerializer, OAuthTokenSerializer
+from ..oauth_serializers import OAuthAuthorizeSerializer, OAuthClientCreateSerializer, OAuthTokenSerializer
 from ..rate_limiting import oauth_rate_limit_check
 from .helpers import get_tokens_for_user, get_user_data, verify_pkce
+
+
+def _generate_unique_client_id():
+    """Generate a unique client_id within the DB limit."""
+    for _ in range(5):
+        candidate = secrets.token_urlsafe(12)
+        if not OAuthClient.objects.filter(client_id=candidate).exists():
+            return candidate
+    return secrets.token_urlsafe(16)
 
 
 @api_view(["GET"])
@@ -351,19 +362,102 @@ def oauth_userinfo(request):
     return Response(user_data)
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def oauth_clients(request):
-    """Get user's OAuth clients (pre admina)"""
-    clients = OAuthClient.objects.filter(is_active=True)
-    data = []
-    for client in clients:
-        data.append(
-            {
-                "client_id": client.client_id,
-                "name": client.name,
-                "redirect_uris": client.get_redirect_uris_list(),
-                "scope": client.scope,
-            }
+    """
+    GET: Zoznam aktívnych OAuth klientov.
+    POST: Vytvorenie nového klienta (len rola garant).
+    """
+    if request.method == "GET":
+        clients = OAuthClient.objects.filter(is_active=True)
+        data = []
+        for client in clients:
+            data.append(
+                {
+                    "client_id": client.client_id,
+                    "name": client.name,
+                    "redirect_uris": client.get_redirect_uris_list(),
+                    "scope": client.scope,
+                }
+            )
+        return Response(data)
+
+    user = request.user
+    if getattr(user, "rola", "") != User.ROLE_GARANT:
+        return Response(
+            {"detail": "Prístup je povolený len používateľom s rolou garant."},
+            status=status.HTTP_403_FORBIDDEN,
         )
-    return Response(data)
+
+    serializer = OAuthClientCreateSerializer(data=request.data, context={"request": request})
+    serializer.is_valid(raise_exception=True)
+    payload = serializer.validated_data
+
+    # ensure client_id uniqueness (serializer already checks custom values)
+    client_id = payload.get("client_id") or _generate_unique_client_id()
+    if OAuthClient.objects.filter(client_id=client_id).exists():
+        return Response({"client_id": ["client_id už existuje."]}, status=status.HTTP_400_BAD_REQUEST)
+
+    is_public = payload.get("is_public", False)
+    client_secret = payload.get("client_secret") or ""
+    if not is_public and not client_secret:
+        client_secret = secrets.token_urlsafe(32)
+    if is_public:
+        client_secret = ""
+
+    service_user = payload.get("service_user") or user
+    if service_user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
+        return Response(
+            {"service_user": ["Service user musí mať rolu externy alebo garant."]},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    client = OAuthClient.objects.create(
+        client_id=client_id,
+        client_secret=client_secret,
+        name=payload["name"],
+        redirect_uris=json.dumps(payload["redirect_uris"]),
+        scope=payload.get("scope") or "read write",
+        is_public=is_public,
+        allow_password_grant=payload.get("allow_password_grant", False),
+        service_user=service_user,
+        allow_private_jwt=payload.get("allow_private_jwt", False),
+        public_key=payload.get("public_key"),
+    )
+
+    response_data = {
+        "client_id": client.client_id,
+        "client_secret": client_secret,
+        "name": client.name,
+        "redirect_uris": payload["redirect_uris"],
+        "scope": client.scope,
+        "is_public": client.is_public,
+        "allow_password_grant": client.allow_password_grant,
+        "allow_private_jwt": client.allow_private_jwt,
+        "service_user": {"id": service_user.id, "email": service_user.email},
+    }
+    return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def oauth_client_detail(request, client_id: str):
+    """
+    Deaktivuje OAuth klienta (len rola garant).
+    """
+    user = request.user
+    if getattr(user, "rola", "") != User.ROLE_GARANT:
+        return Response(
+            {"detail": "Prístup je povolený len používateľom s rolou garant."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        client = OAuthClient.objects.get(client_id=client_id, is_active=True)
+    except OAuthClient.DoesNotExist:
+        return Response({"detail": "OAuth klient nenájdený."}, status=status.HTTP_404_NOT_FOUND)
+
+    client.is_active = False
+    client.save(update_fields=["is_active"])
+    return Response(status=status.HTTP_204_NO_CONTENT)
