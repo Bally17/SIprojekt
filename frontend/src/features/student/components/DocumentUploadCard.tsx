@@ -25,13 +25,18 @@ const STATUS_BADGE: Record<string, string> = {
 const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) => {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+  // povlenie uploadu je naviazane na stav praxe schvalena
+  const isApprovedState = (internship.stav || "").toLowerCase() === "schvalena";
 
   // Lokálne stavy pre modal (súbor, progress, drag state, zvolený typ).
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedType, setSelectedType] = useState<"zmluva" | "vykaz">("zmluva");
+  // predvolený typ je výkaz, a pokým neni prax v stave schválená tak je uplod zmluvy uzamknutý
+  const [selectedType, setSelectedType] = useState<"zmluva" | "vykaz">(
+    isApprovedState ? "zmluva" : "vykaz",
+  );
 
   // Vyhľadáme existujúce dokumenty priradené k praxi.
   const contractDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "dohoda");
@@ -76,9 +81,24 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
     msgs.common.documents.statusUnknown,
   ]);
 
+  // ak prax stratí z hocijakeho dovodu stav schvalena, prepne sa upload automaticky na vykaz
+  React.useEffect(() => {
+    if (!isApprovedState && selectedType === "zmluva") {
+      setSelectedType("vykaz");
+    }
+  }, [isApprovedState, selectedType]);
+
   // Multipart upload na aktuálne zvolený dokument (zmluva/výkaz).
   const uploadDocument = async () => {
     if (!file || !currentDoc) return;
+    // okrem backendu sa aj tu pre istotu blockuje nahravanie ak prax neni schvalena
+    if (selectedType === "zmluva" && !isApprovedState) {
+      notifyWarning({
+        title: msgs.common.documents.errorTitle,
+        description: msgs.common.documents.agreementLocked,
+      });
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -165,6 +185,12 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
                 {msgs.common.documents.agreementTitle}
               </div>
               <p className="text-xs text-cyan-700">{msgs.common.documents.agreementDescription}</p>
+              {!isApprovedState ? (
+                <div className="flex items-center gap-2 text-[11px] font-semibold text-amber-700">
+                  <Icon name="lock-keyhole" className="h-3.5 w-3.5" />
+                  {msgs.common.documents.agreementLocked}
+                </div>
+              ) : null}
               <span
                 className={`inline-flex min-w-[150px] flex-col items-center justify-center rounded-full px-3 py-0.5 text-center text-[11px] font-semibold leading-tight ${statusInfo.agreement.badge}`}
               >
@@ -218,24 +244,42 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
             <div className="mt-4 flex items-center gap-2 text-[11px] font-semibold text-cyan-900">
               <span>{msgs.common.documents.typeLabel}</span>
               <div className="inline-flex rounded-full border border-cyan-200 p-1">
-                {(["zmluva", "vykaz"] as const).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setSelectedType(type)}
-                    className={`rounded-full px-3 py-1 transition ${
-                      selectedType === type
-                        ? "bg-cyan-600 text-white"
-                        : "text-cyan-700 hover:bg-cyan-50"
-                    }`}
-                  >
-                    {type === "zmluva"
-                      ? msgs.common.documents.typeAgreement
-                      : msgs.common.documents.typeReport}
-                  </button>
-                ))}
+                {(["zmluva", "vykaz"] as const).map((type) => {
+                  const isAgreement = type === "zmluva";
+                  const disabled = isAgreement && !isApprovedState;
+                  const isActive = selectedType === type;
+
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        if (disabled) return;
+                        setSelectedType(type);
+                      }}
+                      className={`rounded-full px-3 py-1 transition ${
+                        isActive
+                          ? "bg-cyan-600 text-white"
+                          : disabled
+                            ? "cursor-not-allowed text-cyan-300"
+                            : "text-cyan-700 hover:bg-cyan-50"
+                      }`}
+                    >
+                      {isAgreement
+                        ? msgs.common.documents.typeAgreement
+                        : msgs.common.documents.typeReport}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+            {!isApprovedState ? (
+              <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
+                <Icon name="lock-keyhole" className="h-4 w-4" />
+                {msgs.common.documents.agreementLocked}
+              </div>
+            ) : null}
 
             {/* Ak typ ešte nemá pridelený záznam (napr. zmluva neexistuje), upozorníme používateľa */}
             {currentDoc ? (

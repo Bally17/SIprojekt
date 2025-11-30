@@ -73,6 +73,16 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        # zmluvu moze student nahrať až ak je stav praxe schvaleny
+        if is_student and old_doc.typ_dokumentu == Dokument.TYP_ZMLUVA:
+            resp = _assert(
+                getattr(prax, "stav", "").lower() == Prax.STAV_SCHVALENA,
+                "Zmluvu môžeš nahrať až po schválení praxe.",
+                status.HTTP_403_FORBIDDEN,
+            )
+            if resp:
+                return resp
+
         file = request.FILES.get("file")
         resp = _assert(file is not None, "Chýba súbor 'file' v requeste.")
         if resp:
