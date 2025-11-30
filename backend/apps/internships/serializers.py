@@ -159,6 +159,7 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
     status_note = serializers.CharField(
         required=False, allow_blank=True, write_only=True, max_length=500
     )
+    force = serializers.BooleanField(required=False, default=False, write_only=True)
 
     class Meta:
         model = Prax
@@ -170,6 +171,7 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
             "datum_konca",
             "stav",
             "status_note",
+            "force",
         ]
         read_only_fields = ["id"]
 
@@ -198,7 +200,8 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
         instance_state = (getattr(self.instance, "stav", "") or "").lower()
         if target_state and target_state != instance_state and self.instance:
             missing_docs = missing_required_documents(self.instance, target_state)
-            if missing_docs:
+            force = attrs.get("force", False)
+            if missing_docs and not force:
                 docs_text = ", ".join(missing_docs)
                 raise serializers.ValidationError(
                     {
@@ -213,6 +216,7 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         status_note = validated_data.pop("status_note", "").strip()
+        validated_data.pop("force", None)
         request = self.context.get("request")
         user = getattr(request, "user", None) if request else None
 

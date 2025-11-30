@@ -39,11 +39,16 @@ def missing_required_documents(prax, target_state: str) -> List[str]:
         expected_state = requirement.get("stav", Dokument.STAV_POTVRDENY)
         label = requirement.get("label") or doc_type
 
-        exists = Dokument.objects.filter(
-            prax=prax,
-            typ_dokumentu=doc_type,
-            stav_dokumentu=expected_state,
-        ).exists()
+        exists = (
+            Dokument.objects.filter(
+                prax=prax,
+                typ_dokumentu=doc_type,
+                stav_dokumentu=expected_state,
+            )
+            .exclude(subor_url__isnull=True)
+            .exclude(subor_url="")
+            .exists()
+        )
 
         if not exists:
             missing.append(label)

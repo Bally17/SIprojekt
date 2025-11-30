@@ -189,6 +189,22 @@ class TestDocumentRequirementValidation:
         assert response.status_code == 400
         assert "stav" in response.data
 
+    def test_garant_cannot_mark_schvalena_with_empty_contract_file(self):
+        # potvrdeny, ale bez súboru → stále chýba
+        self.contract.stav_dokumentu = "potvrdeny"
+        self.contract.subor_url = ""
+        self.contract.save(update_fields=["stav_dokumentu", "subor_url"])
+
+        self.client.force_authenticate(user=self.garant)
+        response = self.client.patch(
+            f"/api/internships/garant/internships/{self.prax.id}/",
+            {"stav": "schvalena"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert "stav" in response.data
+
     def test_garant_can_mark_schvalena_with_confirmed_contract(self):
         self.contract.stav_dokumentu = "potvrdeny"
         self.contract.save(update_fields=["stav_dokumentu"])
@@ -197,6 +213,18 @@ class TestDocumentRequirementValidation:
         response = self.client.patch(
             f"/api/internships/garant/internships/{self.prax.id}/",
             {"stav": "schvalena"},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        assert response.data["stav"] == "schvalena"
+
+    def test_garant_can_force_mark_schvalena_even_without_contract(self):
+        # force=True obíde validačný blok na povinné dokumenty
+        self.client.force_authenticate(user=self.garant)
+        response = self.client.patch(
+            f"/api/internships/garant/internships/{self.prax.id}/",
+            {"stav": "schvalena", "force": True},
             format="json",
         )
 
