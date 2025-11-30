@@ -391,6 +391,8 @@ export default function GarantInternshipsDashboard() {
     if (note.length) {
       payload.status_note = note;
     }
+    // Garant môže obísť bloky na chýbajúce dokumenty
+    payload.force = true;
 
     if (Object.keys(payload).length === 0) {
       setEditError(msgs.common.guarant.edit.nothingToUpdate);
