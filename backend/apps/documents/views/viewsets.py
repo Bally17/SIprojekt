@@ -59,6 +59,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
         user = request.user
 
         prax = old_doc.prax
+        prax_forma = getattr(prax, "forma", Prax.FORMA_DOHODA)
+        is_employment = prax_forma == Prax.FORMA_ZAMESTNANIE
         is_student = _user_is_student(user) and prax and prax.student_id == user.id
         is_company = (
             _user_is_firma(user)
@@ -73,8 +75,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # zmluvu moze student nahrať až ak je stav praxe schvaleny
-        if is_student and old_doc.typ_dokumentu == Dokument.TYP_ZMLUVA:
+        # zmluvu moze student nahrať až ak je stav praxe schvaleny (netýka sa plateného zamestnania)
+        if is_student and old_doc.typ_dokumentu == Dokument.TYP_ZMLUVA and not is_employment:
             resp = _assert(
                 getattr(prax, "stav", "").lower() == Prax.STAV_SCHVALENA,
                 "Zmluvu môžeš nahrať až po schválení praxe.",

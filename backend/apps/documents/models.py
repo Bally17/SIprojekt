@@ -3,11 +3,15 @@ from django.db import models
 class Dokument(models.Model):
     TYP_DOHODA = "dohoda"
     TYP_ZMLUVA = "zmluva"
+    TYP_ZAMESTNANIE = "zamestnanie"
     TYP_VYKAZ = "vykaz"
+    TYP_FAKTURA = "faktura"
     TYP_CHOICES = [
         (TYP_DOHODA, 'Dohoda'),
         (TYP_ZMLUVA, 'Zmluva'),
+        (TYP_ZAMESTNANIE, 'Pracovná zmluva'),
         (TYP_VYKAZ, 'Výkaz'),
+        (TYP_FAKTURA, 'Faktúra'),
     ]
 
     STAV_NAHRANY = "nahrany"
@@ -20,7 +24,7 @@ class Dokument(models.Model):
     ]
     
     prax = models.ForeignKey('internships.Prax', on_delete=models.CASCADE, db_column='prax_id')
-    typ_dokumentu = models.CharField(max_length=10, choices=TYP_CHOICES)
+    typ_dokumentu = models.CharField(max_length=20, choices=TYP_CHOICES)
     subor_url = models.TextField()
     nahrane_pouzivatel = models.ForeignKey('users.User', on_delete=models.CASCADE, db_column='nahrane_pouzivatel_id')
     stav_dokumentu = models.CharField(max_length=20, choices=STAV_CHOICES, default=STAV_NAHRANY)

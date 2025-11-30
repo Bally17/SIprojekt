@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -111,6 +111,7 @@ def me_internships(request):
                 "semester": p.semester,
                 "datum_zaciatku": p.datum_zaciatku,
                 "datum_konca": p.datum_konca,
+                "forma": getattr(p, "forma", None),
                 "stav": p.stav,
                 "firma": firma_data,
                 "garant": garant_data,
@@ -142,6 +143,11 @@ def me_internships(request):
             "semester": openapi.Schema(type=openapi.TYPE_STRING, description="Zimný alebo letný"),
             "datum_zaciatku": openapi.Schema(type=openapi.TYPE_STRING, format="date"),
             "datum_konca": openapi.Schema(type=openapi.TYPE_STRING, format="date"),
+            "forma": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description="Forma praxe (dohoda alebo zamestnanie)",
+                enum=[Prax.FORMA_DOHODA, Prax.FORMA_ZAMESTNANIE],
+            ),
         },
         required=["firma_id", "rok", "semester", "datum_zaciatku", "datum_konca"],
     ),
@@ -162,6 +168,7 @@ def create_internship(request):
     semester = serializer.validated_data["semester"]
     datum_zaciatku = serializer.validated_data["datum_zaciatku"]
     datum_konca = serializer.validated_data["datum_konca"]
+    forma = serializer.validated_data.get("forma", Prax.FORMA_DOHODA)
 
     firma = Firma.objects.get(id=firma_id)
 
@@ -176,6 +183,7 @@ def create_internship(request):
             semester=semester,
             datum_zaciatku=datum_zaciatku,
             datum_konca=datum_konca,
+            forma=forma,
             stav=Prax.STAV_VYTVORENA,
         )
 
@@ -187,32 +195,62 @@ def create_internship(request):
             poznamka="Prax bola vytvorená študentom.",
         )
 
-        document, _ = Dokument.objects.get_or_create(
-            prax=prax,
-            typ_dokumentu=Dokument.TYP_DOHODA,
-            defaults={
-                "nahrane_pouzivatel": user,
-                "subor_url": "",
-            },
-        )
+        if forma == Prax.FORMA_ZAMESTNANIE:
+            Dokument.objects.get_or_create(
+                prax=prax,
+                typ_dokumentu=Dokument.TYP_ZAMESTNANIE,
+                defaults={
+                    "nahrane_pouzivatel": user,
+                    "subor_url": "",
+                    "stav_dokumentu": Dokument.STAV_NAHRANY,
+                },
+            )
+            try:
+                for _ in range(3):
+                    Dokument.objects.create(
+                        prax=prax,
+                        typ_dokumentu=Dokument.TYP_FAKTURA,
+                        nahrane_pouzivatel=user,
+                        subor_url="",
+                        stav_dokumentu=Dokument.STAV_NAHRANY,
+                    )
+            except IntegrityError:
+                Dokument.objects.get_or_create(
+                    prax=prax,
+                    typ_dokumentu=Dokument.TYP_FAKTURA,
+                    defaults={
+                        "nahrane_pouzivatel": user,
+                        "subor_url": "",
+                        "stav_dokumentu": Dokument.STAV_NAHRANY,
+                    },
+                )
+        else:
+            document, _ = Dokument.objects.get_or_create(
+                prax=prax,
+                typ_dokumentu=Dokument.TYP_DOHODA,
+                defaults={
+                    "nahrane_pouzivatel": user,
+                    "subor_url": "",
+                },
+            )
 
-        # Použijeme generate_dohoda_pdf z balíka views, aby ho vedeli patchnúť testy
-        from apps.internships import views as internships_views
+            # Použijeme generate_dohoda_pdf z balíka views, aby ho vedeli patchnúť testy
+            from apps.internships import views as internships_views
 
-        pdf_buffer, relative_path = internships_views.generate_dohoda_pdf(prax)
-        document.subor_url = relative_path
-        document.stav_dokumentu = Dokument.STAV_POTVRDENY
-        document.save(update_fields=["subor_url", "stav_dokumentu"])
+            pdf_buffer, relative_path = internships_views.generate_dohoda_pdf(prax)
+            document.subor_url = relative_path
+            document.stav_dokumentu = Dokument.STAV_POTVRDENY
+            document.save(update_fields=["subor_url", "stav_dokumentu"])
 
-        Dokument.objects.get_or_create(
-            prax=prax,
-            typ_dokumentu=Dokument.TYP_ZMLUVA,
-            defaults={
-                "nahrane_pouzivatel": user,
-                "subor_url": "",
-                "stav_dokumentu": Dokument.STAV_NAHRANY,
-            },
-        )
+            Dokument.objects.get_or_create(
+                prax=prax,
+                typ_dokumentu=Dokument.TYP_ZMLUVA,
+                defaults={
+                    "nahrane_pouzivatel": user,
+                    "subor_url": "",
+                    "stav_dokumentu": Dokument.STAV_NAHRANY,
+                },
+            )
         Dokument.objects.get_or_create(
             prax=prax,
             typ_dokumentu=Dokument.TYP_VYKAZ,
