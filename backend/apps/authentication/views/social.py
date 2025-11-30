@@ -25,7 +25,7 @@ def create_or_update_oauth_user(email, first_name, last_name, avatar, provider):
         user = User.objects.create_user(
             email=email,
             password=None,
-            rola="student",
+            rola=User.ROLE_STUDENT,
             meno=first_name,
             priezvisko=last_name,
             musi_zmenit_heslo=False,

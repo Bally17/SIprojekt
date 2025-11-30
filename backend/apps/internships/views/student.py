@@ -13,6 +13,7 @@ from ..models import HistoriaStavovPraxe, Prax
 from ..serializers import InternshipSerializer, StudentCreateInternshipSerializer
 from apps.companies.models import Firma
 from .garant import _pick_garant
+from apps.users.models import User
 
 
 @swagger_auto_schema(
@@ -54,7 +55,7 @@ def me_internships(request):
     """🧑‍🎓 Vráti všetky praxe prihláseného študenta s detailnými informáciami a stránkovaním."""
     user = request.user
 
-    if user.rola != "student":
+    if user.rola != User.ROLE_STUDENT:
         return Response(
             {"error": "Len študent môže pristupovať k tomuto endpointu."},
             status=status.HTTP_403_FORBIDDEN,
@@ -151,7 +152,7 @@ def me_internships(request):
 def create_internship(request):
     user = request.user
 
-    if user.rola != "student":
+    if user.rola != User.ROLE_STUDENT:
         return Response({"error": "Len študent môže vytvoriť prax."}, status=status.HTTP_403_FORBIDDEN)
 
     serializer = StudentCreateInternshipSerializer(data=request.data)
@@ -175,20 +176,20 @@ def create_internship(request):
             semester=semester,
             datum_zaciatku=datum_zaciatku,
             datum_konca=datum_konca,
-            stav="vytvorena",
+            stav=Prax.STAV_VYTVORENA,
         )
 
         HistoriaStavovPraxe.objects.create(
             prax_id=prax.id,
             stary_stav=None,
-            novy_stav="vytvorena",
+            novy_stav=Prax.STAV_VYTVORENA,
             zmenil_id=user.id,
             poznamka="Prax bola vytvorená študentom.",
         )
 
         document, _ = Dokument.objects.get_or_create(
             prax=prax,
-            typ_dokumentu="dohoda",
+            typ_dokumentu=Dokument.TYP_DOHODA,
             defaults={
                 "nahrane_pouzivatel": user,
                 "subor_url": "",
@@ -200,25 +201,25 @@ def create_internship(request):
 
         pdf_buffer, relative_path = internships_views.generate_dohoda_pdf(prax)
         document.subor_url = relative_path
-        document.stav_dokumentu = "potvrdeny"
+        document.stav_dokumentu = Dokument.STAV_POTVRDENY
         document.save(update_fields=["subor_url", "stav_dokumentu"])
 
         Dokument.objects.get_or_create(
             prax=prax,
-            typ_dokumentu="zmluva",
+            typ_dokumentu=Dokument.TYP_ZMLUVA,
             defaults={
                 "nahrane_pouzivatel": user,
                 "subor_url": "",
-                "stav_dokumentu": "nahrany",
+                "stav_dokumentu": Dokument.STAV_NAHRANY,
             },
         )
         Dokument.objects.get_or_create(
             prax=prax,
-            typ_dokumentu="vykaz",
+            typ_dokumentu=Dokument.TYP_VYKAZ,
             defaults={
                 "nahrane_pouzivatel": user,
                 "subor_url": "",
-                "stav_dokumentu": "nahrany",
+                "stav_dokumentu": Dokument.STAV_NAHRANY,
             },
         )
 

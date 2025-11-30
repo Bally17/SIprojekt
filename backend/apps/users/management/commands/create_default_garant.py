@@ -18,7 +18,7 @@ class Command(BaseCommand):
                 password=DEFAULT_PASS,
                 meno="Hlavný",
                 priezvisko="Garant",
-                rola="garant",
+                rola=User.ROLE_GARANT,
                 aktivny=True,
                 email_overeny=True,
                 musi_zmenit_heslo=False,
@@ -29,7 +29,7 @@ class Command(BaseCommand):
         else:
             # ✅ Obnova hesla
             u.set_password(DEFAULT_PASS)
-            u.rola = "garant"
+            u.rola = User.ROLE_GARANT
             u.aktivny = True
             u.email_overeny = True
             u.musi_zmenit_heslo = False

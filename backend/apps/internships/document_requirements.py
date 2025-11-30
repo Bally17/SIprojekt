@@ -1,14 +1,15 @@
 from typing import Dict, List
 
 from apps.documents.models import Dokument
+from apps.internships.models import Prax
 
 # Requirements for transitioning a practice (prax) into a specific state.
 # Map target state -> list of document requirements.
 REQUIRED_DOCUMENTS_BY_STATE: Dict[str, List[Dict[str, str]]] = {
-    "schvalena": [
+    Prax.STAV_SCHVALENA: [
         {
-            "typ": "zmluva",
-            "stav": "potvrdeny",
+            "typ": Dokument.TYP_ZMLUVA,
+            "stav": Dokument.STAV_POTVRDENY,
             "label": "Podpísaná zmluva potvrdená firmou",
         },
     ],
@@ -35,7 +36,7 @@ def missing_required_documents(prax, target_state: str) -> List[str]:
     missing: List[str] = []
     for requirement in requirements:
         doc_type = requirement["typ"]
-        expected_state = requirement.get("stav", "potvrdeny")
+        expected_state = requirement.get("stav", Dokument.STAV_POTVRDENY)
         label = requirement.get("label") or doc_type
 
         exists = Dokument.objects.filter(

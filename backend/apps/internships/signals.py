@@ -1,8 +1,9 @@
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
-from django.utils import timezone
 from apps.internships.models import Prax, HistoriaStavovPraxe
 from apps.notifications.models import Notifikacie
+
+STATUS_TEMPLATE_PRACTICE = "prax_zmena_stavu"
 
 @receiver(pre_save, sender=Prax)
 def cache_old_state(sender, instance, **kwargs):
@@ -41,7 +42,7 @@ def create_notification_on_status_change(sender, instance, created, **kwargs):
     )
 
     predmet = f"Zmena stavu praxe: {new_stav.capitalize()}"
-    sablona_kluc = "prax_zmena_stavu"
+    sablona_kluc = STATUS_TEMPLATE_PRACTICE
     payload = {"old": old_stav, "new": new_stav, "prax_id": instance.id}
 
     # 🔹 notifikácia pre študenta
@@ -53,7 +54,7 @@ def create_notification_on_status_change(sender, instance, created, **kwargs):
             predmet=predmet,
             sablona_kluc=sablona_kluc,
             payload_json=payload,
-            stav="nove",
+            stav=Notifikacie.STAV_NOVE,
         )
 
     # 🔹 notifikácia pre firmu
@@ -64,7 +65,7 @@ def create_notification_on_status_change(sender, instance, created, **kwargs):
             predmet=predmet,
             sablona_kluc=sablona_kluc,
             payload_json=payload,
-            stav="nove",
+            stav=Notifikacie.STAV_NOVE,
         )
 
     # 🔹 notifikácia pre garanta (len ak existuje)
@@ -76,7 +77,7 @@ def create_notification_on_status_change(sender, instance, created, **kwargs):
             predmet=predmet,
             sablona_kluc=sablona_kluc,
             payload_json=payload,
-            stav="nove",
+            stav=Notifikacie.STAV_NOVE,
         )
 
     # vyčisti pomocné atribúty, aby sa neprenášali do ďalších uložení

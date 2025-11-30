@@ -76,15 +76,15 @@ class UserAdmin(admin.ModelAdmin):
 
     # --- bezpečné mazanie: nesmie zostať 0 garantov ---
     def has_delete_permission(self, request, obj=None):
-        if obj and obj.rola == "garant":
-            if User.objects.filter(rola="garant").count() <= 1:
+        if obj and obj.rola == User.ROLE_GARANT:
+            if User.objects.filter(rola=User.ROLE_GARANT).count() <= 1:
                 return False
         return super().has_delete_permission(request, obj)
 
     def delete_queryset(self, request, queryset):
-        garant_qs = queryset.filter(rola="garant")
+        garant_qs = queryset.filter(rola=User.ROLE_GARANT)
         if garant_qs.exists():
-            remaining = User.objects.filter(rola="garant").exclude(id__in=garant_qs.values("id")).count()
+            remaining = User.objects.filter(rola=User.ROLE_GARANT).exclude(id__in=garant_qs.values("id")).count()
             if remaining < 1:
                 self.message_user(request, "Nedá sa zmazať posledného garanta.", level=messages.ERROR)
                 # zmažeme všetko okrem garantov ak existujú iné v querysete
@@ -102,7 +102,7 @@ class UserAdmin(admin.ModelAdmin):
         creating = obj.pk is None
         if creating and isinstance(form, GarantCreateForm):
             # garant sa vytvára
-            obj.rola = "garant"
+            obj.rola = User.ROLE_GARANT
             obj.aktivny = True
             obj.email_overeny = True
             obj.musi_zmenit_heslo = False

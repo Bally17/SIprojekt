@@ -38,7 +38,7 @@ class Command(BaseCommand):
         redirect_uri = options["redirect_uri"]
 
         service_user, created_user = User.objects.get_or_create(
-            email=service_email, defaults={"rola": "externy"}
+            email=service_email, defaults={"rola": User.ROLE_EXTERNY}
         )
         if created_user:
             self.stdout.write(self.style.SUCCESS(f"Vytvorený service user {service_email} (externy)"))

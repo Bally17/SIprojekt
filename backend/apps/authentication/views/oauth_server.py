@@ -253,7 +253,7 @@ def oauth_token(request):
         if not user.check_password(password):
             return Response({"error": "invalid_grant"}, status=400)
 
-        if user.rola != "firma":
+        if user.rola != User.ROLE_FIRMA:
             return Response(
                 {
                     "error": "invalid_role",
@@ -312,7 +312,7 @@ def oauth_token(request):
         if not service_user.is_active:
             return Response({"error": "invalid_grant", "error_description": "Service user is inactive."}, status=403)
 
-        if service_user.rola not in ("externy", "garant"):
+        if service_user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
             return Response(
                 {
                     "error": "invalid_role",

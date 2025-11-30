@@ -49,7 +49,7 @@ def _pick_garant():
     Inak použijeme defaultného garanta podľa ENV, ak existuje.
     """
     default_email = getattr(settings, "DEFAULT_GARANT_EMAIL", None)
-    garants = User.objects.filter(rola="garant", aktivny=True)
+    garants = User.objects.filter(rola=User.ROLE_GARANT, aktivny=True)
     if not garants.exists():
         return None
 
