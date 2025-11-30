@@ -153,7 +153,7 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
     )
     student_id = serializers.PrimaryKeyRelatedField(
         source="student",
-        queryset=User.objects.filter(rola="student"),
+        queryset=User.objects.filter(rola=User.ROLE_STUDENT),
         required=False,
     )
     status_note = serializers.CharField(

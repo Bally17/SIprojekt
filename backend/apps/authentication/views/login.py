@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from ..serializers import LoginSerializer
 from .helpers import get_tokens_for_user, get_user_data
+from apps.users.models import User
 
 
 def _build_login_response(user):
@@ -30,7 +31,7 @@ def login_view(request):
     if serializer.is_valid():
         user = serializer.validated_data["user"]
 
-        if user.rola != "student":
+        if user.rola != User.ROLE_STUDENT:
             return Response(
                 {
                     "error": "invalid_role",
@@ -53,7 +54,7 @@ def company_login_view(request):
     if serializer.is_valid():
         user = serializer.validated_data["user"]
 
-        if user.rola != "firma":
+        if user.rola != User.ROLE_FIRMA:
             return Response(
                 {
                     "error": "invalid_role",
@@ -79,7 +80,7 @@ def garant_login_view(request):
     if serializer.is_valid():
         user = serializer.validated_data["user"]
 
-        if user.rola != "garant":
+        if user.rola != User.ROLE_GARANT:
             return Response(
                 {
                     "error": "invalid_role",

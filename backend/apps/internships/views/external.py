@@ -12,6 +12,7 @@ from django.conf import settings
 
 from ..models import Prax
 from ..serializers import ExternalDefenseSerializer, InternshipSerializer
+from apps.users.models import User
 
 
 @swagger_auto_schema(
@@ -35,7 +36,7 @@ def external_mark_defended(request):
     """Externý systém prepne prax zo stavu schvalena do stavu obhajena."""
     user = request.user
 
-    if user.rola not in ("externy", "garant"):
+    if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
         return Response(
             {"error": "Prístup povolený len pre externých integrátorov."},
             status=status.HTTP_403_FORBIDDEN,
@@ -51,7 +52,7 @@ def external_mark_defended(request):
         with transaction.atomic():
             prax = Prax.objects.select_for_update().get(id=prax_id)
 
-            if (prax.stav or "").lower() != "schvalena":
+            if (prax.stav or "").lower() != Prax.STAV_SCHVALENA:
                 return Response(
                     {"error": "Prax je možné obhájiť len zo stavu 'schvalena'."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -63,7 +64,7 @@ def external_mark_defended(request):
 
             prax._changed_by = user
             prax._status_change_note = custom_note
-            prax.stav = "obhajena"
+            prax.stav = Prax.STAV_OBHAJENA
             prax.save()
 
     except Prax.DoesNotExist:
@@ -93,7 +94,7 @@ def external_mark_defended(request):
 def external_list_internships(request):
     """Externý integrátor alebo garant získa prehľad praxí."""
     user = request.user
-    if user.rola not in ("externy", "garant"):
+    if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
         return Response({"error": "Prístup povolený len pre externých integrátorov."}, status=status.HTTP_403_FORBIDDEN)
 
     qs = (

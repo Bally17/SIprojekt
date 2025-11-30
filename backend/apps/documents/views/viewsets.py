@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from apps.internships.models import Prax
 from apps.internships.permissions import IsGarantOrRelatedDocument
+from apps.users.models import User
 from services.storage import upload_file_to_b2, generate_presigned_url
 from apps.notifications.service import (
     notify_document_uploaded,
@@ -38,11 +39,11 @@ class DocumentViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         role = getattr(user, "rola", "") or ""
 
-        if role == "garant":
+        if role == User.ROLE_GARANT:
             return qs
-        if role == "student":
+        if role == User.ROLE_STUDENT:
             return qs.filter(prax__student_id=user.id)
-        if role == "firma":
+        if role == User.ROLE_FIRMA:
             firma_id = getattr(user, "firma_id", None)
             return qs.filter(prax__firma_id=firma_id) if firma_id else qs.none()
         return qs.none()
@@ -63,7 +64,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             _user_is_firma(user)
             and prax
             and getattr(user, "firma_id", None) == getattr(prax, "firma_id", None)
-            and old_doc.typ_dokumentu == "vykaz"
+            and old_doc.typ_dokumentu == Dokument.TYP_VYKAZ
         )
 
         if not is_student and not is_company:
@@ -81,7 +82,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
         old_doc.subor_url = object_name
         old_doc.nahrane_pouzivatel_id = user.id
-        old_doc.stav_dokumentu = "nahrany"
+        old_doc.stav_dokumentu = Dokument.STAV_NAHRANY
         old_doc.skontroloval = None
         old_doc.skontrolovane_at = None
         old_doc.save(
@@ -120,11 +121,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
             if resp:
                 return resp
 
-        resp = _assert(document.stav_dokumentu == "nahrany", "Firma môže schváliť len dokument v stave 'nahrany'.")
+        resp = _assert(
+            document.stav_dokumentu == Dokument.STAV_NAHRANY,
+            "Firma môže schváliť len dokument v stave 'nahrany'.",
+        )
         if resp:
             return resp
 
-        document.stav_dokumentu = "potvrdeny"
+        document.stav_dokumentu = Dokument.STAV_POTVRDENY
         document.skontroloval_id = user.id
         document.skontrolovane_at = timezone.now()
         document.save(update_fields=["stav_dokumentu", "skontroloval_id", "skontrolovane_at", "zmenene_at"])
@@ -153,7 +157,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
             if resp:
                 return resp
 
-        resp = _assert(document.stav_dokumentu in ["nahrany", "potvrdeny"], "Neplatný stav na zamietnutie.")
+        resp = _assert(
+            document.stav_dokumentu in [Dokument.STAV_NAHRANY, Dokument.STAV_POTVRDENY],
+            "Neplatný stav na zamietnutie.",
+        )
         if resp:
             return resp
 
@@ -162,7 +169,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         if resp:
             return resp
 
-        document.stav_dokumentu = "zamietnuty"
+        document.stav_dokumentu = Dokument.STAV_ZAMIETNUTY
         document.skontroloval_id = user.id
         document.skontrolovane_at = timezone.now()
         document.save(update_fields=["stav_dokumentu", "skontroloval_id", "skontrolovane_at", "zmenene_at"])
@@ -191,7 +198,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
             if resp:
                 return resp
 
-        resp = _assert(document.stav_dokumentu == "nahrany", "Soft reject je dostupný len pre stav 'nahrany'.")
+        resp = _assert(
+            document.stav_dokumentu == Dokument.STAV_NAHRANY,
+            "Soft reject je dostupný len pre stav 'nahrany'.",
+        )
         if resp:
             return resp
 
@@ -216,7 +226,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             return resp
 
         resp = _assert(
-            document.stav_dokumentu == "potvrdeny",
+            document.stav_dokumentu == Dokument.STAV_POTVRDENY,
             "Garant môže schváliť až po schválení firmou (stav 'potvrdeny').",
         )
         if resp:
@@ -241,7 +251,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             return resp
 
         resp = _assert(
-            document.stav_dokumentu == "potvrdeny",
+            document.stav_dokumentu == Dokument.STAV_POTVRDENY,
             "Soft reject je dostupný až po schválení firmou (stav 'potvrdeny').",
         )
         if resp:
@@ -270,7 +280,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
         if resp:
             return resp
 
-        resp = _assert(document.stav_dokumentu in ["nahrany", "potvrdeny"], "Neplatný stav na zamietnutie.")
+        resp = _assert(
+            document.stav_dokumentu in [Dokument.STAV_NAHRANY, Dokument.STAV_POTVRDENY],
+            "Neplatný stav na zamietnutie.",
+        )
         if resp:
             return resp
 
@@ -279,7 +292,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         if resp:
             return resp
 
-        document.stav_dokumentu = "zamietnuty"
+        document.stav_dokumentu = Dokument.STAV_ZAMIETNUTY
         document.skontroloval_id = user.id
         document.skontrolovane_at = timezone.now()
         document.save(update_fields=["stav_dokumentu", "skontroloval_id", "skontrolovane_at", "zmenene_at"])
@@ -325,7 +338,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             prax = Prax.objects.select_related("firma", "student", "garant").get(id=document.prax_id)
 
             user = request.user
-            if getattr(user, "rola", None) != "student":
+            if getattr(user, "rola", None) != User.ROLE_STUDENT:
                 return Response(
                     {"detail": "Iba študent môže generovať PDF dokument."},
                     status=status.HTTP_403_FORBIDDEN,
@@ -336,7 +349,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-            if prax.stav.lower() not in ["vytvorena", "potvrdena"]:
+            if prax.stav.lower() not in [Prax.STAV_VYTVORENA, Prax.STAV_POTVRDENA]:
                 return Response(
                     {
                         "detail": "PDF možno generovať len pre prax v stave 'vytvorena' alebo 'potvrdena'. "
@@ -347,7 +360,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
             pdf_buffer, relative_path = generate_dohoda_pdf(prax)
             document.subor_url = relative_path
-            document.stav_dokumentu = "potvrdeny"
+            document.stav_dokumentu = Dokument.STAV_POTVRDENY
             document.save(update_fields=["subor_url", "stav_dokumentu"])
             pdf_buffer.seek(0)
 

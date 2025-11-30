@@ -1,5 +1,4 @@
 from apps.notifications.models import Notifikacie
-from django.utils import timezone
 
 
 # ============================================
@@ -18,7 +17,7 @@ def create_notification(prax, prijemca, predmet, sablona_kluc, payload=None):
         predmet=predmet,
         sablona_kluc=sablona_kluc,
         payload_json=payload or {},
-        stav="nove",         # bude zmenené na "odoslane" v signals.py
+        stav=Notifikacie.STAV_NOVE,         # bude zmenené na "odoslane" v signals.py
         odoslane_at=None
     )
 

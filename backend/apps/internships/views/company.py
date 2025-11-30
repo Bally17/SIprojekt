@@ -8,6 +8,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.users.serializers import UserSerializer
+from apps.users.models import User
 
 from ..models import HistoriaStavovPraxe, Prax
 from ..serializers import InternshipSerializer
@@ -30,7 +31,7 @@ def company_my_internships(request):
     """🔹 Firma získa prehľad o všetkých svojich praxiach."""
     user = request.user
 
-    if user.rola != "firma":
+    if user.rola != User.ROLE_FIRMA:
         return Response({"error": "Prístup povolený len pre firemných používateľov."}, status=status.HTTP_403_FORBIDDEN)
 
     if not user.firma_id:
@@ -73,13 +74,13 @@ def company_pending_internships(request):
     """🔹 Firma získa praxe, ktoré čakajú na potvrdenie (stav = 'vytvorena')."""
     user = request.user
 
-    if user.rola != "firma":
+    if user.rola != User.ROLE_FIRMA:
         return Response({"error": "Prístup povolený len pre firemných používateľov."}, status=status.HTTP_403_FORBIDDEN)
 
     if not user.firma_id:
         return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
 
-    internships = Prax.objects.filter(firma_id=user.firma_id, stav__iexact="vytvorena").select_related(
+    internships = Prax.objects.filter(firma_id=user.firma_id, stav__iexact=Prax.STAV_VYTVORENA).select_related(
         "student", "garant"
     )
 
@@ -112,7 +113,7 @@ def company_confirm_internship(request, prax_id):
     """✅ Firma potvrdí prax (stav -> potvrdena)."""
     user = request.user
 
-    if user.rola != "firma":
+    if user.rola != User.ROLE_FIRMA:
         return Response({"error": "Len firma môže potvrdiť prax."}, status=status.HTTP_403_FORBIDDEN)
 
     if not user.firma_id:
@@ -123,17 +124,17 @@ def company_confirm_internship(request, prax_id):
     except Prax.DoesNotExist:
         return Response({"error": "Prax neexistuje alebo nepatrí tejto firme."}, status=status.HTTP_404_NOT_FOUND)
 
-    if prax.stav.lower() != "vytvorena":
+    if prax.stav.lower() != Prax.STAV_VYTVORENA:
         return Response({"error": "Prax už nie je v stave 'vytvorena'."}, status=status.HTTP_400_BAD_REQUEST)
 
     with transaction.atomic():
-        prax.stav = "potvrdena"
+        prax.stav = Prax.STAV_POTVRDENA
         prax.save()
 
         HistoriaStavovPraxe.objects.create(
             prax=prax,
-            stary_stav="vytvorena",
-            novy_stav="potvrdena",
+            stary_stav=Prax.STAV_VYTVORENA,
+            novy_stav=Prax.STAV_POTVRDENA,
             zmenil_id=user.id,
             poznamka="Prax bola potvrdená firmou.",
         )
@@ -158,7 +159,7 @@ def company_reject_internship(request, prax_id):
     """❌ Firma zamietne prax (stav -> zamietnuta)."""
     user = request.user
 
-    if user.rola != "firma":
+    if user.rola != User.ROLE_FIRMA:
         return Response({"error": "Len firma môže zamietnuť prax."}, status=status.HTTP_403_FORBIDDEN)
 
     if not user.firma_id:
@@ -169,17 +170,17 @@ def company_reject_internship(request, prax_id):
     except Prax.DoesNotExist:
         return Response({"error": "Prax neexistuje alebo nepatrí tejto firme."}, status=status.HTTP_404_NOT_FOUND)
 
-    if prax.stav.lower() != "vytvorena":
+    if prax.stav.lower() != Prax.STAV_VYTVORENA:
         return Response({"error": "Prax už nie je v stave 'vytvorena'."}, status=status.HTTP_400_BAD_REQUEST)
 
     with transaction.atomic():
-        prax.stav = "zamietnuta"
+        prax.stav = Prax.STAV_ZAMIETNUTA
         prax.save()
 
         HistoriaStavovPraxe.objects.create(
             prax=prax,
-            stary_stav="vytvorena",
-            novy_stav="zamietnuta",
+            stary_stav=Prax.STAV_VYTVORENA,
+            novy_stav=Prax.STAV_ZAMIETNUTA,
             zmenil_id=user.id,
             poznamka="Prax bola zamietnutá firmou.",
         )

@@ -1,18 +1,29 @@
 from django.db import models
 
 class Dokument(models.Model):
+    TYP_DOHODA = "dohoda"
+    TYP_ZMLUVA = "zmluva"
+    TYP_VYKAZ = "vykaz"
     TYP_CHOICES = [
-        ('dohoda', 'Dohoda'),
-        ('zmluva', 'Zmluva'),
-        ('vykaz', 'Výkaz'),
+        (TYP_DOHODA, 'Dohoda'),
+        (TYP_ZMLUVA, 'Zmluva'),
+        (TYP_VYKAZ, 'Výkaz'),
     ]
-    STAV_CHOICES = [('nahrany', 'Nahraný'), ('potvrdeny', 'Potvrdený'), ('zamietnuty', 'Zamietnutý')]
+
+    STAV_NAHRANY = "nahrany"
+    STAV_POTVRDENY = "potvrdeny"
+    STAV_ZAMIETNUTY = "zamietnuty"
+    STAV_CHOICES = [
+        (STAV_NAHRANY, 'Nahraný'),
+        (STAV_POTVRDENY, 'Potvrdený'),
+        (STAV_ZAMIETNUTY, 'Zamietnutý'),
+    ]
     
     prax = models.ForeignKey('internships.Prax', on_delete=models.CASCADE, db_column='prax_id')
     typ_dokumentu = models.CharField(max_length=10, choices=TYP_CHOICES)
     subor_url = models.TextField()
     nahrane_pouzivatel = models.ForeignKey('users.User', on_delete=models.CASCADE, db_column='nahrane_pouzivatel_id')
-    stav_dokumentu = models.CharField(max_length=20, choices=STAV_CHOICES, default='nahrany')
+    stav_dokumentu = models.CharField(max_length=20, choices=STAV_CHOICES, default=STAV_NAHRANY)
     skontroloval = models.ForeignKey('users.User', on_delete=models.SET_NULL, blank=True, null=True, db_column='skontroloval_id', related_name='skontrolovane_dokumenty')
     skontrolovane_at = models.DateTimeField(blank=True, null=True)
     vytvorene_at = models.DateTimeField(auto_now_add=True)

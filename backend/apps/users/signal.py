@@ -5,5 +5,5 @@ from .models import User, GarantProfil
 
 @receiver(post_save, sender=User)
 def ensure_garant_profile(sender, instance: User, created, **kwargs):
-    if instance.rola == "garant":
+    if instance.rola == User.ROLE_GARANT:
         GarantProfil.objects.get_or_create(pouzivatel=instance)

@@ -1,6 +1,7 @@
 # apps/notifications/admin.py
 from django.contrib import admin
 from .models import Notifikacie
+from apps.users.models import User
 
 
 class GarantScopedAdminMixin:
@@ -11,7 +12,7 @@ class GarantScopedAdminMixin:
     garant_field_path = "prax__garant"
 
     def _is_garant(self, request):
-        return (getattr(request.user, "rola", None) == "garant") and not request.user.is_superuser
+        return (getattr(request.user, "rola", None) == User.ROLE_GARANT) and not request.user.is_superuser
 
     def _resolve_owner(self, obj, path: str):
         cur = obj

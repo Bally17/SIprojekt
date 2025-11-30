@@ -14,11 +14,11 @@ class GarantCreateForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["email", "meno", "priezvisko"]  # rolu nastavíme na 'garant' automaticky
+        fields = ["email", "meno", "priezvisko"]  # rolu nastavíme na garant automaticky
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.rola = "garant"
+        user.rola = User.ROLE_GARANT
         user.aktivny = True
         user.email_overeny = True
         user.musi_zmenit_heslo = False

@@ -1,6 +1,7 @@
 # apps/documents/admin.py
 from django.contrib import admin
 from .models import Dokument
+from apps.users.models import User
 
 @admin.register(Dokument)
 class DokumentAdmin(admin.ModelAdmin):
@@ -13,28 +14,28 @@ class DokumentAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user = request.user
-        if getattr(user, "rola", None) == "garant" and not user.is_superuser:
+        if getattr(user, "rola", None) == User.ROLE_GARANT and not user.is_superuser:
             return qs.filter(prax__garant_id=user.id)
         return qs
 
     def has_view_permission(self, request, obj=None):
         if obj is None:
             return True
-        if getattr(request.user, "rola", None) == "garant" and not request.user.is_superuser:
+        if getattr(request.user, "rola", None) == User.ROLE_GARANT and not request.user.is_superuser:
             return getattr(obj.prax, "garant_id", None) == request.user.id
         return True
 
     def has_change_permission(self, request, obj=None):
         if obj is None:
             return True
-        if getattr(request.user, "rola", None) == "garant" and not request.user.is_superuser:
+        if getattr(request.user, "rola", None) == User.ROLE_GARANT and not request.user.is_superuser:
             return getattr(obj.prax, "garant_id", None) == request.user.id
         return True
 
     def has_delete_permission(self, request, obj=None):
         if obj is None:
             return True
-        if getattr(request.user, "rola", None) == "garant" and not request.user.is_superuser:
+        if getattr(request.user, "rola", None) == User.ROLE_GARANT and not request.user.is_superuser:
             return getattr(obj.prax, "garant_id", None) == request.user.id
         return True
 
@@ -44,7 +45,7 @@ class DokumentAdmin(admin.ModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Obmedz praxe v dropdown-e na tie, kde je prihlásený garant garantom
-        if db_field.name == "prax" and getattr(request.user, "rola", None) == "garant" and not request.user.is_superuser:
+        if db_field.name == "prax" and getattr(request.user, "rola", None) == User.ROLE_GARANT and not request.user.is_superuser:
             from apps.internships.models import Prax
             kwargs["queryset"] = Prax.objects.filter(garant_id=request.user.id)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)

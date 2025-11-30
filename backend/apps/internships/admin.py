@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from apps.documents.models import Dokument
 from apps.notifications.models import Notifikacie
+from apps.users.models import User
 from .models import Prax
 
 # ---------- INLINES (Dokumenty, Notifikácie) ----------
@@ -37,14 +38,14 @@ class PraxAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user = request.user
-        if getattr(user, "rola", None) == "garant" and not user.is_superuser:
+        if getattr(user, "rola", None) == User.ROLE_GARANT and not user.is_superuser:
             return qs.filter(garant_id=user.id)
         return qs
 
     # ------- Pole 'garant' – Voľba 3: viditeľné a meniteľné, predvyplníme na prihláseného -------
     def get_changeform_initial_data(self, request):
         initial = super().get_changeform_initial_data(request)
-        if getattr(request.user, "rola", None) == "garant":
+        if getattr(request.user, "rola", None) == User.ROLE_GARANT:
             initial.setdefault("garant_id", request.user.id)
         return initial
 
@@ -60,9 +61,8 @@ class PraxAdmin(admin.ModelAdmin):
 
         user = request.user
         # Ak existuje FK 'garant' (nie len garant_id), prednastav a obmedz
-        if name == "garant" and getattr(user, "rola", None) == "garant" and not user.is_superuser:
-            from apps.users.models import User
-            kwargs["queryset"] = User.objects.filter(rola="garant")
+        if name == "garant" and getattr(user, "rola", None) == User.ROLE_GARANT and not user.is_superuser:
+            kwargs["queryset"] = User.objects.filter(rola=User.ROLE_GARANT)
             kwargs.setdefault("initial", user.pk)
 
         # Ak existuje FK 'pouzivatel' na študenta/firmu, vieš pridať ďalšie obmedzenia
@@ -72,21 +72,21 @@ class PraxAdmin(admin.ModelAdmin):
     def has_view_permission(self, request, obj=None):
         if obj is None:
             return True
-        if getattr(request.user, "rola", None) == "garant" and not request.user.is_superuser:
+        if getattr(request.user, "rola", None) == User.ROLE_GARANT and not request.user.is_superuser:
             return obj.garant_id == request.user.id
         return True
 
     def has_change_permission(self, request, obj=None):
         if obj is None:
             return True
-        if getattr(request.user, "rola", None) == "garant" and not request.user.is_superuser:
+        if getattr(request.user, "rola", None) == User.ROLE_GARANT and not request.user.is_superuser:
             return obj.garant_id == request.user.id
         return True
 
     def has_delete_permission(self, request, obj=None):
         if obj is None:
             return True
-        if getattr(request.user, "rola", None) == "garant" and not request.user.is_superuser:
+        if getattr(request.user, "rola", None) == User.ROLE_GARANT and not request.user.is_superuser:
             return obj.garant_id == request.user.id
         return True
 

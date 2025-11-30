@@ -93,7 +93,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 
         user = User(
             email=validated_data["email"],
-            rola="student",
+            rola=User.ROLE_STUDENT,
             meno=validated_data.get("meno"),
             priezvisko=validated_data.get("priezvisko"),
             telefon=validated_data.get("telefon"),
@@ -182,7 +182,7 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
 
         user = User(
             email=validated_data["email"],
-            rola="firma",
+            rola=User.ROLE_FIRMA,
             meno=meno,
             priezvisko=priezvisko,
             telefon=kontaktna_osoba_telefon,

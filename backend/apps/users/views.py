@@ -22,7 +22,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, "user", None)
         if not user or not user.is_authenticated:
             return User.objects.none()
-        if getattr(user, "rola", "") == "garant":
+        if getattr(user, "rola", "") == User.ROLE_GARANT:
             return User.objects.all()
         return User.objects.filter(id=user.id)
 
@@ -39,9 +39,9 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, "user", None)
         if not user or not user.is_authenticated:
             return StudentProfil.objects.none()
-        if getattr(user, "rola", "") == "garant":
+        if getattr(user, "rola", "") == User.ROLE_GARANT:
             return StudentProfil.objects.all()
-        if getattr(user, "rola", "") == "student":
+        if getattr(user, "rola", "") == User.ROLE_STUDENT:
             return StudentProfil.objects.filter(pouzivatel_id=user.id)
         return StudentProfil.objects.none()
 
@@ -58,7 +58,7 @@ class GarantProfileViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, "user", None)
         if not user or not user.is_authenticated:
             return GarantProfil.objects.none()
-        if getattr(user, "rola", "") == "garant":
+        if getattr(user, "rola", "") == User.ROLE_GARANT:
             # Ak máte viac garantov, umožní im vidieť aj ostatných garantov.
             return GarantProfil.objects.all()
         return GarantProfil.objects.none()
