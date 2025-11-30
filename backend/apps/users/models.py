@@ -33,7 +33,7 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError("Email musí byť zadaný")
         email = self.normalize_email(email)
-        extra_fields.setdefault('rola', 'externy')
+        extra_fields.setdefault('rola', User.ROLE_EXTERNY)
 
         user = self.model(email=email, **extra_fields)
         user.set_password(password or self._generate_random_password())
@@ -42,7 +42,7 @@ class CustomUserManager(BaseUserManager):
 
     def create_superuser(self, email, password=None, **extra_fields):
         # Garant = plné práva v admin rozhraní
-        extra_fields.setdefault('rola', 'garant')
+        extra_fields.setdefault('rola', User.ROLE_GARANT)
         extra_fields.setdefault('aktivny', True)
         extra_fields.setdefault('email_overeny', True)
         extra_fields.setdefault('musi_zmenit_heslo', False)
@@ -57,12 +57,18 @@ class User(AbstractBaseUser):
     password = None
     last_login = None
 
+    ROLE_STUDENT = "student"
+    ROLE_GARANT = "garant"
+    ROLE_FIRMA = "firma"
+    ROLE_EXTERNY = "externy"
+    ROLE_ADMIN = "admin"  # historické
+
     ROLE_CHOICES = [
-        ('student', 'Študent'),
-        ('garant', 'Garant'),
-        ('firma', 'Firma'),
-        ('externy', 'Externý'),
-        ('admin', 'Admin'),  # historické
+        (ROLE_STUDENT, 'Študent'),
+        (ROLE_GARANT, 'Garant'),
+        (ROLE_FIRMA, 'Firma'),
+        (ROLE_EXTERNY, 'Externý'),
+        (ROLE_ADMIN, 'Admin'),
     ]
 
     id = models.BigAutoField(primary_key=True)
@@ -119,11 +125,11 @@ class User(AbstractBaseUser):
 
     @property
     def is_staff(self):
-        return self.rola == 'garant'
+        return self.rola == self.ROLE_GARANT
 
     @property
     def is_superuser(self):
-        return self.rola == 'garant'
+        return self.rola == self.ROLE_GARANT
 
     # minimal permissions API
     def has_perm(self, perm, obj=None):
