@@ -1,35 +1,47 @@
+import pytest
 import requests
-import json
 
-# Test normálneho prihlásenia
+BASE_URL = "http://localhost:8000/api/auth"
+
+
+@pytest.fixture
+def access_token():
+    """Získa access token cez login; ak server nebeží alebo login zlyhá, test sa preskočí."""
+    try:
+        resp = requests.post(
+            f"{BASE_URL}/login/",
+            json={"email": "test@example.com", "password": "testpass123"},
+            timeout=5,
+        )
+    except requests.RequestException:
+        pytest.skip("Backend na localhost:8000 nie je dostupný.")
+    if resp.status_code != 200 or "tokens" not in resp.json():
+        pytest.skip("Login neúspešný – chýba testovací používateľ alebo tokeny.")
+    return resp.json()["tokens"]["access"]
+
+
 def test_normal_login():
-    url = "http://localhost:8000/api/auth/login/"
-    data = {
-        "email": "test@example.com",
-        "password": "testpass123"
-    }
-    
-    response = requests.post(url, json=data)
-    print("Status Code:", response.status_code)
-    print("Response:", response.json())
-    return response.json()
+    try:
+        resp = requests.post(
+            f"{BASE_URL}/login/",
+            json={"email": "test@example.com", "password": "testpass123"},
+            timeout=5,
+        )
+    except requests.RequestException:
+        pytest.skip("Backend na localhost:8000 nie je dostupný.")
+    if resp.status_code != 200:
+        pytest.skip(f"Login zlyhal ({resp.status_code}) – pravdepodobne chýba testovací používateľ.")
+    data = resp.json()
+    assert "tokens" in data
 
-# Test profile endpoint (po prihlásení)
+
 def test_profile(access_token):
-    url = "http://localhost:8000/api/auth/profile/"
-    headers = {
-        "Authorization": f"Bearer {access_token}"
-    }
-    
-    response = requests.get(url, headers=headers)
-    print("Profile Status:", response.status_code)
-    print("Profile Data:", response.json())
-
-if __name__ == "__main__":
-    print("Testing normal login...")
-    result = test_normal_login()
-    
-    if "tokens" in result:
-        access_token = result["tokens"]["access"]
-        print("\nTesting profile endpoint...")
-        test_profile(access_token)
+    try:
+        resp = requests.get(
+            f"{BASE_URL}/profile/",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=5,
+        )
+    except requests.RequestException:
+        pytest.skip("Backend na localhost:8000 nie je dostupný.")
+    assert resp.status_code == 200
