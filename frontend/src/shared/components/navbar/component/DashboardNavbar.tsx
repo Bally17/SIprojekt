@@ -127,7 +127,7 @@ const DashboardNavbar = () => {
       }
       notifySuccess({
         title: msgs.auth.logout,
-        description: msgs.auth.successLogin,
+        description: msgs.auth.successLogout,
       });
     } catch (err: any) {
       notifyWarning({
@@ -143,7 +143,7 @@ const DashboardNavbar = () => {
     }
   }, [
     msgs.auth.logout,
-    msgs.auth.successLogin,
+    msgs.auth.successLogout,
     msgs.common.error.errorAction,
     notifySuccess,
     notifyWarning,
