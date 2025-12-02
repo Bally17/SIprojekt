@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-
+import { QueryProvider } from "../lib/query-provider";
 import type { ReactNode } from "react";
 import { getMessages } from "@i18n/getMessages";
 import { LocalizationProvider } from "@i18n/client";
@@ -20,9 +20,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={locale}>
       <body>
-        <LocalizationProvider locale={locale} messages={messages}>
-          <SystemNotificationsProvider>{children}</SystemNotificationsProvider>
-        </LocalizationProvider>
+        <QueryProvider>
+          <LocalizationProvider locale={locale} messages={messages}>
+            <SystemNotificationsProvider>{children}</SystemNotificationsProvider>
+          </LocalizationProvider>
+        </QueryProvider>
       </body>
     </html>
   );

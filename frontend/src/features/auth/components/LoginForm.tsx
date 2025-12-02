@@ -1,15 +1,20 @@
 "use client";
+
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import axiosClient, { setAuthTokens } from "@lib/axiosClient";
 import { RoleType } from "@type/props/common/globalTypes";
+import { setAuthTokens } from "@lib/api-client";
+import { useLoginMutation } from "@hooks/useLoginMutation"; // ak nemáš alias @hooks, daj si ho v tsconfig alebo použi relatívnu cestu
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function LoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [userType, setUserType] = useState<RoleType>("student");
   const isStudent = userType === "student";
   const isCompany = userType === "company";
@@ -20,10 +25,10 @@ export default function LoginForm() {
     password: "",
   });
 
-  const [loading, setLoading] = useState(false);
-
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+
+  const { mutateAsync: loginMutation, isPending } = useLoginMutation();
 
   // Sync vstupov do state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,32 +38,28 @@ export default function LoginForm() {
   // Odoslanie loginu - študenti vs firmy vs garanti
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      const payload = {
+      const res = await loginMutation({
+        role: userType,
         email: form.email,
         password: form.password,
-      };
+      });
 
-      const endpoint = isStudent
-        ? "/auth/login/"
-        : isCompany
-          ? "/auth/login/company/"
-          : "/auth/login/garant/";
-      const res = await axiosClient.post(endpoint, payload);
-
-      console.log("Login úspešný:", res.data);
+      console.log("Login úspešný:", res);
 
       // Uloženie tokenov
-      const accessToken = res.data.access_token || res.data.tokens?.access;
-      const refreshToken = res.data.refresh_token || res.data.tokens?.refresh;
+      const accessToken = res.access_token || res.tokens?.access;
+      const refreshToken = res.refresh_token || res.tokens?.refresh;
       if (accessToken) {
         setAuthTokens({ access: accessToken, refresh: refreshToken });
       }
 
       // Uloženie používateľa na localStorage
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("user", JSON.stringify(res.user));
+
+      // Naplniť cache profilu, aby sa hneď nemuselo refetchovať
+      queryClient.setQueryData(["profile"], res.user);
 
       notifySuccess({
         title: msgs.auth.successLogin,
@@ -66,7 +67,7 @@ export default function LoginForm() {
       });
 
       // Redirect podľa roly
-      const role = res.data.user.rola;
+      const role = res.user.rola;
       if (role === "firma") {
         router.push("/dashboard/company");
       } else if (role === "garant") {
@@ -76,24 +77,23 @@ export default function LoginForm() {
       }
     } catch (err: any) {
       const message =
-        err.response?.data?.message ||
-        err.response?.data?.error_description ||
-        err.response?.data?.error ||
-        err.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error_description ||
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
         msgs.auth.errorMsg;
-      console.error(msgs.auth.errorTitle, err.response?.data || err.message);
+
+      console.error(msgs.auth.errorTitle, err?.response?.data || err?.message);
+
       notifyWarning({
         title: msgs.auth.errorTitle,
         description: message,
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   // OAuth len pre firmy (študenti cez školský login/heslo)
   const handleGoogleLogin = () => {
-    // Pozn: (redirect na backend)
     window.location.href = "http://localhost:8000/auth/google/login/";
   };
   const handleGithubLogin = () => {
@@ -106,13 +106,15 @@ export default function LoginForm() {
     <div className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto">
       <h2 className="text-2xl font-semibold text-primary-900 text-center">{msgs.auth.title}</h2>
 
-      {/* Prepínač typu používateľa – ovplyvňuje len placeholder a zobrazenie OAuth blokov */}
+      {/* Prepínač typu používateľa */}
       <div className="flex justify-center gap-3 mb-4 flex-wrap">
         <Button
           type="button"
           onClick={() => setUserType("student")}
           variant={isStudent ? "primary" : "ghost"}
-          className={`rounded-full px-4 py-2 text-sm ${isStudent ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"}`}
+          className={`rounded-full px-4 py-2 text-sm ${
+            isStudent ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+          }`}
           aria-pressed={isStudent}
         >
           {msgs.common.entities.student}
@@ -122,7 +124,9 @@ export default function LoginForm() {
           type="button"
           onClick={() => setUserType("company")}
           variant={isCompany ? "primary" : "ghost"}
-          className={`rounded-full px-4 py-2 text-sm ${isCompany ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"}`}
+          className={`rounded-full px-4 py-2 text-sm ${
+            isCompany ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+          }`}
           aria-pressed={isCompany}
         >
           {msgs.common.entities.company}
@@ -132,14 +136,16 @@ export default function LoginForm() {
           type="button"
           onClick={() => setUserType("garant")}
           variant={isGarant ? "primary" : "ghost"}
-          className={`rounded-full px-4 py-2 text-sm ${isGarant ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"}`}
+          className={`rounded-full px-4 py-2 text-sm ${
+            isGarant ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+          }`}
           aria-pressed={isGarant}
         >
           {msgs.common.entities.guarant}
         </Button>
       </div>
 
-      {/* Login formulár – jednotný pre oba typy (payload email + password) */}
+      {/* Login formulár */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="email"
@@ -177,14 +183,14 @@ export default function LoginForm() {
           type="submit"
           variant="primary"
           className="w-full"
-          disabled={loading}
-          loading={loading}
+          disabled={isPending}
+          loading={isPending}
         >
-          {loading ? msgs.auth.logining : msgs.auth.login}
+          {isPending ? msgs.auth.logining : msgs.auth.login}
         </Button>
       </form>
 
-      {/* OAuth blok – zobraziť len pre firmy */}
+      {/* OAuth blok – len pre firmy */}
       {userType === "company" && (
         <div className="text-center mt-6 space-y-2">
           <p className="text-gray-500 mb-2">{msgs.auth.orWith}</p>

@@ -1,6 +1,4 @@
 // src/lib/axiosClient.ts
-import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
-
 const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 /** Endpointy, ktoré nevyžadujú Authorization: Bearer a nebudú retryované po refreshi */
@@ -43,24 +41,36 @@ loadInitialTokens();
 /** API na práci s tokenmi (použi po logine / pri logoute) */
 export const setAuthTokens = (tokens: { access: string; refresh?: string }) => {
   accessTokenMemory = tokens.access;
+
   if (typeof window !== "undefined") {
     sessionStorage.setItem(ACCESS_SS_KEY, tokens.access);
-    if (tokens.refresh) localStorage.setItem(REFRESH_KEY, tokens.refresh);
+    if (tokens.refresh) {
+      localStorage.setItem(REFRESH_KEY, tokens.refresh);
+    }
   }
-  bc?.postMessage({ type: "refresh-success", access: tokens.access, refresh: tokens.refresh } as BroadcastMsg);
+
+  // informuj ostatné tably
+  bc?.postMessage({
+    type: "refresh-success",
+    access: tokens.access,
+    refresh: tokens.refresh,
+  } as BroadcastMsg);
 };
 
 export const clearAuthTokens = () => {
   accessTokenMemory = null;
+
   if (typeof window !== "undefined") {
     sessionStorage.removeItem(ACCESS_SS_KEY);
     localStorage.removeItem(REFRESH_KEY);
   }
+
   bc?.postMessage({ type: "logout" } as BroadcastMsg);
 };
 
 const getAccessToken = () => accessTokenMemory;
-const getRefreshToken = () => (typeof window !== "undefined" ? localStorage.getItem(REFRESH_KEY) : null);
+const getRefreshToken = () =>
+  typeof window !== "undefined" ? localStorage.getItem(REFRESH_KEY) : null;
 
 /** Koordinácia refreshu medzi requestami v jednom tabe */
 let isRefreshing = false;
@@ -80,12 +90,18 @@ bc?.addEventListener("message", (ev: MessageEvent<BroadcastMsg>) => {
   if (!msg) return;
 
   if (msg.type === "refresh-success") {
-    // Prevezmi nový access/refresh aj v ostatných taboch
-    setAuthTokens({ access: msg.access, refresh: msg.refresh });
+    // Prevezmi nový access/refresh aj v ostatných taboch – ale bez ďalšieho broadcastu
+    accessTokenMemory = msg.access;
+
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(ACCESS_SS_KEY, msg.access);
+      if (msg.refresh) {
+        localStorage.setItem(REFRESH_KEY, msg.refresh);
+      }
+    }
   }
 
   if (msg.type === "logout") {
-    // Vyčisti lokálne a nechaj UI riešiť redirect/log out flow
     accessTokenMemory = null;
     if (typeof window !== "undefined") {
       sessionStorage.removeItem(ACCESS_SS_KEY);
@@ -94,6 +110,28 @@ bc?.addEventListener("message", (ev: MessageEvent<BroadcastMsg>) => {
   }
 });
 
+/** Pomocný typ pre HTTP odpoveď (podobné AxiosResponse) */
+export interface HttpResponse<T = any> {
+  data: T;
+  status: number;
+  headers: Headers;
+}
+
+/** Povolené HTTP metódy */
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+export interface RequestOptions {
+  headers?: Record<string, string>;
+  body?: any;
+  signal?: AbortSignal;
+}
+
+/** Interné options – dopĺňame _retry flag */
+interface InternalRequestOptions extends RequestOptions {
+  _retry?: boolean;
+  method?: HttpMethod;
+}
+
 /** Vykoná refresh – rešpektuje ROTATE_REFRESH_TOKENS=True (vracia aj nový refresh) */
 const doRefresh = async (): Promise<string> => {
   const refresh = getRefreshToken();
@@ -101,17 +139,24 @@ const doRefresh = async (): Promise<string> => {
     throw new Error("Missing refresh token");
   }
 
-  // Odošli refresh požiadavku (bez withCredentials – nepoužívame cookies)
-  const res = await axios.post(
-    `${baseURL}/auth/token/refresh/`,
-    { refresh },
-    { headers: { "Content-Type": "application/json" } },
-  );
+  const res = await fetch(`${baseURL}/auth/token/refresh/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh }),
+    credentials: "omit",
+  });
 
-  const newAccess: string | undefined = res.data?.access;
-  const newRefresh: string | undefined = res.data?.refresh; // SimpleJWT vráti, ak ROTATE=True
+  if (!res.ok) {
+    throw new Error(`Refresh failed with status ${res.status}`);
+  }
 
-  if (!newAccess) throw new Error("Refresh response missing access token");
+  const data: any = await safeParseJson(res);
+  const newAccess: string | undefined = data?.access;
+  const newRefresh: string | undefined = data?.refresh;
+
+  if (!newAccess) {
+    throw new Error("Refresh response missing access token");
+  }
 
   setAuthTokens({ access: newAccess, refresh: newRefresh });
   return newAccess;
@@ -141,61 +186,144 @@ const refreshToken = async (): Promise<string> => {
   return refreshPromise;
 };
 
-/** Axios inštancia */
-const axiosClient = axios.create({
-  baseURL,
-  withCredentials: false, // nepoužívame auth cookies
-});
+/** Bezpečné parsovanie JSON; ak nie je JSON, vráti text */
+const safeParseJson = async (res: Response): Promise<any> => {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
 
-/** REQUEST interceptor – pridaj Bearer pre ne-Whitelisted volania */
-axiosClient.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
-    if (!isWhitelisted(config.url)) {
-      const token = getAccessToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+/** Vytvor error podobný AxiosError, aby fungovalo err.response.data */
+const createHttpError = async (res: Response): Promise<any> => {
+  const data = await safeParseJson(res);
+  const error: any = new Error(`HTTP error ${res.status}`);
+  error.status = res.status;
+  error.response = {
+    status: res.status,
+    data,
+    headers: res.headers,
+  };
+  return error;
+};
+
+/** Hlavný request helper – náhrada za Axios interceptory */
+const request = async <T = any>(
+  url: string,
+  options: InternalRequestOptions = {},
+): Promise<HttpResponse<T>> => {
+  const fullUrl = `${baseURL}${url}`;
+  const isProtected = !isWhitelisted(url);
+
+  const headers = new Headers(options.headers || {});
+
+  // Pridaj Bearer token pre chránené endpointy
+  if (isProtected) {
+    const token = getAccessToken();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
     }
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
+  }
 
-/** RESPONSE interceptor – 401 => pokús sa o refresh (raz), queue retry ak refresh prebieha */
-axiosClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const original: AxiosRequestConfig & { _retry?: boolean } = error.config || {};
-    const status = error?.response?.status;
+  const res = await fetch(fullUrl, {
+    method: options.method || "GET",
+    headers,
+    body: options.body,
+    signal: options.signal,
+    credentials: "omit", // nepoužívame cookies
+  });
 
-    // Ak je to 401 na chránenom endpointe a ešte sme neskúšali retry
-    if (status === 401 && !original._retry && !isWhitelisted(original.url)) {
-      original._retry = true;
+  const status = res.status;
 
-      try {
-        if (isRefreshing && refreshPromise) {
-          // Počkaj na prebiehajúci refresh
-          const newAccess = await new Promise<string>((resolve, reject) => {
-            subscribeTokenRefresh(resolve);
-            // Bez timeoutu – voliteľne môžeš pridať ochranný timeout
-          });
-          original.headers = { ...(original.headers || {}), Authorization: `Bearer ${newAccess}` };
-          return axiosClient(original);
-        }
+  // 401 na chránenom endpointe – snažíme sa o refresh + 1x retry
+  if (status === 401 && isProtected && !options._retry) {
+    try {
+      if (isRefreshing && refreshPromise) {
+        // Počkaj na prebiehajúci refresh z iného requestu
+        const newAccess = await new Promise<string>((resolve) => {
+          subscribeTokenRefresh(resolve);
+        });
 
-        // Spusť svoj refresh
-        const newAccess = await refreshToken();
-        original.headers = { ...(original.headers || {}), Authorization: `Bearer ${newAccess}` };
-        return axiosClient(original);
-      } catch (refreshErr) {
-        // Refresh zlyhal -> odhlás
-        clearAuthTokens();
-        return Promise.reject(refreshErr);
+        const retryHeaders = new Headers(headers);
+        retryHeaders.set("Authorization", `Bearer ${newAccess}`);
+
+        return request<T>(url, {
+          ...options,
+          headers: Object.fromEntries(retryHeaders.entries()),
+          _retry: true,
+        });
       }
+
+      // Spusť svoj refresh
+      const newAccess = await refreshToken();
+
+      const retryHeaders = new Headers(headers);
+      retryHeaders.set("Authorization", `Bearer ${newAccess}`);
+
+      return request<T>(url, {
+        ...options,
+        headers: Object.fromEntries(retryHeaders.entries()),
+        _retry: true,
+      });
+    } catch (refreshErr) {
+      clearAuthTokens();
+      throw refreshErr;
     }
+  }
 
-    return Promise.reject(error);
-  },
-);
+  // Iné chyby než 2xx/3xx -> vyhoď error podobný AxiosError
+  if (!res.ok) {
+    throw await createHttpError(res);
+  }
 
-export default axiosClient;
+  const data = (await safeParseJson(res)) as T;
+
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  };
+};
+
+/** Verejné API podobné Axios inštancii */
+const httpClient = {
+  get: <T = any>(url: string, config?: RequestOptions) =>
+    request<T>(url, { ...config, method: "GET" }),
+  delete: <T = any>(url: string, config?: RequestOptions) =>
+    request<T>(url, { ...config, method: "DELETE" }),
+  post: <T = any>(url: string, body?: any, config?: RequestOptions) =>
+    request<T>(url, {
+      ...config,
+      method: "POST",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...(config?.headers || {}),
+      },
+    }),
+  put: <T = any>(url: string, body?: any, config?: RequestOptions) =>
+    request<T>(url, {
+      ...config,
+      method: "PUT",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...(config?.headers || {}),
+      },
+    }),
+  patch: <T = any>(url: string, body?: any, config?: RequestOptions) =>
+    request<T>(url, {
+      ...config,
+      method: "PATCH",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...(config?.headers || {}),
+      },
+    }),
+};
+
+export default httpClient;

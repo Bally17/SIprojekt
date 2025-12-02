@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import axiosClient from "@lib/axiosClient";
+import { api } from "@lib/api-client";
 
 type ChangePasswordFormProps = {
   onSubmit?: (payload: {
@@ -21,6 +21,20 @@ type FormState = {
   currentPassword: string;
   newPassword: string;
   newPasswordConfirm: string;
+};
+
+type User = {
+  rola?: string;
+  role?: string;
+  [key: string]: unknown;
+};
+
+type ChangePasswordResponse = {
+  user?: User | null;
+};
+
+type ProfileResponse = {
+  user?: User | null;
 };
 
 export default function ChangePasswordForm({
@@ -47,17 +61,18 @@ export default function ChangePasswordForm({
       newPassword: string;
       newPasswordConfirm: string;
     }) => {
-      const response = await axiosClient.post("/auth/password/change/", {
+      const response = await api.post<ChangePasswordResponse>("/auth/password/change/", {
         current_password: currentPassword,
         new_password: newPassword,
         new_password_confirm: newPasswordConfirm,
       });
 
-      let latestUser = response.data?.user;
+      let latestUser: User | null = response.user ?? null;
+
       if (!latestUser) {
         try {
-          const profile = await axiosClient.get("/auth/profile/");
-          latestUser = profile.data?.user;
+          const profile = await api.get<ProfileResponse>("/auth/profile/");
+          latestUser = profile.user ?? null;
         } catch {
           latestUser = null;
         }
@@ -69,6 +84,7 @@ export default function ChangePasswordForm({
 
       const roleKey = String(latestUser?.rola || latestUser?.role || "").toLowerCase();
       const redirectTarget = roleKey === "firma" ? "/dashboard/company" : "/dashboard/student";
+
       router.push(redirectTarget);
     },
     [router],
