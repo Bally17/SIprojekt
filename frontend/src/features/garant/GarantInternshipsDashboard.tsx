@@ -648,8 +648,8 @@ export default function GarantInternshipsDashboard() {
       </div>
       {/* Modál pre pokročilé úpravy jednej praxe */}
       {editingInternship && editForm ? (
-        <div className="fixed inset-x-0 bottom-0 top-0 z-[10] flex items-center justify-center bg-black/40 px-4 py-10">
-          <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[10] flex items-center justify-center bg-black/40 px-3 pb-20 pt-20 sm:px-4 sm:pb-10 sm:pt-24">
+          <div className="w-full max-w-xl rounded-xl bg-white p-4 shadow-2xl sm:p-6 max-h-[80vh] overflow-y-auto sm:max-h-none sm:overflow-visible">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-2xl font-semibold text-primary-900">
