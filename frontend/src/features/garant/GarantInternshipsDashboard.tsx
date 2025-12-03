@@ -1,9 +1,10 @@
 "use client";
 
+import { JSX, useEffect, useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import axiosClient from "@lib/axiosClient";
+import { getAccessToken } from "@lib/api-client";
 import { Company } from "@type/backend/Company";
 import { GarantInternshipUpdate } from "@type/backend/GarantInternshipUpdate";
 import { Internship } from "@type/backend/Internship";
@@ -15,8 +16,7 @@ import {
   SEMESTER_LABEL,
   STAV_BADGE_CLASS,
 } from "@type/props/common/StateInternship";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { METHOD, useApi } from "src/hook/useApi";
 
 // Default prázdne filtre – slúžia aj na resetovanie formulára.
 const DEFAULT_FILTERS = {
@@ -27,9 +27,48 @@ const DEFAULT_FILTERS = {
   stav: "",
 };
 
-type Filters = typeof DEFAULT_FILTERS;
+const buildQueryString = (params: Record<string, string>) => {
+  const searchParams = new URLSearchParams();
 
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== "") {
+      searchParams.append(key, value);
+    }
+  }
+
+  const qs = searchParams.toString();
+  return qs ? `?${qs}` : "";
+};
+
+type Filters = typeof DEFAULT_FILTERS;
 type GarantInternship = Internship;
+
+type StudentSearchResponse = { results?: StudentProfile[] } | StudentProfile[];
+type CompanySearchResponse = { results?: Company[] } | Company[];
+
+type GarantInternshipsApiResponse =
+  | { results?: GarantInternship[]; internships?: GarantInternship[] }
+  | GarantInternship[];
+
+const normalizeInternships = (response: GarantInternshipsApiResponse | null | undefined) => {
+  if (!response) return [] as GarantInternship[];
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.results)) return response.results;
+  if (Array.isArray(response.internships)) return response.internships;
+  return [] as GarantInternship[];
+};
+
+const normalizeStudentSearchResponse = (res: StudentSearchResponse): StudentProfile[] => {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.results)) return res.results;
+  return [];
+};
+
+const normalizeCompanySearchResponse = (res: CompanySearchResponse): Company[] => {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.results)) return res.results;
+  return [];
+};
 
 const getStudentLabel = (
   data: { meno?: string | null; priezvisko?: string | null; email?: string | null } | null,
@@ -49,10 +88,199 @@ const getCompanyLabel = (
 ) => {
   if (!data && !fallback) return "";
   if (data?.nazov) return data.nazov;
-  if (typeof fallback !== "undefined" && fallback !== null) {
+  if (fallback !== undefined && fallback !== null) {
     return `#${fallback}`;
   }
   return "";
+};
+
+const parseNumberOrFallback = (value: string, fallback: number) => {
+  if (!value.trim()) return fallback;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const buildEditPayload = (
+  form: GarantInternshipUpdate,
+  current: GarantInternship,
+): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {};
+
+  const studentValue = parseNumberOrFallback(form.student_id, current.student);
+  if (studentValue > 0) {
+    payload.student_id = studentValue;
+  }
+
+  const companyValue = form.firma_id.trim().length
+    ? parseNumberOrFallback(form.firma_id, current.firma ?? 0)
+    : (current.firma ?? 0);
+
+  if (companyValue > 0) {
+    payload.firma_id = companyValue;
+  }
+
+  if (form.datum_zaciatku) {
+    payload.datum_zaciatku = form.datum_zaciatku;
+  }
+  if (form.datum_konca) {
+    payload.datum_konca = form.datum_konca;
+  }
+  if (form.stav) {
+    payload.stav = form.stav;
+  }
+
+  const note = form.status_note.trim();
+  if (note.length) {
+    payload.status_note = note;
+  }
+
+  // Garant môže obísť bloky na chýbajúce dokumenty
+  payload.force = true;
+
+  return payload;
+};
+
+const getErrorMessage = (err: any, fallback: string) => {
+  const data = err?.response?.data;
+  if (!data) return err?.message || fallback;
+  if (typeof data === "string") return data;
+  if (data.detail) return data.detail;
+  if (data.error) return data.error;
+  if (data.message) return data.message;
+  return fallback;
+};
+
+// Typ pre msgs, aby sme ho mohli posielať do child komponentu
+type Messages = ReturnType<typeof useLocalization>["msgs"];
+
+type TableSectionProps = {
+  internships: GarantInternship[];
+  loading: boolean;
+  tableErrorMessage: string | null;
+  msgs: Messages;
+  onEdit: (internship: GarantInternship) => void;
+};
+
+const GarantInternshipsTableSection = ({
+  internships,
+  loading,
+  tableErrorMessage,
+  msgs,
+  onEdit,
+}: TableSectionProps) => {
+  let body: JSX.Element;
+
+  if (loading) {
+    body = (
+      <tr>
+        <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink-500">
+          {msgs.common.loading.internships}
+        </td>
+      </tr>
+    );
+  } else if (tableErrorMessage) {
+    body = (
+      <tr>
+        <td colSpan={6} className="px-4 py-6 text-center text-sm text-red-600">
+          {tableErrorMessage}
+        </td>
+      </tr>
+    );
+  } else if (!internships.length) {
+    body = (
+      <tr>
+        <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink-400">
+          {msgs.common.error.errorFilterLoad}
+        </td>
+      </tr>
+    );
+  } else {
+    body = (
+      <>
+        {internships.map((internship) => (
+          <tr key={internship.id}>
+            <td className="px-4 py-4 text-sm text-ink-900">
+              <div className="font-semibold">
+                {internship.student_full_name || `#${internship.student}`}
+              </div>
+              <div className="text-xs text-ink-400">{internship.student_email}</div>
+            </td>
+            <td className="px-4 py-4 text-sm text-ink-900">
+              {internship.company_name || msgs.common.entities.company}
+            </td>
+            <td className="px-4 py-4 text-sm text-ink-900">{internship.study_program || "—"}</td>
+            <td className="px-4 py-4 text-sm text-ink-900">
+              <div>{`${internship.rok} · ${
+                SEMESTER_LABEL[internship.semester] ?? internship.semester
+              }`}</div>
+              <div className="text-xs text-ink-400">
+                {internship.datum_zaciatku} – {internship.datum_konca}
+              </div>
+            </td>
+            <td className="px-4 py-4 text-sm">
+              <span
+                className={`inline-flex min-w-[120px] items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${
+                  internship.stav ? STAV_BADGE_CLASS[internship.stav] : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {internship.stav ? STAV_LABEL[internship.stav] : internship.stav}
+              </span>
+            </td>
+            <td className="px-4 py-4 text-sm">
+              <div className="flex items-center justify-start">
+                <button
+                  type="button"
+                  onClick={() => onEdit(internship)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary-200 bg-white text-primary-900 transition hover:bg-primary-50"
+                  aria-label={`${msgs.common.guarant.edit.title} #${internship.id}`}
+                >
+                  <Icon name="pencil" className="h-4 w-4" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <section className="space-y-4 rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+      <div>
+        <h2 className="text-3xl font-semibold text-primary-900">
+          {msgs.common.guarant.tableTitle}
+        </h2>
+        <p className="text-sm text-ink-500">{msgs.common.guarant.tableSubtitle}</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-100">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+                {msgs.common.guarant.table.student}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+                {msgs.common.guarant.table.company}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+                {msgs.common.guarant.table.program}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+                {msgs.common.guarant.table.term}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+                {msgs.common.internships.state}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
+                {msgs.common.guarant.table.actions}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">{body}</tbody>
+        </table>
+      </div>
+    </section>
+  );
 };
 
 export default function GarantInternshipsDashboard() {
@@ -66,18 +294,15 @@ export default function GarantInternshipsDashboard() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [queryFilters, setQueryFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [internships, setInternships] = useState<GarantInternship[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const [editingInternship, setEditingInternship] = useState<GarantInternship | null>(null);
   const [editForm, setEditForm] = useState<GarantInternshipUpdate | null>(null);
-  const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+
   const [studentSearch, setStudentSearch] = useState("");
   const [companySearch, setCompanySearch] = useState("");
   const [studentOptions, setStudentOptions] = useState<StudentProfile[]>([]);
   const [companyOptions, setCompanyOptions] = useState<Company[]>([]);
-  const [studentSearchLoading, setStudentSearchLoading] = useState(false);
-  const [companySearchLoading, setCompanySearchLoading] = useState(false);
   const [selectedStudentLabel, setSelectedStudentLabel] = useState("");
   const [selectedCompanyLabel, setSelectedCompanyLabel] = useState("");
   const [exporting, setExporting] = useState(false);
@@ -88,41 +313,85 @@ export default function GarantInternshipsDashboard() {
         Object.entries(queryFilters)
           .filter(([, value]) => value !== "")
           .map(([key, value]) => [key, value]),
-      ),
+      ) as Record<string, string>,
     [queryFilters],
   );
 
-  // Načíta všetky praxe podľa aktuálne aplikovaných filtrov
-  const fetchInternships = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axiosClient.get("/internships/garant/internships/", {
-        params: apiFilters,
-      });
-      const rawPayload =
-        response.data?.results ??
-        response.data?.internships ??
-        (Array.isArray(response.data) ? response.data : []);
-      const payload = Array.isArray(rawPayload) ? rawPayload : [];
-      setInternships(payload as GarantInternship[]);
-    } catch (err: any) {
-      const description =
-        err?.response?.data?.error ||
-        err?.response?.data?.detail ||
-        msgs.common.error.errorLoadInternships;
-      setError(description);
-      notifyWarning({ title: msgs.common.error.errorLoadInternships, description });
-    } finally {
-      setLoading(false);
-    }
-  }, [apiFilters, msgs.common.error.errorLoadInternships, notifyWarning]);
+  // useApi – načítanie praxí garanta
+  const {
+    loading: internshipsLoading,
+    error: internshipsError,
+    execute: executeInternships,
+  } = useApi<GarantInternshipsApiResponse, void, Record<string, string>>({
+    url: "/internships/garant/internships/",
+    method: METHOD.GET,
+  });
 
-  // Prvé načítanie hneď po prihlásení/otvorení dashboardu
+  // useApi – PATCH update praxe
+  const { loading: editSaving, execute: executeEditInternship } = useApi<
+    unknown,
+    Record<string, unknown>,
+    {}
+  >({
+    url: "/internships/garant/internships/",
+    method: METHOD.PATCH,
+  });
+
+  // useApi – vyhľadávanie študentov
+  const { loading: studentSearchLoading, execute: executeStudentSearch } = useApi<
+    StudentSearchResponse,
+    void,
+    { q: string }
+  >({
+    url: "/users/students/search/",
+    method: METHOD.GET,
+    onSuccess: (res) => {
+      setStudentOptions(normalizeStudentSearchResponse(res));
+    },
+    onError: () => {
+      setStudentOptions([]);
+    },
+  });
+
+  // useApi – vyhľadávanie firiem
+  const { loading: companySearchLoading, execute: executeCompanySearch } = useApi<
+    CompanySearchResponse,
+    void,
+    { q: string }
+  >({
+    url: "/companies/search/",
+    method: METHOD.GET,
+    onSuccess: (res) => {
+      setCompanyOptions(normalizeCompanySearchResponse(res));
+    },
+    onError: () => {
+      setCompanyOptions([]);
+    },
+  });
+
+  // prvé načítanie + reload pri zmene filtrov
   useEffect(() => {
-    fetchInternships();
-  }, [fetchInternships]);
+    const load = async () => {
+      try {
+        const response = await executeInternships({ params: apiFilters });
+        const normalized = normalizeInternships(response);
+        setInternships(normalized);
+      } catch (error: any) {
+        const description = getErrorMessage(error, msgs.common.error.errorLoadInternships);
+        notifyWarning({
+          title: msgs.common.error.errorLoadInternships,
+          description,
+        });
+      }
+    };
+    void load();
+  }, [apiFilters, executeInternships, msgs.common.error.errorLoadInternships, notifyWarning]);
 
+  const tableErrorMessage = internshipsError
+    ? getErrorMessage(internshipsError, msgs.common.error.errorLoadInternships)
+    : null;
+
+  // Vyhľadávanie študentov (debounce + abort) cez useApi
   useEffect(() => {
     if (!editingInternship) return;
     const query = studentSearch.trim();
@@ -133,30 +402,19 @@ export default function GarantInternshipsDashboard() {
 
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => {
-      setStudentSearchLoading(true);
-      axiosClient
-        .get("/users/students/search/", {
-          params: { q: query },
-          signal: controller.signal,
-        })
-        .then((response) => {
-          const results = Array.isArray(response.data?.results) ? response.data.results : [];
-          setStudentOptions(results);
-        })
-        .catch(() => {
-          setStudentOptions([]);
-        })
-        .finally(() => {
-          setStudentSearchLoading(false);
-        });
+      void executeStudentSearch({
+        params: { q: query },
+        signal: controller.signal,
+      });
     }, 300);
 
     return () => {
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [editingInternship, studentSearch]);
+  }, [editingInternship, studentSearch, executeStudentSearch]);
 
+  // Vyhľadávanie firiem (debounce + abort) cez useApi
   useEffect(() => {
     if (!editingInternship) return;
     const query = companySearch.trim();
@@ -167,29 +425,17 @@ export default function GarantInternshipsDashboard() {
 
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => {
-      setCompanySearchLoading(true);
-      axiosClient
-        .get("/companies/search/", {
-          params: { q: query },
-          signal: controller.signal,
-        })
-        .then((response) => {
-          const results = Array.isArray(response.data?.results) ? response.data.results : [];
-          setCompanyOptions(results);
-        })
-        .catch(() => {
-          setCompanyOptions([]);
-        })
-        .finally(() => {
-          setCompanySearchLoading(false);
-        });
+      void executeCompanySearch({
+        params: { q: query },
+        signal: controller.signal,
+      });
     }, 300);
 
     return () => {
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [editingInternship, companySearch]);
+  }, [editingInternship, companySearch, executeCompanySearch]);
 
   // Lokálne ovládanie filtrov vo formulári (hodnoty sa aplikujú až po potvrdení)
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -197,7 +443,7 @@ export default function GarantInternshipsDashboard() {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Po kliknutí na „Filtrovať“ uloží aktuálne hodnoty a spustí fetch
+  // Po kliknutí na „Filtrovať“ uloží aktuálne hodnoty a tým pádom sa zmenia apiFilters → nový fetch
   const handleApplyFilters = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     setQueryFilters(filters);
@@ -209,7 +455,7 @@ export default function GarantInternshipsDashboard() {
     setQueryFilters(DEFAULT_FILTERS);
   };
 
-  // Dodatočné klientské filtrovanie – textové polia, rok aj stav sa kombinujú klientsky.
+  // Dodatočné klientské filtrovanie
   const filteredInternships = useMemo(() => {
     if (!Array.isArray(internships)) return [];
     const { firma, student, odbor, rok, stav } = queryFilters;
@@ -237,18 +483,41 @@ export default function GarantInternshipsDashboard() {
     });
 
     try {
-      const response = await axiosClient.get("/internships/garant/internships/export/", {
-        params: apiFilters,
-        responseType: "blob",
+      const qs = buildQueryString(apiFilters);
+      const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+      const res = await fetch(`${baseURL}/internships/garant/internships/export/${qs}`, {
+        headers: {
+          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+        },
       });
 
-      const disposition: string = response.headers?.["content-disposition"] || "";
-      const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
+      if (!res.ok) {
+        let errorBody: any = {};
+        try {
+          errorBody = await res.json();
+        } catch {
+          // noop
+        }
+        const description =
+          errorBody?.error || errorBody?.detail || msgs.common.guarant.exportError;
+
+        const error = new Error(description);
+        (error as any).status = res.status;
+        (error as any).body = errorBody;
+
+        throw error;
+      }
+
+      const disposition = res.headers.get("content-disposition") || "";
+      const filenameRegex = /filename\*?=(?:UTF-8''|")?([^\";]+)/i;
+      const filenameMatch = filenameRegex.exec(disposition);
+
       const filename = filenameMatch?.[1]
         ? decodeURIComponent(filenameMatch[1])
         : "internships_export.csv";
 
-      const blob = new Blob([response.data], { type: "text/csv;charset=utf-8" });
+      const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -264,26 +533,24 @@ export default function GarantInternshipsDashboard() {
       });
     } catch (err: any) {
       const description =
-        err?.response?.data?.error ||
-        err?.response?.data?.detail ||
-        msgs.common.guarant.exportError;
+        err?.description || err?.error || err?.detail || msgs.common.guarant.exportError;
       notifyWarning({ title: msgs.common.guarant.exportError, description });
     } finally {
       setExporting(false);
     }
   };
 
-  // Pripraví modálne okno s údajmi vybranej praxe – hodnoty zobrazíme aj v editačnom formulári.
   const openEditModal = (internship: GarantInternship) => {
     setEditingInternship(internship);
     setEditForm({
       datum_zaciatku: internship.datum_zaciatku,
       datum_konca: internship.datum_konca,
-      stav: internship.stav ?? STAV_OPTIONS[0].value,
+      stav: (internship.stav as Stav) ?? STAV_OPTIONS[0].value,
       student_id: internship.student ? String(internship.student) : "",
       firma_id: internship.firma ? String(internship.firma) : "",
       status_note: "",
     });
+
     const studentLabel =
       internship.student_full_name ||
       internship.student_email ||
@@ -291,6 +558,7 @@ export default function GarantInternshipsDashboard() {
     const companyLabel =
       internship.company_name ||
       (typeof internship.firma === "number" ? `#${internship.firma}` : "");
+
     setStudentSearch(studentLabel);
     setCompanySearch(companyLabel);
     setSelectedStudentLabel(studentLabel);
@@ -303,7 +571,6 @@ export default function GarantInternshipsDashboard() {
   const closeEditModal = () => {
     setEditingInternship(null);
     setEditForm(null);
-    setEditSaving(false);
     setEditError(null);
     setStudentOptions([]);
     setCompanyOptions([]);
@@ -350,71 +617,41 @@ export default function GarantInternshipsDashboard() {
     setCompanyOptions([]);
   };
 
-  // PATCH na backend – prepíše všetky editované atribúty (vrátane študenta/firmy) a obnoví tabuľku.
+  // PATCH na backend – použitie useApi + urlOverride
   const handleSubmitEdit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editingInternship || !editForm) return;
 
-    setEditSaving(true);
     setEditError(null);
 
-    const parseNumber = (value: string, fallback: number) => {
-      if (!value.trim()) return fallback;
-      const parsed = Number(value);
-      return Number.isNaN(parsed) ? fallback : parsed;
-    };
+    const payload = buildEditPayload(editForm, editingInternship);
 
-    const payload: Record<string, unknown> = {};
-
-    const studentValue = parseNumber(editForm.student_id, editingInternship.student);
-    if (!Number.isNaN(studentValue) && studentValue > 0) {
-      payload.student_id = studentValue;
-    }
-
-    const companyValue = editForm.firma_id.trim().length
-      ? parseNumber(editForm.firma_id, editingInternship.firma ?? 0)
-      : (editingInternship.firma ?? 0);
-    if (!Number.isNaN(companyValue) && companyValue > 0) {
-      payload.firma_id = companyValue;
-    }
-
-    if (editForm.datum_zaciatku) {
-      payload.datum_zaciatku = editForm.datum_zaciatku;
-    }
-    if (editForm.datum_konca) {
-      payload.datum_konca = editForm.datum_konca;
-    }
-    if (editForm.stav) {
-      payload.stav = editForm.stav;
-    }
-    const note = editForm.status_note.trim();
-    if (note.length) {
-      payload.status_note = note;
-    }
-    // Garant môže obísť bloky na chýbajúce dokumenty
-    payload.force = true;
-
-    if (Object.keys(payload).length === 0) {
+    if (Object.keys(payload).length === 1 && payload.force === true) {
       setEditError(msgs.common.guarant.edit.nothingToUpdate);
-      setEditSaving(false);
       return;
     }
 
     try {
-      await axiosClient.patch(`/internships/garant/internships/${editingInternship.id}/`, payload);
+      await executeEditInternship({
+        body: payload,
+        urlOverride: `/internships/garant/internships/${editingInternship.id}/`,
+      });
+
       notifySuccess({
         title: msgs.common.guarant.edit.title,
         description: msgs.common.guarant.edit.success,
       });
-      await fetchInternships();
+
+      // reload dát cez useApi
+      const response = await executeInternships({ params: apiFilters });
+      const normalized = normalizeInternships(response);
+      setInternships(normalized);
+
       closeEditModal();
-    } catch (err: any) {
-      const description =
-        err?.response?.data?.error || err?.response?.data?.detail || msgs.common.guarant.edit.error;
+    } catch (error: any) {
+      const description = getErrorMessage(error, msgs.common.guarant.edit.error);
       setEditError(description);
       notifyWarning({ title: msgs.common.guarant.edit.error, description });
-    } finally {
-      setEditSaving(false);
     }
   };
 
@@ -520,110 +757,14 @@ export default function GarantInternshipsDashboard() {
           </form>
         </section>
 
-        {/* Hlavná tabuľka s praxami */}
-        <section className="space-y-4 rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
-          <div>
-            <h2 className="text-3xl font-semibold text-primary-900">
-              {msgs.common.guarant.tableTitle}
-            </h2>
-            <p className="text-sm text-ink-500">{msgs.common.guarant.tableSubtitle}</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-100">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
-                    {msgs.common.guarant.table.student}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
-                    {msgs.common.guarant.table.company}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
-                    {msgs.common.guarant.table.program}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
-                    {msgs.common.guarant.table.term}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
-                    {msgs.common.internships.state}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
-                    {msgs.common.guarant.table.actions}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink-500">
-                      {msgs.common.loading.internships}
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-red-600">
-                      {error}
-                    </td>
-                  </tr>
-                ) : filteredInternships.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink-400">
-                      {msgs.common.error.errorFilterLoad}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredInternships.map((internship) => {
-                    return (
-                      <tr key={internship.id}>
-                        <td className="px-4 py-4 text-sm text-ink-900">
-                          <div className="font-semibold">
-                            {internship.student_full_name || `#${internship.student}`}
-                          </div>
-                          <div className="text-xs text-ink-400">{internship.student_email}</div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-ink-900">
-                          {internship.company_name || msgs.common.entities.company}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-ink-900">
-                          {internship.study_program || "—"}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-ink-900">
-                          <div>{`${internship.rok} · ${SEMESTER_LABEL[internship.semester] ?? internship.semester}`}</div>
-                          <div className="text-xs text-ink-400">
-                            {internship.datum_zaciatku} – {internship.datum_konca}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm">
-                          <span
-                            className={`inline-flex min-w-[120px] items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${
-                              internship.stav
-                                ? STAV_BADGE_CLASS[internship.stav]
-                                : "bg-gray-100 text-gray-600"
-                            }`}
-                          >
-                            {internship.stav ? STAV_LABEL[internship.stav] : internship.stav}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-sm">
-                          <div className="flex items-center justify-start">
-                            <button
-                              type="button"
-                              onClick={() => openEditModal(internship)}
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary-200 bg-white text-primary-900 transition hover:bg-primary-50"
-                              aria-label={`${msgs.common.guarant.edit.title} #${internship.id}`}
-                            >
-                              <Icon name="pencil" className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        {/* Hlavná tabuľka s praxami – extrahovaná sekcia */}
+        <GarantInternshipsTableSection
+          internships={filteredInternships}
+          loading={internshipsLoading}
+          tableErrorMessage={tableErrorMessage}
+          msgs={msgs}
+          onEdit={openEditModal}
+        />
 
         {/* Sekcia exportu požadovaných dát */}
         <section className="flex flex-col gap-4 rounded-lg border border-primary-100 bg-primary-50/70 p-6 shadow-sm md:flex-row md:items-center md:justify-between">
@@ -646,6 +787,7 @@ export default function GarantInternshipsDashboard() {
           </button>
         </section>
       </div>
+
       {/* Modál pre pokročilé úpravy jednej praxe */}
       {editingInternship && editForm ? (
         <div className="fixed inset-0 z-[10] flex items-center justify-center bg-black/40 px-3 pb-20 pt-20 sm:px-4 sm:pb-10 sm:pt-24">

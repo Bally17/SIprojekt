@@ -13,6 +13,8 @@
     "i18n:check": "node scripts/i18n-check.mjs"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.11",
+    "@tanstack/react-query-devtools": "^5.91.1",
     "axios": "1.12.2",
     "lucide-react": "0.548.0",
     "next": "15.5.4",

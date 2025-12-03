@@ -1,10 +1,13 @@
+"use client";
+
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import axiosClient from "@lib/axiosClient";
 import { Internship } from "@type/backend/Internship";
 import InternshipDocument from "@type/backend/InternshipDocument";
-import React, { useMemo, useState } from "react";
+import { METHOD, useApi } from "src/hook/useApi";
 
 type InternshipWithDocuments = Internship & {
   documents?: InternshipDocument[];
@@ -21,21 +24,23 @@ const STATUS_BADGE: Record<string, string> = {
   zamietnuty: "bg-red-50 text-red-700",
 };
 
-// Komponent slúži ako mini dashboard dokumentov praxe.
+const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:8000";
+
 const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) => {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
-  // povlenie uploadu je naviazane na stav praxe schvalena
-  const isApprovedState = (internship.stav || "").toLowerCase() === "schvalena";
 
-  // Lokálne stavy pre modal (súbor, progress, drag state, zvolený typ).
+  // stav praxe – nepoužívame negáciu vo výraze, ale "pozitívne" pomenovanú premennú
+  const isNotApproved = (internship.stav || "").toLowerCase() !== "schvalena";
+
+  // Lokálne stavy pre modal (súbor, drag state, zvolený typ).
   const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  // predvolený typ je výkaz, a pokým neni prax v stave schválená tak je uplod zmluvy uzamknutý
+
+  // predvolený typ – ak prax nie je schválená, default je "vykaz"
   const [selectedType, setSelectedType] = useState<"zmluva" | "vykaz">(
-    isApprovedState ? "zmluva" : "vykaz",
+    isNotApproved ? "vykaz" : "zmluva",
   );
 
   // Vyhľadáme existujúce dokumenty priradené k praxi.
@@ -44,25 +49,51 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
   const reportDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "vykaz");
   const currentDoc = selectedType === "zmluva" ? agreementDoc : reportDoc;
 
-  // Slúži na stiahnutie existujúceho PDF.
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:8000";
+  // useApi pre upload (FormData) – url override použijeme pri execute
+  const { loading: uploading, execute: executeUpload } = useApi<unknown, FormData, {}>({
+    url: "/documents/upload/",
+    method: METHOD.POST,
+    onSuccess: () => {
+      notifySuccess({
+        title: msgs.common.documents.successTitle,
+        description: msgs.common.documents.successDescription,
+      });
+      setFile(null);
+      onSuccess?.();
+    },
+    onError: (error: any) => {
+      const data = error?.response?.data;
+      const description =
+        data?.detail || data?.error || data?.message || msgs.common.documents.uploadError;
 
-  // Pre každý typ dokumentu priprav čitateľný text a badge.
+      notifyWarning({
+        title: msgs.common.documents.errorTitle,
+        description,
+      });
+    },
+  });
+
+  // Pre každý typ dokumentu priprav čitateľný text a badge – jednoduchšia logika kvôli complexity
   const statusInfo = useMemo(() => {
-    const getLabel = (code?: string) => {
-      if (!code) return msgs.common.documents.statusMissing;
-      if (code === "nahrany") return msgs.common.documents.statusUploaded;
-      if (code === "potvrdeny") return msgs.common.documents.statusApproved;
-      if (code === "zamietnuty") return msgs.common.documents.statusRejected;
-      return msgs.common.documents.statusUnknown;
+    const statusLabels: Record<string, string> = {
+      nahrany: msgs.common.documents.statusUploaded,
+      potvrdeny: msgs.common.documents.statusApproved,
+      zamietnuty: msgs.common.documents.statusRejected,
     };
 
     const getInfo = (doc?: InternshipDocument) => {
-      if (!doc || !doc.subor_url) {
-        return { label: msgs.common.documents.statusMissing, badge: "bg-gray-50 text-gray-500" };
+      if (!doc?.subor_url) {
+        return {
+          label: msgs.common.documents.statusMissing,
+          badge: "bg-gray-50 text-gray-500",
+        };
       }
+
       const code = doc.stav_dokumentu || "nahrany";
-      return { label: getLabel(code), badge: STATUS_BADGE[code] || "bg-gray-100 text-gray-600" };
+      const label = statusLabels[code] ?? msgs.common.documents.statusUnknown;
+      const badge = STATUS_BADGE[code] || "bg-gray-100 text-gray-600";
+
+      return { label, badge };
     };
 
     return {
@@ -81,46 +112,38 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
     msgs.common.documents.statusUnknown,
   ]);
 
-  // ak prax stratí z hocijakeho dovodu stav schvalena, prepne sa upload automaticky na vykaz
-  React.useEffect(() => {
-    if (!isApprovedState && selectedType === "zmluva") {
+  // ak prax stratí z hocijakého dôvodu stav "schválená", prepne sa upload automaticky na výkaz
+  useEffect(() => {
+    if (isNotApproved && selectedType === "zmluva") {
       setSelectedType("vykaz");
     }
-  }, [isApprovedState, selectedType]);
+  }, [isNotApproved, selectedType]);
 
-  // Multipart upload na aktuálne zvolený dokument (zmluva/výkaz).
-  const uploadDocument = async () => {
-    if (!file || !currentDoc) return;
-    // okrem backendu sa aj tu pre istotu blockuje nahravanie ak prax neni schvalena
-    if (selectedType === "zmluva" && !isApprovedState) {
+  // Multipart upload na aktuálne zvolený dokument (zmluva/výkaz) cez useApi
+  const uploadDocument = async (): Promise<boolean> => {
+    if (!file || !currentDoc) return false;
+
+    const isAgreementUploadLocked = selectedType === "zmluva" && isNotApproved;
+    if (isAgreementUploadLocked) {
       notifyWarning({
         title: msgs.common.documents.errorTitle,
         description: msgs.common.documents.agreementLocked,
       });
-      return;
+      return false;
     }
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      setUploading(true);
-      await axiosClient.post(`/documents/${currentDoc.id}/upload/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      await executeUpload({
+        body: formData,
+        urlOverride: `/documents/${currentDoc.id}/upload/`,
       });
-      notifySuccess({
-        title: msgs.common.documents.successTitle,
-        description: msgs.common.documents.successDescription,
-      });
-      setFile(null);
-      onSuccess?.();
-    } catch (err: any) {
-      notifyWarning({
-        title: msgs.common.documents.errorTitle,
-        description: err?.response?.data?.detail || msgs.common.documents.uploadError,
-      });
-    } finally {
-      setUploading(false);
+      return true;
+    } catch {
+      // onError už zobrazil notifikáciu
+      return false;
     }
   };
 
@@ -131,6 +154,8 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
     const droppedFile = event.dataTransfer?.files?.[0];
     if (droppedFile) setFile(droppedFile);
   };
+
+  const isAgreementLocked = isNotApproved;
 
   return (
     <>
@@ -185,12 +210,12 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
                 {msgs.common.documents.agreementTitle}
               </div>
               <p className="text-xs text-cyan-700">{msgs.common.documents.agreementDescription}</p>
-              {!isApprovedState ? (
+              {isAgreementLocked && (
                 <div className="flex items-center gap-2 text-[11px] font-semibold text-amber-700">
                   <Icon name="lock-keyhole" className="h-3.5 w-3.5" />
                   {msgs.common.documents.agreementLocked}
                 </div>
-              ) : null}
+              )}
               <span
                 className={`inline-flex min-w-[150px] flex-col items-center justify-center rounded-full px-3 py-0.5 text-center text-[11px] font-semibold leading-tight ${statusInfo.agreement.badge}`}
               >
@@ -246,7 +271,7 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
               <div className="inline-flex rounded-full border border-cyan-200 p-1">
                 {(["zmluva", "vykaz"] as const).map((type) => {
                   const isAgreement = type === "zmluva";
-                  const disabled = isAgreement && !isApprovedState;
+                  const disabled = isAgreement && isAgreementLocked;
                   const isActive = selectedType === type;
 
                   return (
@@ -274,14 +299,14 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
                 })}
               </div>
             </div>
-            {!isApprovedState ? (
+
+            {isAgreementLocked && (
               <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
                 <Icon name="lock-keyhole" className="h-4 w-4" />
                 {msgs.common.documents.agreementLocked}
               </div>
-            ) : null}
+            )}
 
-            {/* Ak typ ešte nemá pridelený záznam (napr. zmluva neexistuje), upozorníme používateľa */}
             {currentDoc ? (
               <>
                 <label
@@ -336,8 +361,10 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
                   <button
                     type="button"
                     onClick={async () => {
-                      await uploadDocument();
-                      if (!uploading) setIsModalOpen(false);
+                      const success = await uploadDocument();
+                      if (success) {
+                        setIsModalOpen(false);
+                      }
                     }}
                     disabled={!file || uploading}
                     className="rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-800 disabled:opacity-60"

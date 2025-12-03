@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
-
 import type { ReactNode } from "react";
 import { getMessages } from "@i18n/getMessages";
-import { LocalizationProvider } from "@i18n/client";
-import { SystemNotificationsProvider } from "@components/notifications";
 import { Locale } from "@type/props/common/globalTypes";
+import { AppProviders } from "./AppProviders";
 
 export const metadata: Metadata = {
-  title: "Praxy – správa odbornej praxe jednoducho",
+  title: "Praxy - správa odbornej praxe jednoducho",
   description:
-    "CRM systém pre študentov, firmy a garantov. Správa praxí, dokumentov a stavov – bez papierovačiek.",
+    "CRM systém pre študentov, firmy a garantov. Správa praxí, dokumentov a stavov - bez papierovačiek.",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -20,9 +18,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={locale}>
       <body>
-        <LocalizationProvider locale={locale} messages={messages}>
-          <SystemNotificationsProvider>{children}</SystemNotificationsProvider>
-        </LocalizationProvider>
+        <AppProviders locale={locale} messages={messages}>
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

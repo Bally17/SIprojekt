@@ -31,7 +31,9 @@
       "@type/backend/*": ["src/shared/types/backendDataType/*"],
       "@type/props/*": ["src/shared/types/propsDataType/*"],
       "@utils/*": ["src/shared/utils/*"],
-      "@icons/*": ["src/shared/icons/*"]
+      "@icons/*": ["src/shared/icons/*"],
+      "@constants": ["src/constants/index.ts"],
+      "@hook/*": ["src/hook/*"]
     }
   },
   "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],

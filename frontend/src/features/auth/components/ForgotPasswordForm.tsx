@@ -1,10 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import axiosClient from "@lib/axiosClient";
-import { useState } from "react";
+import { api } from "@lib/api-client";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -17,13 +17,20 @@ export default function ForgotPasswordForm() {
     setLoading(true);
 
     try {
-      await axiosClient.post("/auth/password/reset/", { email });
+      await api.post("/auth/password/reset/", { email });
+
       notifyInfo({
         title: msgs.auth.submitted,
         description: msgs.auth.forgotPassword,
       });
     } catch (err: any) {
-      const message = err.response?.data?.error || err.response?.data?.message || msgs.auth.error;
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error_description ||
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        msgs.auth.error;
+
       notifyWarning({
         title: msgs.auth.error,
         description: message,

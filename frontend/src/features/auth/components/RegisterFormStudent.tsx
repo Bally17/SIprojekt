@@ -1,13 +1,24 @@
 "use client";
+
+import { useState } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import axiosClient from "@lib/axiosClient";
-import { useState } from "react";
+import { api } from "@lib/api-client";
+
+type RegisterStudentFormState = {
+  firstName: string;
+  lastName: string;
+  address: string;
+  studentEmail: string;
+  altEmail: string;
+  phone: string;
+  studyField: string;
+};
 
 export default function RegisterFormStudent() {
   // Lokálny stav formulára
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<RegisterStudentFormState>({
     firstName: "",
     lastName: "",
     address: "",
@@ -30,12 +41,15 @@ export default function RegisterFormStudent() {
     if (form.lastName.trim().length < 2) return "Priezvisko musí mať aspoň 2 znaky.";
     if (form.address.trim().length < 5) return "Adresa musí mať aspoň 5 znakov.";
     if (!form.studyField.trim()) return "Študijný program je povinný.";
+
     const emailDomain = form.studentEmail.split("@")[1]?.toLowerCase() || "";
     if (!allowedStudentDomains.includes(emailDomain)) {
       return `Email musí byť z domény ${allowedStudentDomains.join(", ")}.`;
     }
-    const phoneDigits = form.phone.replace(/\\D/g, "");
+
+    const phoneDigits = form.phone.replace(/\D/g, "");
     if (phoneDigits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
+
     return null;
   };
 
@@ -44,6 +58,7 @@ export default function RegisterFormStudent() {
     if (!data) return msgs.auth.error;
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
+
     const parts: string[] = [];
     Object.entries(data).forEach(([key, value]) => {
       if (Array.isArray(value)) {
@@ -56,13 +71,14 @@ export default function RegisterFormStudent() {
   };
 
   // Aktualizácia vstupov → state
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   // Submit handler: mapovanie na backend field names + POST
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setLoading(true);
 
     const clientError = validateForm();
@@ -82,17 +98,14 @@ export default function RegisterFormStudent() {
       studijny_program: form.studyField,
     };
 
-    console.log("📤 Payload odosielaný na backend:", payload);
-
     try {
-      // baseURL sa doplní z axiosClient
-      const res = await axiosClient.post("/auth/register/student/", payload);
-      console.log("✅ Registrácia študenta:", res.data);
+      await api.post("/auth/register/student/", payload);
 
       notifySuccess({
         title: msgs.auth.successRegister,
         description: msgs.auth.registerStudent,
       });
+
       setForm({
         firstName: "",
         lastName: "",
@@ -103,8 +116,14 @@ export default function RegisterFormStudent() {
         studyField: "",
       });
     } catch (err: any) {
-      const message = getErrorMessage(err);
-      console.error("❌ Chyba pri registrácii:", err.response?.data || err);
+      const message =
+        getErrorMessage(err) ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        msgs.auth.errorTitle;
+
+      console.error("❌ Chyba pri registrácii:", err?.response?.data || err);
+
       notifyWarning({
         title: msgs.auth.errorTitle,
         description: message,
@@ -125,7 +144,6 @@ export default function RegisterFormStudent() {
         {msgs.auth.registerStudent}
       </h2>
 
-      {/* Polia formulára */}
       <input
         name="firstName"
         placeholder={msgs.auth.name}

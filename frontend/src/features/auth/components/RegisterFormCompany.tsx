@@ -1,14 +1,23 @@
 "use client";
+
+import { useState } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import axiosClient from "@lib/axiosClient";
-import { useState } from "react";
-// axiosClient: shared inštancia s baseURL z NEXT_PUBLIC_API_URL (napr. http://localhost:8000/api)
+import { api } from "@lib/api-client";
+
+type RegisterCompanyFormState = {
+  companyName: string;
+  companyEmail: string;
+  address: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+};
 
 export default function RegisterFormCompany() {
   // Lokálny stav formulára (controlled inputs)
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<RegisterCompanyFormState>({
     companyName: "",
     companyEmail: "",
     address: "",
@@ -36,6 +45,7 @@ export default function RegisterFormCompany() {
     if (!data) return msgs.auth.error;
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
+
     const parts: string[] = [];
     Object.entries(data).forEach(([key, value]) => {
       if (Array.isArray(value)) {
@@ -48,13 +58,14 @@ export default function RegisterFormCompany() {
   };
 
   // Aktualizácia vstupov → state
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   // Submit handler: mapovanie na backend field names + POST
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setLoading(true);
 
     const clientError = validateForm();
@@ -75,15 +86,15 @@ export default function RegisterFormCompany() {
     };
 
     try {
-      // baseURL sa doplní z axiosClient
-      const res = await axiosClient.post("/auth/register/company/", payload);
-      console.log("✅ Registrácia firmy:", res.data);
+      // api.post vracia priamo response body, tu ho nepotrebujeme
+      await api.post("/auth/register/company/", payload);
 
-      // Reset a info pre používateľa
       notifySuccess({
         title: msgs.auth.successRegister,
         description: msgs.auth.registerCompany,
       });
+
+      // Reset formulára
       setForm({
         companyName: "",
         companyEmail: "",
@@ -93,8 +104,15 @@ export default function RegisterFormCompany() {
         contactPhone: "",
       });
     } catch (err: any) {
-      const message = getErrorMessage(err);
+      const message =
+        getErrorMessage(err) ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        msgs.auth.errorTitle;
+
+      // Log do konzoly pre debug
       console.error("❌ Chyba registrácie:", err);
+
       notifyWarning({
         title: msgs.auth.errorTitle,
         description: message,

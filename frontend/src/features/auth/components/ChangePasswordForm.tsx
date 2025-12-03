@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import axiosClient from "@lib/axiosClient";
+import { api } from "@lib/api-client";
+import { getProfile, type ProfileUser } from "@lib/api";
 
 type ChangePasswordFormProps = {
   onSubmit?: (payload: {
@@ -23,6 +24,10 @@ type FormState = {
   newPasswordConfirm: string;
 };
 
+type ChangePasswordResponse = {
+  user?: ProfileUser | null;
+};
+
 export default function ChangePasswordForm({
   onSubmit,
   loading = false,
@@ -38,26 +43,20 @@ export default function ChangePasswordForm({
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   const defaultSubmit = useCallback(
-    async ({
-      currentPassword,
-      newPassword,
-      newPasswordConfirm,
-    }: {
-      currentPassword: string;
-      newPassword: string;
-      newPasswordConfirm: string;
-    }) => {
-      const response = await axiosClient.post("/auth/password/change/", {
+    async ({ currentPassword, newPassword, newPasswordConfirm }: FormState) => {
+      // api.post vracia priamo telo odpovede, nie res.data
+      const response = await api.post<ChangePasswordResponse>("/auth/password/change/", {
         current_password: currentPassword,
         new_password: newPassword,
         new_password_confirm: newPasswordConfirm,
       });
 
-      let latestUser = response.data?.user;
+      let latestUser: ProfileUser | null = response.user ?? null;
+
+      // fallback – ak backend nevrátil usera po zmene hesla
       if (!latestUser) {
         try {
-          const profile = await axiosClient.get("/auth/profile/");
-          latestUser = profile.data?.user;
+          latestUser = await getProfile();
         } catch {
           latestUser = null;
         }
@@ -69,6 +68,7 @@ export default function ChangePasswordForm({
 
       const roleKey = String(latestUser?.rola || latestUser?.role || "").toLowerCase();
       const redirectTarget = roleKey === "firma" ? "/dashboard/company" : "/dashboard/student";
+
       router.push(redirectTarget);
     },
     [router],
@@ -100,21 +100,28 @@ export default function ChangePasswordForm({
     try {
       setSubmitting(true);
       const submitHandler = onSubmit ?? defaultSubmit;
+
       await submitHandler({
         currentPassword: form.currentPassword,
         newPassword: form.newPassword,
         newPasswordConfirm: form.newPasswordConfirm,
       });
+
       notifySuccess({
         title: msgs.auth.succesResetPassword,
         description: msgs.auth.setNewPassword,
       });
+
       setForm({ currentPassword: "", newPassword: "", newPasswordConfirm: "" });
     } catch (submitError: any) {
       const message =
-        submitError?.message ||
+        submitError?.response?.data?.message ||
+        submitError?.response?.data?.error_description ||
+        submitError?.response?.data?.error ||
         submitError?.response?.data?.detail ||
+        submitError?.message ||
         "Nepodarilo sa zmeniť heslo. Skúste znova.";
+
       notifyWarning({
         title: msgs.auth.error,
         description: message,
