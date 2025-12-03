@@ -1,12 +1,12 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import axiosClient from "@lib/axiosClient";
+import { api, getAccessToken } from "@lib/api-client";
 import { Internship } from "@type/backend/Internship";
 import InternshipDocument from "@type/backend/InternshipDocument";
-import { useMemo, useState } from "react";
 
 type Props = {
   internship: Internship;
@@ -31,8 +31,10 @@ const buildMediaUrl = (path: string) => {
 const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+
   const [uploading, setUploading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+
   const reportDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "vykaz");
   const uploadInputId = useMemo(() => `company-doc-upload-${internship.id}`, [internship.id]);
   const closeActions = () => setActionsOpen(false);
@@ -57,16 +59,39 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
       });
       return;
     }
+
     const file = event.target.files?.[0];
     if (!file) return;
+
     const formData = new FormData();
     formData.append("file", file);
 
     try {
       setUploading(true);
-      await axiosClient.post(`/documents/${reportDoc.id}/upload/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+
+      const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const res = await fetch(`${baseURL}/documents/${reportDoc.id}/upload/`, {
+        method: "POST",
+        headers: {
+          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+        },
+        body: formData,
       });
+
+      if (!res.ok) {
+        let errorBody: any = null;
+        try {
+          errorBody = await res.json();
+        } catch {
+          // ignore
+        }
+
+        const description =
+          errorBody?.detail || errorBody?.error || msgs.common.companyDocs.uploadError;
+
+        throw new Error(description);
+      }
+
       notifySuccess({
         title: msgs.common.companyDocs.uploadSuccess,
         description: msgs.common.companyDocs.uploadDescription,
@@ -76,7 +101,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
     } catch (error: any) {
       notifyWarning({
         title: msgs.common.companyDocs.uploadError,
-        description: error?.response?.data?.detail || msgs.common.companyDocs.uploadError,
+        description: error?.message || msgs.common.companyDocs.uploadError,
       });
     } finally {
       setUploading(false);
@@ -86,32 +111,51 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
 
   const handleApprove = async () => {
     if (!reportDoc || !reportDoc.subor_url) return;
+
     try {
-      await axiosClient.post(`/documents/${reportDoc.id}/approve-company/`);
-      notifySuccess({ title: msgs.common.companyDocs.approved, description: "" });
+      await api.post<unknown>(`/documents/${reportDoc.id}/approve-company/`, {});
+
+      notifySuccess({
+        title: msgs.common.companyDocs.approved,
+        description: "",
+      });
       onChange?.();
       closeActions();
-    } catch (error: any) {
+    } catch (err: any) {
+      const data = err?.response?.data;
+      const description =
+        data?.detail || data?.error || err?.message || msgs.common.companyDocs.actionError;
+
       notifyWarning({
         title: msgs.common.companyDocs.actionError,
-        description: error?.response?.data?.detail || msgs.common.companyDocs.actionError,
+        description,
       });
     }
   };
 
   const handleReject = async () => {
     if (!reportDoc || !reportDoc.subor_url) return;
+
     const reason = window.prompt(msgs.common.companyDocs.rejectPrompt);
     if (!reason) return;
+
     try {
-      await axiosClient.post(`/documents/${reportDoc.id}/reject-company/`, { reason });
-      notifySuccess({ title: msgs.common.companyDocs.rejected, description: "" });
+      await api.post<unknown>(`/documents/${reportDoc.id}/reject-company/`, { reason });
+
+      notifySuccess({
+        title: msgs.common.companyDocs.rejected,
+        description: "",
+      });
       onChange?.();
       closeActions();
-    } catch (error: any) {
+    } catch (err: any) {
+      const data = err?.response?.data;
+      const description =
+        data?.detail || data?.error || err?.message || msgs.common.companyDocs.actionError;
+
       notifyWarning({
         title: msgs.common.companyDocs.actionError,
-        description: error?.response?.data?.detail || msgs.common.companyDocs.actionError,
+        description,
       });
     }
   };
@@ -126,6 +170,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
           <span className="text-xs text-gray-500">{internship.student_email || "—"}</span>
         </div>
       </td>
+
       <td className="px-4 py-4 align-top">
         <div className="text-sm text-gray-700">
           <p className="font-medium">
@@ -136,6 +181,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
           </p>
         </div>
       </td>
+
       <td className="px-4 py-4 align-top">
         <div className="flex flex-col gap-1">
           <span className="font-medium text-primary-900">{msgs.common.documents.reportTitle}</span>
@@ -154,6 +200,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
           )}
         </div>
       </td>
+
       <td className="px-4 py-4 align-top">
         <span
           className={`inline-flex min-w-[150px] items-center justify-center rounded-full px-3 py-1 text-center text-xs font-semibold leading-tight ${badgeClass(
@@ -163,6 +210,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
           {statusLabel(reportDoc)}
         </span>
       </td>
+
       <td className="px-4 py-4 align-top">
         <div className="flex flex-wrap gap-2">
           <button
@@ -174,6 +222,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
           >
             <Icon name="more-horizontal" className="h-5 w-5" />
           </button>
+
           {actionsOpen ? (
             <div
               className="fixed inset-0 z-[10] flex items-center justify-center bg-black/50 px-4 py-6"
@@ -206,6 +255,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
                     <Icon name="x" className="h-4 w-4" />
                   </button>
                 </div>
+
                 <div className="mt-5 space-y-3">
                   <div>
                     <label
@@ -228,6 +278,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
                       onChange={handleUpload}
                     />
                   </div>
+
                   <button
                     type="button"
                     onClick={handleApprove}
@@ -237,6 +288,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
                     {msgs.common.companyDocs.approveButton}
                     <Icon name="check-circle-2" className="h-4 w-4" />
                   </button>
+
                   <button
                     type="button"
                     onClick={handleReject}

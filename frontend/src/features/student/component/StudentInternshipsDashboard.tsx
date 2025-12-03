@@ -1,17 +1,17 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { Select } from "@components/select";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import axiosClient from "@lib/axiosClient";
-import { useState, useCallback, useEffect } from "react";
-import DocumentUploadCard from "../components/DocumentUploadCard";
 import { Internship } from "@type/backend/Internship";
 import InternshipDocument from "@type/backend/InternshipDocument";
 import { STAV_BADGE_CLASS, Semester, SEMESTER_OPTIONS } from "@type/props/common/StateInternship";
 import { Company } from "@type/backend/Company";
+import DocumentUploadCard from "../components/DocumentUploadCard";
+import { METHOD, useApi } from "src/hook/useApi";
 
 type InternshipWithRelations = Internship & {
   firma?: Company | null;
@@ -27,13 +27,21 @@ type CreateInternshipForm = Omit<CreateInternshipPayload, "firma_id"> & {
   firma_id: string;
 };
 
+type StudentInternshipsResponse =
+  | InternshipWithRelations[]
+  | {
+      internships?: InternshipWithRelations[];
+      results?: {
+        internships?: InternshipWithRelations[];
+      };
+    };
+
+type CompanySearchResponse = Company[] | { results?: Company[] };
+
 export default function StudentDashboardPage() {
   const [internships, setInternships] = useState<InternshipWithRelations[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
 
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
@@ -47,145 +55,190 @@ export default function StudentDashboardPage() {
     datum_konca: "",
   });
 
-  // Načítanie praxí
-  const fetchInternships = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await axiosClient.get("/internships/me/internships/");
-      let data: InternshipWithRelations[] = [];
-      if (Array.isArray(res.data)) data = res.data as InternshipWithRelations[];
-      else if (res.data?.results?.internships)
-        data = res.data.results.internships as InternshipWithRelations[];
-      else if (res.data?.internships) data = res.data.internships as InternshipWithRelations[];
-      setInternships(data);
-    } catch (err) {
-      console.error(err);
-      notifyWarning({
-        title: errorLoadMsg,
-        description: "Nepodarilo sa načítať praxe.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [errorLoadMsg, notifyWarning]);
-
-  useEffect(() => {
-    fetchInternships();
-  }, [fetchInternships]);
-
-  // Hľadanie firiem
-  const searchCompanies = async (q: string) => {
-    if (!q.trim()) return setCompanies([]);
-    setSearchLoading(true);
-    try {
-      const res = await axiosClient.get(`/companies/search/?q=${encodeURIComponent(q)}`);
-      const list: Company[] = res.data.results ?? res.data ?? [];
-      setCompanies(list);
-    } catch (err) {
-      console.error(err);
-      notifyWarning({
-        title: msgs.common.error.errorAction,
-        description: msgs.common.loading.companies,
-      });
-    } finally {
-      setSearchLoading(false);
-    }
+  const getErrorMessage = (err: any, fallback: string) => {
+    const data = err?.response?.data;
+    if (!data) return err?.message || fallback;
+    if (typeof data === "string") return data;
+    if (data.detail) return data.detail;
+    if (data.error) return data.error;
+    if (data.message) return data.message;
+    return fallback;
   };
 
-  // Vytvorenie praxe
-  const handleCreateInternship = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreating(true);
-
-    try {
-      if (!form.firma_id.trim()) {
-        notifyWarning({ title: "Chýba firma", description: "Vyberte firmu zo zoznamu." });
-        setCreating(false);
-        return;
+  const normalizeInternships = useCallback(
+    (res: StudentInternshipsResponse): InternshipWithRelations[] => {
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res.results?.internships)) {
+        return res.results!.internships as InternshipWithRelations[];
       }
-
-      if (form.datum_zaciatku && form.datum_konca && form.datum_konca < form.datum_zaciatku) {
-        notifyWarning({
-          title: "Chybný dátum",
-          description: "Dátum ukončenia musí byť po dátume začiatku.",
-        });
-        setCreating(false);
-        return;
+      if (Array.isArray(res.internships)) {
+        return res.internships as InternshipWithRelations[];
       }
+      return [];
+    },
+    [],
+  );
 
-      const currentYear = new Date().getFullYear();
-      if (form.rok < currentYear - 1 || form.rok > currentYear + 2) {
-        notifyWarning({
-          title: "Chybný rok",
-          description: "Rok praxe je mimo povoleného intervalu.",
-        });
-        setCreating(false);
-        return;
-      }
+  // Automatické načítanie praxí cez `immediate: true`
+  const { loading: internshipsLoading, execute: reloadInternships } = useApi<
+    StudentInternshipsResponse,
+    void,
+    {}
+  >({
+    url: "/internships/me/internships/",
+    method: METHOD.GET,
+    immediate: true,
+    initialData: [] as StudentInternshipsResponse,
+    onSuccess: (response) => {
+      const data = normalizeInternships(response);
+      setInternships(data);
+    },
+    onError: (error) => {
+      const description = getErrorMessage(error, "Nepodarilo sa načítať praxe.");
+      console.error(error);
+      notifyWarning({
+        title: errorLoadMsg,
+        description,
+      });
+    },
+  });
 
-      const payload: CreateInternshipPayload = {
-        ...form,
-        firma_id: Number(form.firma_id),
-      };
+  const { loading: companiesLoading, execute: executeCompanySearch } = useApi<
+    CompanySearchResponse,
+    void,
+    { q: string }
+  >({
+    url: "/companies/search/",
+    method: METHOD.GET,
+    onSuccess: (response) => {
+      const list = Array.isArray(response) ? response : (response.results ?? []);
+      setCompanies(list);
+    },
+    onError: (error) => {
+      const description = getErrorMessage(error, msgs.common.loading.companies);
+      console.error(error);
+      notifyWarning({
+        title: msgs.common.error.errorAction,
+        description,
+      });
+    },
+  });
 
-      await axiosClient.post("/internships/create/", payload);
+  const { loading: creating, execute: executeCreateInternship } = useApi<
+    unknown,
+    CreateInternshipPayload,
+    {}
+  >({
+    url: "/internships/create/",
+    method: METHOD.POST,
+    onSuccess: () => {
       notifySuccess({
         title: "Prax vytvorená",
         description: "Dohoda bola automaticky vygenerovaná.",
       });
+
       setForm((prev) => ({
         ...prev,
         firma_id: "",
         datum_zaciatku: "",
         datum_konca: "",
-        searchQuery: "",
       }));
       setSearchQuery("");
       setCompanies([]);
-      await fetchInternships();
-    } catch (err) {
-      console.error(err);
+
+      reloadInternships();
+    },
+    onError: (error) => {
+      const description = getErrorMessage(error, "Nepodarilo sa vytvoriť prax.");
+      console.error(error);
       notifyWarning({
         title: "Chyba",
-        description: "Nepodarilo sa vytvoriť prax.",
+        description,
       });
-    } finally {
-      setCreating(false);
+    },
+  });
+
+  const handleCompanySearchChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchQuery(value);
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setCompanies([]);
+      return;
     }
+    await executeCompanySearch({ params: { q: trimmed } });
   };
 
-  // Helper: link na dokument bez IIFE a bez ternárnikov
-  // Príprava obsahu zoznamu bez vnorených ternárnikov (Sonar-friendly)
+  const handleCreateInternship = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!form.firma_id.trim()) {
+      notifyWarning({
+        title: "Chýba firma",
+        description: "Vyberte firmu zo zoznamu.",
+      });
+      return;
+    }
+
+    if (form.datum_zaciatku && form.datum_konca && form.datum_konca < form.datum_zaciatku) {
+      notifyWarning({
+        title: "Chybný dátum",
+        description: "Dátum ukončenia musí byť po dátume začiatku.",
+      });
+      return;
+    }
+
+    const currentYear = new Date().getFullYear();
+    if (form.rok < currentYear - 1 || form.rok > currentYear + 2) {
+      notifyWarning({
+        title: "Chybný rok",
+        description: "Rok praxe je mimo povoleného intervalu.",
+      });
+      return;
+    }
+
+    const payload: CreateInternshipPayload = {
+      rok: form.rok,
+      semester: form.semester,
+      datum_zaciatku: form.datum_zaciatku,
+      datum_konca: form.datum_konca,
+      firma_id: Number(form.firma_id),
+    };
+
+    await executeCreateInternship({ body: payload });
+  };
+
   let listContent: React.ReactNode;
-  if (loading) {
+  if (internshipsLoading) {
     listContent = <p className="text-gray-600">{msgs.common.loading.loading}</p>;
   } else if (internships.length === 0) {
     listContent = <p className="text-gray-500 italic">{msgs.common.internships.emptyYour}</p>;
   } else {
     listContent = (
-      <div className="grid md:grid-cols-2 gap-5">
-        {internships.map((p) => (
+      <div className="grid gap-5 md:grid-cols-2">
+        {internships.map((internship) => (
           <div
-            key={p.id}
-            className="border border-cyan-100 rounded-xl bg-white p-5 shadow-sm hover:shadow-md transition"
+            key={internship.id}
+            className="rounded-xl border border-cyan-100 bg-white p-5 shadow-sm transition hover:shadow-md"
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-lg text-cyan-700">
-                {p.firma?.nazov || "Neznáma firma"}
+              <h3 className="text-lg font-semibold text-cyan-700">
+                {internship.firma?.nazov || "Neznáma firma"}
               </h3>
               <span
-                className={`text-sm font-medium px-2 py-1 rounded ${
-                  p.stav ? STAV_BADGE_CLASS[p.stav] : "bg-gray-100 text-gray-600"
+                className={`rounded px-2 py-1 text-sm font-medium ${
+                  internship.stav ? STAV_BADGE_CLASS[internship.stav] : "bg-gray-100 text-gray-600"
                 }`}
               >
-                {p.stav}
+                {internship.stav}
               </span>
             </div>
-            <p className="text-gray-600 text-sm mt-1">
-              {p.semester} {p.rok} • {p.datum_zaciatku} → {p.datum_konca}
+            <p className="mt-1 text-sm text-gray-600">
+              {internship.semester} {internship.rok} • {internship.datum_zaciatku} →{" "}
+              {internship.datum_konca}
             </p>
 
-            <DocumentUploadCard internship={p} onSuccess={fetchInternships} />
+            <DocumentUploadCard internship={internship} onSuccess={reloadInternships} />
           </div>
         ))}
       </div>
@@ -196,98 +249,108 @@ export default function StudentDashboardPage() {
     <>
       <form
         onSubmit={handleCreateInternship}
-        className="border border-cyan-100 rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition space-y-5"
+        className="space-y-5 rounded-xl border border-cyan-100 bg-white p-6 shadow-sm transition hover:shadow-md"
       >
         <div className="flex items-center gap-2">
           <Icon name="calendar-plus" className="text-cyan-600" />
           <h2 className="text-xl font-semibold text-gray-800">{msgs.common.internships.new}</h2>
         </div>
 
+        {/* Výber firmy */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="mb-1 block text-sm font-medium text-gray-700">
             {msgs.common.entities.company}
           </label>
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              searchCompanies(e.target.value);
-            }}
+            onChange={handleCompanySearchChange}
             placeholder={msgs.common.action.company}
-            className="border w-full rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           />
-          {searchLoading && (
-            <p className="text-sm text-gray-500 mt-1">{msgs.common.loading.companies}</p>
+          {companiesLoading && (
+            <p className="mt-1 text-sm text-gray-500">{msgs.common.loading.companies}</p>
           )}
           {companies.length > 0 && (
-            <ul className="border mt-2 rounded-lg max-h-40 overflow-y-auto divide-y">
-              {companies.map((c) => (
+            <ul className="mt-2 max-h-40 divide-y overflow-y-auto rounded-lg border">
+              {companies.map((company) => (
                 <li
-                  key={c.id}
+                  key={company.id}
                   onClick={() => {
-                    setForm((f) => ({ ...f, firma_id: String(c.id) }));
-                    setSearchQuery(c.nazov);
+                    setForm((previous) => ({ ...previous, firma_id: String(company.id) }));
+                    setSearchQuery(company.nazov);
                     setCompanies([]);
                   }}
-                  className="p-2 cursor-pointer hover:bg-cyan-50"
+                  className="cursor-pointer p-2 hover:bg-cyan-50"
                 >
-                  <div className="font-medium">{c.nazov}</div>
-                  {c.adresa && <div className="text-gray-500 text-sm">{c.adresa}</div>}
+                  <div className="font-medium">{company.nazov}</div>
+                  {company.adresa ? (
+                    <div className="text-sm text-gray-500">{company.adresa}</div>
+                  ) : null}
                 </li>
               ))}
             </ul>
           )}
         </div>
 
+        {/* Rok + semester */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               {msgs.common.date.year}
             </label>
             <input
               type="number"
               value={form.rok}
-              onChange={(e) => setForm((f) => ({ ...f, rok: Number(e.target.value) }))}
-              className="border w-full rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              onChange={(event) =>
+                setForm((previous) => ({ ...previous, rok: Number(event.target.value) }))
+              }
+              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               {msgs.common.date.semester}
             </label>
             <Select<Semester>
               name="semester"
               value={form.semester}
               options={SEMESTER_OPTIONS}
-              onChangeValue={(val) => {
-                if (val) setForm((f) => ({ ...f, semester: val }));
+              onChangeValue={(value) => {
+                if (value) {
+                  setForm((previous) => ({ ...previous, semester: value }));
+                }
               }}
             />
           </div>
         </div>
 
+        {/* Dátumy */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               {msgs.common.date.startDate}
             </label>
             <input
               type="date"
               value={form.datum_zaciatku}
-              onChange={(e) => setForm((f) => ({ ...f, datum_zaciatku: e.target.value }))}
-              className="border w-full rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              onChange={(event) =>
+                setForm((previous) => ({ ...previous, datum_zaciatku: event.target.value }))
+              }
+              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               {msgs.common.date.endDate}
             </label>
             <input
               type="date"
               value={form.datum_konca}
-              onChange={(e) => setForm((f) => ({ ...f, datum_konca: e.target.value }))}
-              className="border w-full rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              onChange={(event) =>
+                setForm((previous) => ({ ...previous, datum_konca: event.target.value }))
+              }
+              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
           </div>
         </div>
@@ -295,7 +358,7 @@ export default function StudentDashboardPage() {
         <Button
           type="submit"
           variant="primary"
-          className="px-5 py-2.5 rounded-lg transition flex items-center gap-2"
+          className="flex items-center gap-2 rounded-lg px-5 py-2.5 transition"
           disabled={creating}
           loading={creating}
         >
@@ -305,7 +368,7 @@ export default function StudentDashboardPage() {
       </form>
 
       <section>
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+        <h2 className="mb-4 text-2xl font-semibold text-gray-800">
           📋 {msgs.common.internships.my}
         </h2>
         {listContent}

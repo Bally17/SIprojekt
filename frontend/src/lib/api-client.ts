@@ -35,9 +35,7 @@ export function clearAuthTokens() {
   }
 }
 
-export function getAccessToken() {
-  return accessTokenMemory;
-}
+export const getAccessToken = () => accessTokenMemory;
 
 export function getRefreshToken() {
   if (typeof window === "undefined") return null;
@@ -121,7 +119,7 @@ export async function request<T = unknown>(url: string, options: RequestInit = {
     return undefined as T;
   }
 
-  return (await res.json()) as T;
+  return res.json() as Promise<T>;
 }
 
 type BroadcastMsg =
@@ -215,24 +213,33 @@ async function refreshToken(): Promise<string> {
   return refreshPromise;
 }
 
-// Toto patrí sem, pod request()
 export const api = {
-  get: <T>(url: string) => request<T>(url),
+  get: <T>(url: string, options?: RequestInit) => request<T>(url, options),
 
-  post: <T>(url: string, body: any) =>
+  post: <T>(url: string, body: any, options: RequestInit = {}) =>
     request<T>(url, {
+      ...options,
       method: "POST",
       body: JSON.stringify(body),
     }),
 
-  put: <T>(url: string, body: any) =>
+  put: <T>(url: string, body: any, options: RequestInit = {}) =>
     request<T>(url, {
+      ...options,
       method: "PUT",
       body: JSON.stringify(body),
     }),
 
-  delete: <T>(url: string) =>
+  patch: <T>(url: string, body: any, options: RequestInit = {}) =>
     request<T>(url, {
+      ...options,
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
+  delete: <T>(url: string, options: RequestInit = {}) =>
+    request<T>(url, {
+      ...options,
       method: "DELETE",
     }),
 };

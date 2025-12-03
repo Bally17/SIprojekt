@@ -1,12 +1,12 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { Table } from "@components/table";
 import { useLocalization } from "@i18n/client";
-import axiosClient from "@lib/axiosClient";
+import { api } from "@lib/api-client";
 import { Internship } from "@type/backend/Internship";
-import { useEffect, useState, useCallback } from "react";
 import { TABLE_NAMES } from "src/constants/Table";
 
 type PendingResponse = {
@@ -36,15 +36,17 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
   const fetchPending = useCallback(async () => {
     setLoading(true);
     setError("");
+
     try {
-      const res = await axiosClient.get<PendingResponse>(
-        "/internships/company/me/internships/pending/",
-      );
-      const list = res.data.results?.internships ?? [];
-      setInternships(list);
+      const res = await api.get<PendingResponse>("/internships/company/me/internships/pending/");
+
+      const list = res.results?.internships ?? [];
+      setInternships(Array.isArray(list) ? list : []);
     } catch (err: any) {
+      const data = err?.response?.data;
       const message =
-        err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships;
+        data?.error || data?.detail || err?.message || msgs.common.error.errorLoadInternships;
+
       setError(message);
       notifyWarning({
         title: msgs.common.error.errorLoadInternships,
@@ -63,11 +65,14 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
   // Potvrdí alebo zamietne prax a odstráni ju zo zoznamu
   const handleAction = async (id: number, action: "confirm" | "reject") => {
     setError("");
+
     try {
       const endpoint = `/internships/company/${action}/${id}/`;
-      await axiosClient.patch(endpoint, {});
+      await api.patch(endpoint, {});
+
       setInternships((prev) => prev.filter((item) => item.id !== id));
       onChange?.();
+
       notifySuccess({
         title:
           action === "confirm" ? msgs.common.internships.management : msgs.common.error.errorAction,
@@ -75,7 +80,9 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
           action === "confirm" ? msgs.common.internships.new : msgs.common.error.errorAction,
       });
     } catch (err: any) {
-      const message = err.response?.data?.error || err.message || msgs.common.error.errorAction;
+      const data = err?.response?.data;
+      const message = data?.error || data?.detail || err?.message || msgs.common.error.errorAction;
+
       setError(message);
       notifyWarning({
         title: msgs.common.error.errorAction,

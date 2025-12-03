@@ -1,14 +1,14 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { Table } from "@components/table";
 import { useLocalization } from "@i18n/client";
-import axiosClient from "@lib/axiosClient";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { api } from "@lib/api-client";
 import PendingInternships from "./components/PendingInternships";
+import CompanyDocumentsCard from "./components/CompanyDocumentsCard";
 import { TableFilters } from "@type/props/table";
 import { TABLE_NAMES } from "src/constants/Table";
-import CompanyDocumentsCard from "./components/CompanyDocumentsCard";
 import { Internship } from "@type/backend/Internship";
 import { SEMESTER_OPTIONS, STAV_OPTIONS } from "@type/props/common/StateInternship";
 
@@ -29,11 +29,27 @@ type PaginatedCompanyInternshipsResponse = {
   results: CompanyInternshipsResponse;
 };
 
+type CompanyInternshipsApiResponse =
+  | CompanyInternshipsResponse
+  | PaginatedCompanyInternshipsResponse;
+
+// pomocný builder na query string (rovnaký pattern ako pri garantovi)
+const buildQueryString = (params: Record<string, string>) => {
+  const entries = Object.entries(params).filter(([, value]) => value !== "");
+  if (!entries.length) return "";
+  const searchParams = new URLSearchParams(entries as [string, string][]);
+  return `?${searchParams.toString()}`;
+};
+
 export default function CompanyInternshipsDashboard() {
   const [internships, setInternships] = useState<Internship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [filters, setFilters] = useState<TableFilters>({ rok: "", semester: "", stav: "" });
+  const [filters, setFilters] = useState<TableFilters>({
+    rok: "",
+    semester: "",
+    stav: "",
+  });
 
   const { msgs } = useLocalization();
   const { warning: notifyWarning } = useSystemNotifications();
@@ -41,25 +57,29 @@ export default function CompanyInternshipsDashboard() {
   const fetchInternships = useCallback(async () => {
     setLoading(true);
     setError("");
+
     try {
-      const params = Object.fromEntries(
+      const rawFilters = Object.fromEntries(
         Object.entries(filters).filter(([, value]) => value !== ""),
+      ) as Record<string, string>;
+
+      const qs = buildQueryString(rawFilters);
+
+      const res = await api.get<CompanyInternshipsApiResponse>(
+        `/internships/company/me/internships/${qs}`,
       );
-      const res = await axiosClient.get<
-        CompanyInternshipsResponse | PaginatedCompanyInternshipsResponse
-      >("/internships/company/me/internships/", {
-        params,
-      });
 
       const payload =
-        "results" in res.data
-          ? (res.data.results as CompanyInternshipsResponse)
-          : (res.data as CompanyInternshipsResponse);
+        "results" in res
+          ? (res.results as CompanyInternshipsResponse)
+          : (res as CompanyInternshipsResponse);
 
       setInternships(payload?.internships || []);
     } catch (err: any) {
+      const data = err?.response?.data;
       const message =
-        err.response?.data?.error || err.message || msgs.common.error.errorLoadInternships;
+        data?.error || data?.detail || err?.message || msgs.common.error.errorLoadInternships;
+
       setError(message);
       notifyWarning({
         title: msgs.common.error.errorLoadInternships,
@@ -74,7 +94,12 @@ export default function CompanyInternshipsDashboard() {
     fetchInternships();
   }, [fetchInternships]);
 
-  const resetFilters = () => setFilters({ rok: "", semester: "", stav: "" });
+  const resetFilters = () =>
+    setFilters({
+      rok: "",
+      semester: "",
+      stav: "",
+    });
 
   const displayedInternships = useMemo(() => internships, [internships]);
 
@@ -83,6 +108,7 @@ export default function CompanyInternshipsDashboard() {
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-4 border border-gray-100">
         <PendingInternships onChange={fetchInternships} />
       </section>
+
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
         <Table
           data={displayedInternships}
@@ -99,6 +125,7 @@ export default function CompanyInternshipsDashboard() {
           isError={error || null}
         />
       </section>
+
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
         <Table
           data={displayedInternships}

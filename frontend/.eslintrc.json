@@ -42,7 +42,9 @@
               "@type/props/*/*/*",
               "@type/props/*/*/**",
               "@utils/*/*",
-              "@utils/*/**"
+              "@utils/*/**",
+              "@constants/*",
+              "@hook/*/*"
             ],
             "message": "Importuj cez barrel (t.j. <alias>/<modul>), nie priamo zo súborov."
           }

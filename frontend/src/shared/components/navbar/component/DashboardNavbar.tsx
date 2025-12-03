@@ -1,58 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import axiosClient, { clearAuthTokens } from "@lib/axiosClient";
 import Icon from "@icons/index";
-import { RoleType } from "@type/props/common/globalTypes";
-
-type DashboardUser = {
-  id: number;
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  meno?: string;
-  priezvisko?: string;
-  full_name?: string;
-  rola?: RoleType;
-  role?: RoleType;
-  firma?: {
-    nazov?: string | null;
-  };
-  musi_zmenit_heslo?: boolean;
-};
-
-// Pomocník pre localStorage, aby mal klient hneď dostupné dáta
-const getStoredUser = (): DashboardUser | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem("user");
-    return raw ? (JSON.parse(raw) as DashboardUser) : null;
-  } catch {
-    return null;
-  }
-};
-
-const storeUser = (user: DashboardUser) => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("user", JSON.stringify(user));
-};
+import { api } from "@lib/api-client";
+import { useAuth } from "src/constants/AuthProvider";
 
 const DashboardNavbar = () => {
-  const [user, setUser] = useState<DashboardUser | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const router = useRouter();
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
+  const { user, isLoading, isFetchingProfile, isAuthenticated, logout, refetchProfile } = useAuth();
+
   const roleKey = (user?.rola || user?.role || "student").toLowerCase();
   const mustChangePassword = Boolean(user?.musi_zmenit_heslo);
 
-  // Firma -> názov spoločnosti, inak zlož meno + priezvisko
   const displayName = useMemo(() => {
     if (!user) return msgs.auth.loginRegister;
     if (roleKey === "firma") {
@@ -64,7 +31,6 @@ const DashboardNavbar = () => {
     return composed || user.full_name || user.email;
   }, [user, roleKey, msgs.auth.loginRegister]);
 
-  // Podľa role meníme ikonu, aby bolo hneď jasné kto je prihlásený
   const roleIcon = useMemo(() => {
     if (roleKey === "firma") {
       return <Icon name="building-2" className="h-5 w-5 text-primary-800" aria-hidden />;
@@ -88,43 +54,15 @@ const DashboardNavbar = () => {
     user,
   ]);
 
-  // Po mount-e načítaj profil, prípadne použi cache z localStorage
-  const loadProfile = useCallback(async () => {
-    setLoadingUser(true);
-    try {
-      const res = await axiosClient.get("/auth/profile/");
-      const profile = res.data?.user as DashboardUser | undefined;
-      if (profile) {
-        setUser(profile);
-        storeUser(profile);
-      }
-    } catch (err: any) {
-      notifyWarning({
-        title: msgs.common.error.errorAction,
-        description: err?.response?.data?.detail || msgs.common.error.errorAction,
-      });
-    } finally {
-      setLoadingUser(false);
-    }
-  }, [msgs.common.error.errorAction, notifyWarning]);
-
-  useEffect(() => {
-    const stored = getStoredUser();
-    if (stored) {
-      setUser(stored);
-      setLoadingUser(false);
-      return;
-    }
-    loadProfile();
-  }, [loadProfile]);
-
-  // Logout vyčistí tokeny, zavolá backend a presmeruje na login
+  // Logout: zavoláme backend logout a potom použijeme logout() z AuthProvider
   const handleLogout = useCallback(async () => {
     try {
       const refresh = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
+
       if (refresh) {
-        await axiosClient.post("/auth/logout/", { refresh_token: refresh });
+        await api.post("/auth/logout/", { refresh_token: refresh });
       }
+
       notifySuccess({
         title: msgs.auth.logout,
         description: msgs.auth.successLogin,
@@ -135,20 +73,20 @@ const DashboardNavbar = () => {
         description: err?.response?.data?.detail || msgs.common.error.errorAction,
       });
     } finally {
-      clearAuthTokens();
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("user");
-      }
-      router.push("/auth/login");
+      logout();
     }
   }, [
+    logout,
     msgs.auth.logout,
     msgs.auth.successLogin,
     msgs.common.error.errorAction,
     notifySuccess,
     notifyWarning,
-    router,
   ]);
+
+  const handleRefreshProfile = useCallback(() => {
+    refetchProfile();
+  }, [refetchProfile]);
 
   return (
     <>
@@ -171,7 +109,7 @@ const DashboardNavbar = () => {
               {roleIcon}
             </div>
             <p className="text-sm font-semibold text-ink-900">
-              {loadingUser ? msgs.common.loading.loading : displayName}
+              {isLoading ? msgs.common.loading.loading : displayName}
             </p>
           </div>
 
@@ -208,15 +146,17 @@ const DashboardNavbar = () => {
                 </div>
               ) : null}
             </div>
-            <Button
-              type="button"
-              variant="danger"
-              onClick={handleLogout}
-              aria-label={msgs.auth.logout}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white"
-            >
-              <Icon name="log-out" className="h-5 w-5" />
-            </Button>
+            {isAuthenticated && (
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleLogout}
+                aria-label={msgs.auth.logout}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white"
+              >
+                <Icon name="log-out" className="h-5 w-5" />
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -248,13 +188,13 @@ const DashboardNavbar = () => {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={loadProfile}
-                disabled={loadingUser}
+                onClick={handleRefreshProfile}
+                disabled={isFetchingProfile}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:bg-slate-50"
               >
                 <Icon
                   name="refresh-cw"
-                  className={`h-4 w-4 ${loadingUser ? "animate-spin" : ""}`}
+                  className={`h-4 w-4 ${isFetchingProfile ? "animate-spin" : ""}`}
                   aria-hidden
                 />
                 {msgs.auth.refreshStatus}

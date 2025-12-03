@@ -8,8 +8,8 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { RoleType } from "@type/props/common/globalTypes";
 import { setAuthTokens } from "@lib/api-client";
-import { useLoginMutation } from "@hooks/useLoginMutation"; // ak nemáš alias @hooks, daj si ho v tsconfig alebo použi relatívnu cestu
 import { useQueryClient } from "@tanstack/react-query";
+import { useLoginMutation } from "src/hook/useLoginMutation";
 
 export default function LoginForm() {
   const router = useRouter();
