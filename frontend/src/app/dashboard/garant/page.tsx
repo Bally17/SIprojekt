@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@components/sections";
-import { GarantInternshipsDashboard } from "@features/garant";
+import { GarantInternshipsDashboard, OAuthClientsSection } from "@features/garant";
 import { useLocalization } from "@i18n/client";
 
 export default function GarantDashboardPage() {
@@ -12,7 +12,10 @@ export default function GarantDashboardPage() {
       subtitle={msgs.common.guarant.subtitle}
       titleClassName="text-4xl font-bold text-primary-900 tracking-tight"
     >
-      <GarantInternshipsDashboard />
+      <div className="space-y-10">
+        <GarantInternshipsDashboard />
+        <OAuthClientsSection />
+      </div>
     </Card>
   );
 }
