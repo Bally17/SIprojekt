@@ -52,8 +52,13 @@
   "error": {
     "errorLoadInternships": "Failed to load internships.",
     "errorFilterLoad": "No internships match the selected filters.",
-    "errorAction": "Action failed."
+    "errorAction": "Action failed.",
+    "errorLoad": "Failed to load data.",
+    "errorSave": "Failed to save changes.",
+    "errorDelete": "Failed to delete."
   },
+  "successTitle": "Done",
+  "success": "Operation completed.",
 
   "internships": {
     "state": "Internship status",
@@ -192,6 +197,56 @@
       "success": "Internship has been updated.",
       "error": "Editing internship failed.",
       "nothingToUpdate": "Fill in at least one field to save changes."
+    }
+  },
+  "oauth": {
+    "title": "OAuth clients",
+    "subtitle": "Manage credentials for integrations (client_id, redirect URIs, scope).",
+    "active": "Active clients",
+    "table": {
+      "clientId": "client_id",
+      "name": "Name",
+      "redirectUris": "Redirect URIs",
+      "scope": "Scope",
+      "actions": "Actions"
+    },
+    "empty": "No clients.",
+    "delete": "Deactivate",
+    "deleteConfirm": "Do you really want to deactivate this client?",
+    "deleteSuccess": "Client has been deactivated.",
+    "form": {
+      "title": "New client",
+      "labels": {
+        "name": "Name",
+        "redirectUris": "Redirect URIs",
+        "scope": "Scope",
+        "publicClient": "Public client",
+        "passwordGrant": "Password grant",
+        "privateKeyJwt": "Private key JWT",
+        "publicKey": "Public key",
+        "serviceUserId": "Service user ID"
+      },
+      "placeholder": {
+        "redirectUris": "One URI per line",
+        "publicKey": "PEM public key",
+        "serviceUserId": "(leave empty to use current guarantor)"
+      },
+      "hint": {
+        "redirectUris": "Expecting an array of URIs; split by lines (http/https)."
+      },
+      "submit": "Create client"
+    },
+    "newCredentials": {
+      "title": "New credentials",
+      "clientId": "client_id:",
+      "clientSecret": "client_secret:",
+      "note": "Save these credentials now. The client secret will not be shown again."
+    },
+    "validation": {
+      "nameRequired": "Name is required.",
+      "redirectRequired": "Enter at least one redirect URI.",
+      "redirectInvalid": "Redirect URI is not valid: {uri}",
+      "publicKeyRequired": "Public key is required when private key JWT is enabled."
     }
   }
 }

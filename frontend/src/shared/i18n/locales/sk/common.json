@@ -52,8 +52,13 @@
   "error": {
     "errorLoadInternships": "Nepodarilo sa načítať praxe.",
     "errorFilterLoad": "Žiadne praxe nezodpovedajú zadaným filtrom.",
-    "errorAction": "Akcia zlyhala."
+    "errorAction": "Akcia zlyhala.",
+    "errorLoad": "Nepodarilo sa načítať údaje.",
+    "errorSave": "Uloženie zlyhalo.",
+    "errorDelete": "Zmazanie zlyhalo."
   },
+  "successTitle": "Hotovo",
+  "success": "Operácia prebehla úspešne.",
 
   "internships": {
     "state": "Stav praxe",
@@ -192,6 +197,56 @@
       "success": "Prax bola aktualizovaná.",
       "error": "Úprava praxe zlyhala.",
       "nothingToUpdate": "Vyplň aspoň jedno pole na uloženie zmien."
+    }
+  },
+  "oauth": {
+    "title": "OAuth klienti",
+    "subtitle": "Spravujte prístupové údaje pre integrácie (client_id, redirect URIs, scope).",
+    "active": "Aktívne klienty",
+    "table": {
+      "clientId": "client_id",
+      "name": "Názov",
+      "redirectUris": "Redirect URIs",
+      "scope": "Scope",
+      "actions": "Akcie"
+    },
+    "empty": "Žiadni klienti.",
+    "delete": "Deaktivovať",
+    "deleteConfirm": "Naozaj deaktivovať tohto klienta?",
+    "deleteSuccess": "Klient bol deaktivovaný.",
+    "form": {
+      "title": "Nový klient",
+      "labels": {
+        "name": "Názov",
+        "redirectUris": "Redirect URIs",
+        "scope": "Scope",
+        "publicClient": "Public client",
+        "passwordGrant": "Password grant",
+        "privateKeyJwt": "Private key JWT",
+        "publicKey": "Public key",
+        "serviceUserId": "Service user ID"
+      },
+      "placeholder": {
+        "redirectUris": "Každý riadok jedna URI",
+        "publicKey": "PEM public key",
+        "serviceUserId": "(nechajte prázdne pre aktuálneho garanta)"
+      },
+      "hint": {
+        "redirectUris": "Očakáva pole URI, v UI sa delí po riadkoch (http/https)."
+      },
+      "submit": "Vytvoriť klienta"
+    },
+    "newCredentials": {
+      "title": "Nové údaje",
+      "clientId": "client_id:",
+      "clientSecret": "client_secret:",
+      "note": "Uložte si tieto údaje. Client secret sa neskôr nezobrazí."
+    },
+    "validation": {
+      "nameRequired": "Názov je povinný.",
+      "redirectRequired": "Zadajte aspoň jednu redirect URI.",
+      "redirectInvalid": "Redirect URI nie je platná URL: {uri}",
+      "publicKeyRequired": "Pre private key JWT musíte zadať public key."
     }
   }
 }
