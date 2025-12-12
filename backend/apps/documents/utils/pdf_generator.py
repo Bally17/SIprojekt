@@ -79,24 +79,25 @@ def generate_dohoda_pdf(prax):
     # prva strana
     # 🔹 Firma #dobre
     first_page = get_canvas(0)
-    first_page.drawString(83 * mm, 206 * mm, safe_str(firma.nazov))
-    first_page.drawString(115 * mm, 206 * mm, safe_str(firma.adresa))
+    first_page.drawString(70 * mm, 222 * mm, safe_str(firma.nazov))
+    first_page.drawString(105 * mm, 222 * mm, safe_str(firma.adresa))
     company_contact = safe_str(getattr(firma, "kontakt_meno", "") or "")
     if company_contact:
-        first_page.drawString(83 * mm, 201 * mm, company_contact)
+        first_page.drawString(78 * mm, 217 * mm, company_contact)
+        first_page.drawString(57 * mm, 31 * mm, company_contact)
 
     # 🔹 Študent # dobre
-    first_page.drawString(125 * mm, 177 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
-    first_page.drawString(125 * mm, 172 * mm, safe_str(student.adresa))
-    first_page.drawString(125 * mm, 167 * mm, safe_str(student.email))
+    first_page.drawString(120 * mm, 201 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
+    first_page.drawString(120 * mm, 197 * mm, safe_str(student.adresa))
+    first_page.drawString(120 * mm, 192 * mm, safe_str(student.email))
 
     # 🔹 Garant dobre
     #if garant:
     #   first_page.drawString(125 * mm, 152 * mm, safe_str(f"Garant: {garant.meno} {garant.priezvisko}"))
 
     # 🔹 Termíny praxe # dobre
-    first_page.drawString(80 * mm, 118 * mm, safe_str(zaciatok_str))
-    first_page.drawString(125 * mm, 118 * mm, safe_str(koniec_str))
+    first_page.drawString(35 * mm, 152 * mm, safe_str(zaciatok_str))
+    first_page.drawString(80 * mm, 152 * mm, safe_str(koniec_str))
 
 
 
@@ -104,17 +105,14 @@ def generate_dohoda_pdf(prax):
 
     # 🔹 Dátum a podpis
     second_page = get_canvas(1)
-    second_page.drawString(52 * mm, 24 * mm, safe_str(f"{datum_dnes}"))
+    second_page.drawString(44 * mm, 89 * mm, safe_str(f"{datum_dnes}"))
 
     if company_contact:
         second_page = get_canvas(1)
-        second_page.drawString(75 * mm, 230 * mm, company_contact)
+        second_page.drawString(135 * mm, 70 * mm, company_contact)
 
-        third_page = get_canvas(2)
-        third_page.drawString(142 * mm, 270 * mm, company_contact)
-
-    third_page = get_canvas(2)
-    third_page.drawString(140 * mm, 234 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
+    second_page = get_canvas(1)
+    second_page.drawString(140 * mm, 42 * mm, safe_str(f"{student.meno} {student.priezvisko}"))
 
     overlays = {}
     for index, data in overlay_data.items():
