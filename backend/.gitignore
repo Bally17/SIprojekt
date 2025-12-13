@@ -55,4 +55,4 @@ Thumbs.db
 .env.production
 
 #server generated static files
-backend/staticfiles/
+staticfiles/
