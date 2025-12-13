@@ -53,3 +53,6 @@ Thumbs.db
 .env
 .env.local
 .env.production
+
+#server generated static files
+backend/staticfiles/
