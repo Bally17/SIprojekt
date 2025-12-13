@@ -1,0 +1,54 @@
+version: "3.9"
+
+networks:
+  moja-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - DOCKER_CONTAINER=True
+    depends_on:
+      - db
+    expose:
+      - "8000"
+    restart: always
+    networks:
+      - moja-network
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+
+  db:
+    image: postgres:17
+    environment:
+      - POSTGRES_DB=praxy_db
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d
+    restart: always
+    networks:
+      - moja-network
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
+    restart: always
+    networks:
+      - moja-network
