@@ -23,7 +23,7 @@ export default function HeroSection() {
             </a>
             <a
               href="/auth/register/student"
-              className="border border-primary-700 px-6 py-3 rounded-md text-primary-900 hover:bg-primary-50 transition"
+              className="border border-primary-700 px-6 py-3 rounded-md text-primary-900 hover:bg-primary-100 transition"
             >
               {msgs.auth.registerStudent}
             </a>

@@ -47,7 +47,7 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
         <div className="hidden md:flex items-center gap-3 relative">
           <Link
             href="/auth/login"
-            className="border border-primary-100 px-4 py-2 rounded-md text-sm text-ink-700 hover:bg-primary-50"
+            className="border border-primary-700 px-4 py-2 rounded-md text-sm text-primary-900 hover:bg-primary-100"
           >
             {msgs.auth.login}
           </Link>
