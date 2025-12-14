@@ -58,8 +58,9 @@ export default function LoginForm() {
       // Uloženie používateľa na localStorage
       localStorage.setItem("user", JSON.stringify(res.user));
 
-      // Naplniť cache profilu, aby sa hneď nemuselo refetchovať
+      // Naplniť cache profilu, aby sa hneď zobrazil nový profil
       queryClient.setQueryData(["profile"], res.user);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
 
       notifySuccess({
         title: msgs.auth.successLogin,
