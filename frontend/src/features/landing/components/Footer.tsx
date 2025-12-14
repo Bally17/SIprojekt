@@ -14,9 +14,9 @@ export default function Footer({ showLandingLinks = true }: Readonly<FooterProps
   return (
     <footer id="contact" className="bg-primary-900 text-white">
       <div className="container-wide py-12">
-        <div className="flex items-center -ml-2">
+        <div className="flex items-center">
           <Image
-            src="/images/logo_fpvai.png"
+            src="/images/logo_fpvai_footer.png"
             alt={msgs.common.brand.logoText}
             width={180}
             height={48}

@@ -49,7 +49,7 @@ export default function ActivateClient({ token }: Readonly<TokenVerify>) {
   }, [token, msgs, notifySuccess, notifyWarning]);
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+    <main className="min-h-screen bg-primary-50 flex items-center justify-center p-6">
       <div className="bg-white shadow-md rounded-lg p-8 max-w-md w-full text-center space-y-4">
         <h1 className="text-2xl font-semibold text-primary-900">{msgs.auth.accountActivation}</h1>
 
