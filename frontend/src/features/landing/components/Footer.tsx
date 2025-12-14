@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useLocalization } from "@i18n/client";
 
 //volitelný prop, určuje či sa zobrazia anchor odkazy, na landing je true inak false
@@ -13,13 +14,15 @@ export default function Footer({ showLandingLinks = true }: Readonly<FooterProps
   return (
     <footer id="contact" className="bg-primary-900 text-white">
       <div className="container-wide py-12">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-2xl font-bold text-white">
-            <div className="bg-white text-primary-900 rounded-md px-2 py-1">
-              {msgs.common.brand.logoLetter}
-            </div>
-            {msgs.common.brand.logoText}
-          </div>
+        <div className="flex items-center -ml-2">
+          <Image
+            src="/images/logo_fpvai.png"
+            alt={msgs.common.brand.logoText}
+            width={180}
+            height={48}
+            className="h-12 w-auto"
+            priority
+          />
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 mt-8 text-sm">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
@@ -92,16 +93,18 @@ const DashboardNavbar = () => {
     <>
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
         <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-3">
-          <div className="flex flex-1 items-center gap-3 text-2xl font-bold text-primary-900">
-            <div className="rounded-md bg-primary-900 px-2 py-1 text-white">
-              {msgs.common.brand.logoLetter}
-            </div>
-            <div className="text-primary-800 flex items-baseline gap-2">
-              <span>{msgs.common.brand.logoText}</span>
-              {roleLabel ? (
-                <span className="text-base font-semibold text-primary-600">{roleLabel}</span>
-              ) : null}
-            </div>
+          <div className="flex flex-1 items-center gap-3">
+            <Image
+              src="/images/logo_fpvai.png"
+              alt={msgs.common.brand.logoText}
+              width={180}
+              height={48}
+              className="h-10 w-auto"
+              priority
+            />
+            {roleLabel ? (
+              <span className="text-base font-semibold text-primary-600">{roleLabel}</span>
+            ) : null}
           </div>
 
           <div className="flex flex-1 items-center justify-center gap-3 text-base font-medium text-ink-900">

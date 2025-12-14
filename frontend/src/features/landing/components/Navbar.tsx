@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@components/button";
 import { useLocalization } from "@i18n/client";
 
@@ -17,12 +18,14 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
   return (
     <header className="fixed w-full top-0 z-50 bg-paper/90 backdrop-blur-md border-b border-primary-100 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-2 text-2xl font-bold text-primary-900">
-          <div className="bg-primary-800 text-white rounded-md px-2 py-1">
-            {msgs.common.brand.logoLetter}
-          </div>
-          {msgs.common.brand.logoText}
-        </div>
+        <Image
+          src="/images/logo_fpvai.png"
+          alt={msgs.common.brand.logoText}
+          width={180}
+          height={48}
+          className="h-10 w-auto"
+          priority
+        />
 
         {showLandingLinks && (
           <nav className="hidden md:flex gap-8 text-ink-700 text-sm">
