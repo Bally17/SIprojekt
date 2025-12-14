@@ -8,7 +8,7 @@ export default function FAQSection() {
   const { msgs } = useLocalization();
 
   return (
-    <section id="faq" className="section">
+    <section id="faq" className="section bg-primary-50">
       <div className="container-wide">
         <div className="text-center mb-10">
           <div className="text-primary-700 font-semibold">{msgs.common.page.faq}</div>

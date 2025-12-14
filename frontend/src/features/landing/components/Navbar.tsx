@@ -16,7 +16,7 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
   const [registerOpen, setRegisterOpen] = useState(false);
 
   return (
-    <header className="fixed w-full top-0 z-50 bg-paper/90 backdrop-blur-md border-b border-primary-100 shadow-sm">
+    <header className="fixed w-full top-0 z-50 bg-primary-50/90 backdrop-blur-md border-b border-primary-100 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <Image
           src="/images/logo_fpvai.png"
