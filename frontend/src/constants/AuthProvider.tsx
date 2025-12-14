@@ -39,6 +39,8 @@ export function AuthProvider({ children }: Readonly<Props>) {
         if (typeof window !== "undefined") {
           localStorage.removeItem("user");
         }
+        // profile cache sa vyčistí, aby UI neukazovalo staré dáta
+        queryClient.setQueryData(["profile"], null);
         queryClient.removeQueries({ queryKey: ["profile"] });
         router.push("/auth/login");
       },
