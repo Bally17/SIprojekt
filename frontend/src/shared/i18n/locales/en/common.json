@@ -154,11 +154,8 @@
     "filters": {
       "year": "Year",
       "company": "Company",
-      "companyPlaceholder": "Company name or ID",
       "student": "Student",
-      "studentPlaceholder": "Name or email",
       "field": "Study program",
-      "fieldPlaceholder": "Program name",
       "state": "Status",
       "statePlaceholder": "Select status"
     },
@@ -179,23 +176,14 @@
     "edit": {
       "title": "Edit internship",
       "description": "Update assigned student, company, term dates, and status.",
-      "legend": "Search for a student or company by name, email, or contact.",
       "studentSearch": "Search student",
-      "studentSearchPlaceholder": "Name, surname, or email",
-      "studentSelected": "Selected student:",
       "companySearch": "Search company",
-      "companySearchPlaceholder": "Company name or contact",
-      "companySelected": "Selected company:",
-      "searchHint": "Enter at least 2 characters to see suggestions.",
       "startDate": "Start date",
       "endDate": "End date",
       "statusNote": "Status change note",
-      "statusNotePlaceholder": "Reason for the change (optional)",
-      "statusNoteHint": "The note is stored in the status history (max 500 chars).",
       "submit": "Save changes",
       "success": "Internship has been updated.",
-      "error": "Editing internship failed.",
-      "nothingToUpdate": "Fill in at least one field to save changes."
+      "error": "Editing internship failed."
     }
   },
   "oauth": {

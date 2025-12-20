@@ -126,7 +126,7 @@ const DashboardNavbar = () => {
     if (roleKey === "garant") return msgs.common.entities.guarant;
 
     return msgs.common.entities.student;
-  }, [user, roleKey, msgs.common.entities]);
+  }, [user, roleKey, msgs]);
 
   return (
     <>
