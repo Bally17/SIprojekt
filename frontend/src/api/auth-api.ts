@@ -1,74 +1,15 @@
 // src/api/auth-api.ts
 import { api } from "@lib/ApiProvider";
-import type { RoleType } from "@type/props/common/globalTypes";
-
-/* ----------------------------------------
- * TYPES
- * ---------------------------------------- */
-
-export type LoginPayload = {
-  role: RoleType;
-  email: string;
-  password: string;
-};
-
-export type LoginResponse = {
-  access_token?: string;
-  refresh_token?: string;
-
-  tokens?: {
-    access: string;
-    refresh: string;
-  };
-
-  user: {
-    rola: RoleType;
-    [key: string]: unknown;
-  };
-};
-
-export type ChangePasswordPayload = {
-  current_password: string;
-  new_password: string;
-  new_password_confirm: string;
-};
-
-export type RequestResetPasswordPayload = {
-  email: string;
-};
-
-export type ResetPasswordPayload = {
-  token: string;
-  new_password: string;
-  new_password_confirm: string;
-};
-
-/* ----------------------------------------
- * PROFILE TYPES
- * ---------------------------------------- */
-
-export type ProfileUser = {
-  id: number;
-  email: string;
-  first_name?: string | null;
-  last_name?: string | null;
-  meno?: string | null;
-  priezvisko?: string | null;
-  full_name?: string | null;
-  rola?: RoleType | null;
-
-  firma?: {
-    nazov?: string | null;
-  } | null;
-
-  musi_zmenit_heslo?: boolean;
-
-  [key: string]: unknown;
-};
-
-export type ProfileResponse = {
-  user?: ProfileUser | null;
-};
+import {
+  ProfileUser,
+  ProfileResponse,
+  LoginPayload,
+  LoginResponse,
+  RequestResetPasswordPayload,
+  ResetPasswordPayload,
+} from "@shared-types/auth";
+import { RoleType } from "@shared-types/core/common";
+import { ENDPOINTS } from "src/constants/Endpoints";
 
 /* ----------------------------------------
  * PROFILE API
@@ -76,7 +17,7 @@ export type ProfileResponse = {
 
 export async function getProfile(): Promise<ProfileUser | null> {
   try {
-    const res = await api.get<ProfileResponse>("/auth/profile/");
+    const res = await api.get<ProfileResponse>(ENDPOINTS.GET_PROFILE);
     return res.user ?? null;
   } catch (err: any) {
     const status = err?.response?.status ?? err?.status;
@@ -91,9 +32,9 @@ export async function getProfile(): Promise<ProfileUser | null> {
 
 function getLoginEndpoint(role: RoleType): string {
   const endpoints: Record<RoleType, string> = {
-    student: "/auth/login/",
-    company: "/auth/login/company/",
-    garant: "/auth/login/garant/",
+    student: ENDPOINTS.LOGIN_STUDENT,
+    company: ENDPOINTS.LOGIN_COMPANY,
+    garant: ENDPOINTS.LOGIN_GARANT,
   };
 
   return endpoints[role];
@@ -112,21 +53,17 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
 }
 
 export async function logout(refresh_token: string | null) {
-  return api.post("/auth/logout/", { refresh_token });
-}
-
-export async function changePassword(payload: ChangePasswordPayload) {
-  return api.post("/auth/password/change/", payload);
+  return api.post(ENDPOINTS.LOGOUT, { refresh_token });
 }
 
 export async function requestResetPassword(payload: RequestResetPasswordPayload) {
-  return api.post("/auth/password/reset/", payload);
+  return api.post(ENDPOINTS.PASSWORD_RESET, payload);
 }
 
 export async function verifyResetToken(token: string) {
-  return api.post("/auth/password/reset/verify/", { token });
+  return api.post(ENDPOINTS.PASSWORD_RESET_VERIFY, { token });
 }
 
 export async function resetPassword(payload: ResetPasswordPayload) {
-  return api.post("/auth/password/reset/confirm/", payload);
+  return api.post(ENDPOINTS.PASSWORD_RESET_CONFIRM, payload);
 }

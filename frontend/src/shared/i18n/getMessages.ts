@@ -1,4 +1,4 @@
-import { Locale } from "@type/props/common/globalTypes";
+import { Locale } from "@shared-types/core/common";
 
 export type Messages = Record<string, any>;
 

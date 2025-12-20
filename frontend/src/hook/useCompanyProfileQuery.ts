@@ -1,8 +1,9 @@
 // src/hook/useCompanyProfileQuery.ts
 "use client";
 
+import { CompanyProfile } from "@shared-types/company";
 import { useQuery } from "@tanstack/react-query";
-import { getCompanyProfile, CompanyProfile } from "src/api/company-api";
+import { getCompanyProfile } from "src/api/company-api";
 
 export function useCompanyProfileQuery() {
   return useQuery<CompanyProfile>({

@@ -1,11 +1,8 @@
 "use client";
 
+import { ChangePasswordResponse, ChangePasswordPayload } from "@shared-types/auth";
 import { useMutation } from "@tanstack/react-query";
-import {
-  changePassword,
-  type ChangePasswordPayload,
-  type ChangePasswordResponse,
-} from "src/api/password-api";
+import { changePassword } from "src/api/password-api";
 
 export function useChangePasswordMutation() {
   return useMutation<ChangePasswordResponse, unknown, ChangePasswordPayload>({

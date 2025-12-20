@@ -3,7 +3,7 @@
 import { DashboardNavbar } from "@components/navbar";
 import React from "react";
 
-type Props = {
+type MainCardComponentProps = {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
@@ -17,7 +17,7 @@ const mainCardComponent = ({
   children,
   maxWidthClassName = "max-w-5xl",
   titleClassName = "text-4xl font-bold text-primary-900 tracking-tight",
-}: Props) => {
+}: MainCardComponentProps) => {
   return (
     <>
       <DashboardNavbar />

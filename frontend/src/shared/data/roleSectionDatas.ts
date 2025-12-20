@@ -1,7 +1,7 @@
 import IconName from "@icons/iconName";
-import { RoleType, RoleDataType } from "@type/props/common/globalTypes";
+import { DoubleDataType, RoleType } from "@shared-types/core/common";
 
-export const roleSectionDatas: Record<RoleType, RoleDataType[]> = {
+export const roleSectionDatas: Record<RoleType, DoubleDataType[]> = {
   student: [
     { a: "Vytvoriť prax (dohodnutie, firma, dátumy)", b: "Dohoda o odbornej praxi — Náhľad" },
     { a: "Generovať PDF „Dohoda o odbornej praxi“", b: "Študent • Firma • Garant" },

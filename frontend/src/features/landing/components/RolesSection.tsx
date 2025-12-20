@@ -5,7 +5,7 @@ import "@utils/idUsing";
 import { roleSectionDatas, rolePreviewImages, tabs } from "@data/roleSectionDatas";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import { RoleType } from "@type/props/common/globalTypes";
+import { RoleType } from "@shared-types/core/common";
 
 export default function RolesSection() {
   const { msgs } = useLocalization();

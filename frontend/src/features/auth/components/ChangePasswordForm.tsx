@@ -7,43 +7,39 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { useAuth } from "@lib/AuthProvider";
 import { useChangePasswordMutation } from "src/hook/useChangePasswordMutation";
-
-type FormState = {
-  currentPassword: string;
-  newPassword: string;
-  newPasswordConfirm: string;
-};
+import { ChangePasswordPayload } from "@shared-types/auth";
 
 export default function ChangePasswordForm() {
   const { msgs } = useLocalization();
   const router = useRouter();
   const { user } = useAuth();
 
-  const [form, setForm] = useState<FormState>({
-    currentPassword: "",
-    newPassword: "",
-    newPasswordConfirm: "",
+  const [form, setForm] = useState<ChangePasswordPayload>({
+    current_password: "",
+    new_password: "",
+    new_password_confirm: "",
   });
 
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   const mutation = useChangePasswordMutation();
 
-  const handleChange = (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [field]: event.target.value }));
-  };
+  const handleChange =
+    (field: keyof ChangePasswordPayload) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      setForm((prev) => ({ ...prev, [field]: event.target.value }));
+    };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const { currentPassword, newPassword, newPasswordConfirm } = form;
+    const { current_password, new_password, new_password_confirm } = form;
 
-    if (newPassword.length < 8) {
+    if (new_password.length < 8) {
       notifyWarning({ title: msgs.auth.error, description: msgs.auth.passwordTooShort });
       return;
     }
 
-    if (newPassword !== newPasswordConfirm) {
+    if (new_password !== new_password_confirm) {
       notifyWarning({ title: msgs.auth.error, description: msgs.auth.passwordMismatch });
       return;
     }
@@ -51,9 +47,9 @@ export default function ChangePasswordForm() {
     try {
       // API request
       const res = await mutation.mutateAsync({
-        current_password: currentPassword,
-        new_password: newPassword,
-        new_password_confirm: newPasswordConfirm,
+        current_password: current_password,
+        new_password: new_password,
+        new_password_confirm: new_password_confirm,
       });
 
       // Preferujeme user z API, inak vezmeme user z AuthProvideru
@@ -78,9 +74,9 @@ export default function ChangePasswordForm() {
 
       // Reset form
       setForm({
-        currentPassword: "",
-        newPassword: "",
-        newPasswordConfirm: "",
+        current_password: "",
+        new_password: "",
+        new_password_confirm: "",
       });
     } catch (err: any) {
       const description =
@@ -118,8 +114,8 @@ export default function ChangePasswordForm() {
         </label>
         <input
           type="password"
-          value={form.currentPassword}
-          onChange={handleChange("currentPassword")}
+          value={form.current_password}
+          onChange={handleChange("current_password")}
           className={inputClasses}
           required
         />
@@ -129,8 +125,8 @@ export default function ChangePasswordForm() {
         <label className="text-sm font-medium text-gray-700">{msgs.auth.newPassword}</label>
         <input
           type="password"
-          value={form.newPassword}
-          onChange={handleChange("newPassword")}
+          value={form.new_password}
+          onChange={handleChange("new_password")}
           className={inputClasses}
           required
           minLength={8}
@@ -141,8 +137,8 @@ export default function ChangePasswordForm() {
         <label className="text-sm font-medium text-gray-700">{msgs.auth.confirmPassword}</label>
         <input
           type="password"
-          value={form.newPasswordConfirm}
-          onChange={handleChange("newPasswordConfirm")}
+          value={form.new_password_confirm}
+          onChange={handleChange("new_password_confirm")}
           className={inputClasses}
           required
           minLength={8}

@@ -5,8 +5,8 @@ import Image from "next/image";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import type { RoleType } from "@type/props/common/globalTypes";
 import { useAuth } from "src/lib/AuthProvider";
+import { RoleType } from "@shared-types/core/common";
 
 export default function LoginForm() {
   const [userType, setUserType] = useState<RoleType>("student");

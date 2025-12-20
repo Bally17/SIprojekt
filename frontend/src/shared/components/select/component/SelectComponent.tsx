@@ -3,7 +3,7 @@ import React from "react";
 
 export type Option<T extends string> = { value: T; label: string };
 
-type Props<T extends string> = Omit<
+type SelectComponentProps<T extends string> = Omit<
   React.SelectHTMLAttributes<HTMLSelectElement>,
   "value" | "onChange"
 > & {
@@ -22,7 +22,7 @@ export default function SelectComponent<T extends string>({
   className,
   emptyOptionLabel,
   ...rest
-}: Props<T>) {
+}: SelectComponentProps<T>) {
   return (
     <select
       value={value}

@@ -1,5 +1,6 @@
 import { api } from "@lib/ApiProvider";
-import type { Internship } from "@type/backend/Internship";
+import { Internship } from "@shared-types/internship";
+import { ENDPOINTS } from "src/constants/Endpoints";
 
 export type CompanyInternshipsResponse = {
   firma: {
@@ -37,21 +38,19 @@ export function getCompanyInternships(params: Record<string, string>) {
   const filtered = Object.entries(params).filter(([, v]) => v !== "");
   const qs = new URLSearchParams(filtered).toString();
 
-  const url = qs
-    ? `/internships/company/me/internships/?${qs}`
-    : `/internships/company/me/internships/`;
+  const url = ENDPOINTS.INTERNSHIPS(qs ? `?${qs}` : "");
 
   return api.get<CompanyInternshipsApiResponse>(url);
 }
 
 export function getPendingInternships() {
-  return api.get<PendingInternshipsResponse>("/internships/company/me/internships/pending/");
+  return api.get<PendingInternshipsResponse>(ENDPOINTS.INTERNSHIPS_PENDING);
 }
 
 export function confirmInternship(id: number) {
-  return api.patch(`/internships/company/confirm/${id}/`, {});
+  return api.patch(ENDPOINTS.INTERNSHIPS_CONFIRM(id), {});
 }
 
 export function rejectInternship(id: number) {
-  return api.patch(`/internships/company/reject/${id}/`, {});
+  return api.patch(ENDPOINTS.INTERNSHIPS_REJECT(id), {});
 }

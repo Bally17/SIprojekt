@@ -1,5 +1,5 @@
 "use client";
-import { base, ButtonProps, variants } from "@type/props/button/buttonTypes";
+import { base, ButtonProps, variants } from "@shared-types/ui/button";
 import React from "react";
 
 export const Button = ({

@@ -6,12 +6,9 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 
 import { useResetPasswordMutation } from "src/hook/useResetPasswordMutation";
-import type { TokenVerify } from "@type/backend/TokenVerify";
-
-type ResetPasswordFormState = {
-  newPassword: string;
-  confirmPassword: string;
-};
+import { TokenVerify } from "@shared-types/auth";
+import { ResetPasswordFormState } from "@shared-types/index";
+import { getErrorMessage } from "@utils/errorActions";
 
 export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
   const [form, setForm] = useState<ResetPasswordFormState>({
@@ -23,37 +20,6 @@ export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
   const mutation = useResetPasswordMutation();
-
-  const serializeErrorValue = (value: unknown): string => {
-    if (value == null) return "";
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      return String(value);
-    }
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return "[unserializable]";
-    }
-  };
-
-  const getErrorMessage = (err: any) => {
-    const data = err?.response?.data;
-
-    if (!data) return msgs.auth.error;
-    if (typeof data === "string") return data;
-    if (data.detail) return data.detail;
-
-    const dataObj: Record<string, unknown> = data ?? {};
-    const parts: string[] = [];
-
-    for (const [key, value] of Object.entries(dataObj)) {
-      const serialized = serializeErrorValue(value);
-      if (serialized) parts.push(`${key}: ${serialized}`);
-    }
-
-    return parts.join(" | ") || msgs.auth.error;
-  };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -92,10 +58,10 @@ export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
         title: msgs.auth.succesResetPassword,
         description: msgs.auth.setNewPassword,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       notifyWarning({
-        title: msgs.auth.error,
-        description: getErrorMessage(err),
+        title: msgs.auth.errorTitle,
+        description: getErrorMessage(err, msgs.auth.error),
       });
     }
   };

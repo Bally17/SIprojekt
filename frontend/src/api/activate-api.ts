@@ -1,4 +1,5 @@
 import { api } from "@lib/ApiProvider";
+import { ENDPOINTS } from "src/constants/Endpoints";
 
 export type ActivateResponse = {
   message?: string;
@@ -6,5 +7,5 @@ export type ActivateResponse = {
 };
 
 export function activateAccount(token: string) {
-  return api.get<ActivateResponse>(`/auth/activate/${token}/`);
+  return api.get<ActivateResponse>(ENDPOINTS.ACTIVATE_ACCOUNT(token));
 }

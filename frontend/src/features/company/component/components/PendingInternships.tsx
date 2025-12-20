@@ -10,6 +10,8 @@ import { TABLE_NAMES } from "src/constants/Table";
 import { usePendingInternshipsQuery } from "src/hook/usePendingInternshipsQuery";
 import { useConfirmInternshipMutation } from "src/hook/useConfirmInternshipMutation";
 import { useRejectInternshipMutation } from "src/hook/useRejectInternshipMutation";
+import { Action } from "@shared-types/core/common";
+import { getErrorMessage } from "@utils/errorActions";
 
 type PendingInternshipsProps = {
   onChange?: () => void;
@@ -28,16 +30,7 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
     return Array.isArray(list) ? list : [];
   }, [pending.data?.results?.internships]);
 
-  const getErrorMessage = (err: any) => {
-    return (
-      err?.response?.data?.detail ||
-      err?.response?.data?.error ||
-      err?.message ||
-      msgs.common.error.errorLoadInternships
-    );
-  };
-
-  const handleAction = async (id: number, action: "confirm" | "reject") => {
+  const handleAction = async (id: number, action: Action) => {
     try {
       if (action === "confirm") {
         await confirmMutation.mutateAsync(id);
@@ -57,7 +50,7 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
     } catch (err: any) {
       warning({
         title: msgs.common.error.errorAction,
-        description: getErrorMessage(err),
+        description: getErrorMessage(err, msgs.common.error.errorLoadInternships),
       });
     }
   };
@@ -69,7 +62,9 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
   if (pending.isError) {
     return (
       <div className="text-center">
-        <p className="text-red-600">{getErrorMessage(pending.error)}</p>
+        <p className="text-red-600">
+          {getErrorMessage(pending.error, msgs.common.error.errorLoadInternships)}
+        </p>
 
         <Button type="button" variant="primary" className="mt-4" onClick={() => pending.refetch()}>
           {msgs.common.tryAgain}
@@ -77,6 +72,8 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
       </div>
     );
   }
+
+  const pendingError = (pending as { error?: unknown }).error;
 
   return (
     <Table
@@ -86,7 +83,11 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
       onAction={handleAction}
       actionMessage={msgs.common.internships.empty}
       isLoading={pending.isLoading}
-      isError={pending.isError ? getErrorMessage((pending as any).error) : null}
+      isError={
+        pending.isError
+          ? getErrorMessage(pendingError, msgs.common.error.errorLoadInternships)
+          : null
+      }
       showEmpty
     />
   );

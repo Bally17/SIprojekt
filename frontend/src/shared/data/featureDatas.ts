@@ -1,4 +1,4 @@
-import { FeatureDatasItem } from "@type/props/common/globalTypes";
+import { FeatureDatasItem } from "@shared-types/core/common";
 
 export const featureDatas: readonly FeatureDatasItem[] = [
   { icon: "file-spreadsheet", title: "Evidencia praxí" },

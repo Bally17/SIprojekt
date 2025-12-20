@@ -9,13 +9,13 @@ import PendingInternships from "./components/PendingInternships";
 import CompanyDocumentsCard from "./components/CompanyDocumentsCard";
 
 import { TABLE_NAMES } from "src/constants/Table";
-import { TableFilters } from "@type/props/table";
-import { SEMESTER_OPTIONS, STAV_OPTIONS } from "@type/props/common/StateInternship";
 
 import {
   useCompanyInternshipsQuery,
   extractInternships,
 } from "src/hook/useCompanyInternshipsQuery";
+import { TableFilters, SEMESTER_OPTIONS, STAV_OPTIONS } from "@shared-types/index";
+import { getErrorMessage } from "@utils/errorActions";
 
 export default function CompanyInternshipsDashboard() {
   const { warning: notifyWarning } = useSystemNotifications();
@@ -40,43 +40,9 @@ export default function CompanyInternshipsDashboard() {
 
   const { data, isLoading, error, refetch } = useCompanyInternshipsQuery(apiFilters);
 
-  const serialize = useCallback((value: unknown): string => {
-    if (value == null) return "";
-
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      return String(value);
-    }
-
-    if (Array.isArray(value)) {
-      return value.map((v) => serialize(v)).join(", ");
-    }
-
-    if (typeof value === "object") {
-      try {
-        return JSON.stringify(value);
-      } catch {
-        return "[unserializable]";
-      }
-    }
-
-    return "";
-  }, []);
-
-  const getErrorMessage = useCallback(
-    (err: any): string => {
-      const data = err?.response?.data;
-      if (!data) return errorLoadInternships;
-      if (typeof data === "string") return data;
-      if (data.detail) return data.detail;
-
-      const parts: string[] = [];
-      for (const [k, v] of Object.entries(data)) {
-        const s = serialize(v);
-        if (s) parts.push(`${k}: ${s}`);
-      }
-      return parts.join(" | ") || errorLoadInternships;
-    },
-    [errorLoadInternships, serialize],
+  const getLoadInternshipsErrorMessage = useCallback(
+    (err: unknown) => getErrorMessage(err, errorLoadInternships),
+    [errorLoadInternships],
   );
 
   // warning sa zobrazí, keď je error (effect je lint-clean)
@@ -85,11 +51,11 @@ export default function CompanyInternshipsDashboard() {
 
     notifyWarning({
       title: errorLoadInternships,
-      description: getErrorMessage(error),
+      description: getLoadInternshipsErrorMessage(error),
     });
-  }, [error, notifyWarning, errorLoadInternships, getErrorMessage]);
+  }, [error, notifyWarning, errorLoadInternships, getLoadInternshipsErrorMessage]);
 
-  const errorText = error ? getErrorMessage(error) : null;
+  const errorText = error ? getLoadInternshipsErrorMessage(error) : null;
 
   const internships = extractInternships(data);
 

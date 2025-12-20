@@ -29,7 +29,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import IconName from "./iconName";
-import { IconType } from "../types/propsDataType/icons/iconTypes";
+import { IconType } from "@shared-types/ui/icons";
 
 const iconMap = {
   download: Download,

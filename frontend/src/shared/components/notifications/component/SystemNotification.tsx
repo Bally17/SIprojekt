@@ -1,66 +1,8 @@
 import { Button } from "@components/button";
+import { NotificationVariantStyles } from "@data/notificationVariantStyles";
 import Icon from "@icons/index";
+import { SystemNotificationProps } from "@shared-types/ui/notifications";
 import React from "react";
-
-export type SystemNotificationVariant = "success" | "info" | "warning";
-
-export type SystemNotificationProps = {
-  title: string;
-  description?: string;
-  variant?: SystemNotificationVariant;
-  dismissible?: boolean;
-  actionLabel?: string;
-  onAction?: () => void;
-  onClose?: () => void;
-  className?: string;
-  progressDuration?: number;
-  progressPaused?: boolean;
-  closeLabel?: string;
-};
-
-type VariantStyles = {
-  wrapper: string;
-  accent: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  action: string;
-  progressTrack: string;
-  progressFill: string;
-};
-
-const variantStyles: Record<SystemNotificationVariant, VariantStyles> = {
-  success: {
-    wrapper: "bg-green-200 border border-green-300 text-green-900 shadow-soft",
-    accent: "bg-green-600",
-    icon: <Icon name="check-circle-2" className="h-5 w-5 text-green-700" aria-hidden />,
-    title: "text-green-900",
-    description: "text-green-800",
-    action: "text-green-700 hover:text-green-900 focus-visible:ring-green-500",
-    progressTrack: "bg-green-100/80",
-    progressFill: "bg-green-600",
-  },
-  info: {
-    wrapper: "bg-blue-200 border border-blue-300 text-blue-900 shadow-soft",
-    accent: "bg-blue-600",
-    icon: <Icon name="info" className="h-5 w-5 text-blue-700" aria-hidden />,
-    title: "text-blue-900",
-    description: "text-blue-800",
-    action: "text-blue-700 hover:text-blue-900 focus-visible:ring-blue-500",
-    progressTrack: "bg-blue-100/80",
-    progressFill: "bg-blue-600",
-  },
-  warning: {
-    wrapper: "bg-red-200 border border-red-300 text-red-900 shadow-soft",
-    accent: "bg-red-600",
-    icon: <Icon name="alert-triangle" className="h-5 w-5 text-red-700" aria-hidden />,
-    title: "text-red-900",
-    description: "text-red-800",
-    action: "text-red-700 hover:text-red-900 focus-visible:ring-red-500",
-    progressTrack: "bg-red-100/80",
-    progressFill: "bg-red-600",
-  },
-};
 
 export const SystemNotification = ({
   variant = "info",
@@ -75,7 +17,7 @@ export const SystemNotification = ({
   progressPaused = false,
   closeLabel,
 }: SystemNotificationProps) => {
-  const styles = variantStyles[variant];
+  const styles = NotificationVariantStyles[variant];
   const role = variant === "warning" ? "alert" : "status";
   const showProgress = typeof progressDuration === "number" && progressDuration > 0;
 

@@ -9,10 +9,10 @@ import { useLoginMutation } from "src/hook/useLoginMutation";
 import { useLogoutMutation } from "src/hook/useLogoutMutation";
 import { useProfileQuery } from "@hook/useProfileQuery";
 import { clearAuthTokens, getRefreshToken, setAuthTokens } from "./ApiProvider";
-import { RoleType } from "@type/props/common/globalTypes";
+import { Nillable, Nullable, RoleType } from "@shared-types/index";
 
 type AuthUser = {
-  rola?: RoleType | null;
+  rola?: Nullable<RoleType>;
   [key: string]: unknown;
 };
 
@@ -23,7 +23,7 @@ type LoginParams = {
 };
 
 type AuthContextValue = {
-  user: AuthUser | null;
+  user: Nullable<AuthUser>;
   isLoading: boolean;
   isFetchingProfile: boolean;
   isAuthenticated: boolean;
@@ -87,7 +87,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
       // pre istotu natiahnuť profil z /auth/profile/
       const profileResult = await refetch();
-      const effectiveUser: AuthUser | undefined = profileResult.data ?? res.user;
+      const effectiveUser: Nullable<AuthUser> =
+        (profileResult.data as Nillable<AuthUser>) ?? (res.user as Nillable<AuthUser>) ?? null;
 
       const roleFromUser = effectiveUser?.rola ?? params.role;
       const redirectTarget = mapRoleToDashboardPath(roleFromUser);

@@ -1,5 +1,5 @@
-import type { StudentProfile } from "@type/backend/StudentProfile";
-import type { Company } from "@type/backend/Company";
+import { Company } from "@shared-types/company";
+import { StudentProfile } from "@shared-types/student";
 
 export function normalizeSearchResponse<T>(res: T[] | { results?: T[] }): T[] {
   if (Array.isArray(res)) return res;

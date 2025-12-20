@@ -1,8 +1,8 @@
 // src/hook/useRegisterCompanyMutation.ts
 "use client";
 
+import { CompanyRegistration } from "@shared-types/company";
 import { useMutation } from "@tanstack/react-query";
-import { CompanyRegistration } from "@type/backend/CompanyRegistration";
 import { registerCompany } from "src/api/company-api";
 
 export function useRegisterCompanyMutation() {

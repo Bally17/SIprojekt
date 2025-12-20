@@ -1,6 +1,6 @@
-// \src\lib\ApiProvider.ts
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+import { BASE_URL } from "src/constants/Endpoints";
 
+// \src\lib\ApiProvider.ts
 const REFRESH_KEY = "refresh_token";
 const ACCESS_SS_KEY = "access_token_ss";
 
@@ -52,7 +52,7 @@ export async function request<T = unknown>(url: string, options: RequestInit = {
     headers.set("Authorization", `Bearer ${getAccessToken()}`);
   }
 
-  const res = await fetch(baseURL + url, {
+  const res = await fetch(BASE_URL + url, {
     ...options,
     headers,
   });
@@ -163,7 +163,7 @@ async function doRefresh(): Promise<string> {
   const refresh = getRefreshToken();
   if (!refresh) throw new Error("Missing refresh token");
 
-  const res = await fetch(baseURL + "/auth/token/refresh/", {
+  const res = await fetch(BASE_URL + "/auth/token/refresh/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh }),
