@@ -5,39 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import { api } from "@lib/ApiProvider"; // TOTO si nechávame
-import { useAuth } from "@lib/AuthProvider"; // TOTO si nechávame
-
-// --------------------------------------------------
-// TYPES
-// --------------------------------------------------
-
-type OAuthClient = {
-  client_id: string;
-  name: string;
-  redirect_uris: string[];
-  scope?: string | null;
-  is_public: boolean;
-  allow_password_grant: boolean;
-  allow_private_jwt: boolean;
-  service_user_id?: number | null;
-  public_key?: string | null;
-};
-
-type CreateClientPayload = {
-  name: string;
-  redirect_uris: string[];
-  scope?: string;
-  is_public: boolean;
-  allow_password_grant: boolean;
-  allow_private_jwt: boolean;
-  public_key?: string;
-  service_user_id?: number;
-};
-
-// --------------------------------------------------
-// INITIAL FORM
-// --------------------------------------------------
+import { useAuth } from "@lib/AuthProvider";
+import { CreateOAuthClientPayload } from "@shared-types/oauth";
+import { getOAuthClients, createOAuthClient, deleteOAuthClient } from "src/api/oauth-api";
 
 const initialFormState = {
   name: "",
@@ -50,28 +20,6 @@ const initialFormState = {
   service_user_id: "",
 };
 
-// --------------------------------------------------
-// API FUNCTIONS
-// --------------------------------------------------
-
-async function fetchOAuthClients(): Promise<OAuthClient[]> {
-  const res = await api.get("/auth/oauth/clients/");
-  return res as OAuthClient[];
-}
-
-async function createOAuthClient(payload: CreateClientPayload): Promise<OAuthClient> {
-  const res = await api.post("/auth/oauth/clients/", payload);
-  return res as OAuthClient;
-}
-
-async function deleteOAuthClient(id: string): Promise<void> {
-  await api.delete(`/auth/oauth/clients/${id}/`);
-}
-
-// --------------------------------------------------
-// COMPONENT
-// --------------------------------------------------
-
 export default function OAuthClientsSection() {
   const { user } = useAuth();
   const { msgs } = useLocalization();
@@ -81,11 +29,11 @@ export default function OAuthClientsSection() {
   // HOOKY MUSIA BYŤ MIMO PODMIENOK (inak React hodí chybu)
   const clientsQuery = useQuery({
     queryKey: ["oauth-clients"],
-    queryFn: fetchOAuthClients,
+    queryFn: getOAuthClients,
   });
 
   const createMutation = useMutation({
-    mutationFn: (payload: CreateClientPayload) => createOAuthClient(payload),
+    mutationFn: (payload: CreateOAuthClientPayload) => createOAuthClient(payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["oauth-clients"] }),
   });
 
@@ -165,7 +113,7 @@ export default function OAuthClientsSection() {
       return;
     }
 
-    const payload: CreateClientPayload = {
+    const payload: CreateOAuthClientPayload = {
       name: form.name.trim(),
       redirect_uris: parsedRedirects,
       scope: form.scope.trim() || undefined,

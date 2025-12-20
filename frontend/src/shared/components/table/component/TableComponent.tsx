@@ -2,13 +2,12 @@ import React, { useState } from "react";
 import { Button } from "@components/button";
 import { Select } from "@components/select";
 import { useLocalization } from "@i18n/client";
-import { Action } from "@type/props/common/globalTypes";
-import useLoadTableData from "@utils/actions";
+import useLoadTableData from "@utils/useLoadTableData";
 import Icon from "@icons/index";
-import { TableProps } from "@type/props/table";
-import { Internship } from "@type/backend/Internship";
-import InternshipDocument from "@type/backend/InternshipDocument";
 import {
+  TableProps,
+  Action,
+  Nullable,
   Semester,
   isSemester,
   Stav,
@@ -17,13 +16,12 @@ import {
   STAV_OPTIONS,
   STAV_BADGE_CLASS,
   getStavLabel,
-} from "@type/props/common/StateInternship";
+} from "@shared-types/index";
+import { Internship, InternshipDocument } from "@shared-types/internship";
+import { BASE_URL } from "src/constants/Endpoints";
 
 const buildMediaUrl = (path: string) => {
-  const backend = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(
-    /\/api\/?$/,
-    "",
-  );
+  const backend = BASE_URL.replace(/\/api\/?$/, "");
   return `${backend}/media/${path.replace(/^\/?/, "")}`;
 };
 
@@ -50,7 +48,7 @@ export const TableComponent = ({
   const { subTitle, title, columns } = useLoadTableData(name);
   const { msgs } = useLocalization();
   const [busy, setBusy] = useState<Record<number, Action | undefined>>({});
-  const [docPreview, setDocPreview] = useState<Internship | null>(null);
+  const [docPreview, setDocPreview] = useState<Nullable<Internship>>(null);
 
   // pred return:
   const semesterValue: Semester | "" = isSemester(String(filters?.semester))
@@ -132,7 +130,7 @@ export const TableComponent = ({
       case "vykaz":
         return msgs.common.documents.reportTitle;
       default:
-        return docType?.toUpperCase() || "—";
+        return docType?.toUpperCase() || "N/A";
     }
   };
 

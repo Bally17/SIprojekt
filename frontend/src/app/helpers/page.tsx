@@ -3,19 +3,19 @@ import { useState } from "react";
 
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
-import { FaqData } from "@type/props/common/globalTypes";
 import { AcordeonComponent } from "@components/acordeon";
 import Icon from "@icons/index";
 import { ICON_NAMES } from "@icons/getIconByName";
+import { DoubleDataType } from "@shared-types/index";
 
 export default function Helpers() {
   const { success, warning } = useSystemNotifications();
   const [pending, setPending] = useState<string | null>(null);
 
-  const howToUse: FaqData[] = [
+  const howToUse: DoubleDataType[] = [
     {
-      q: "Ako pridať novú ikonku?",
-      a: "Otvor alebo vyhladaj subor: 'getIconByName.ts' a pridaj do importov novú ikonku z lucide-react -> následne pridaj do súboru iconName.ts na koniec '| \"názov ikonky ktorý sa bude používať\";'",
+      a: "Ako pridať novú ikonku?",
+      b: "Otvor alebo vyhladaj subor: 'getIconByName.ts' a pridaj do importov novú ikonku z lucide-react -> následne pridaj do súboru iconName.ts na koniec '| \"názov ikonky ktorý sa bude používať\";'",
     },
   ];
 

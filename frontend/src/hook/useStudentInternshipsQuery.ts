@@ -1,6 +1,6 @@
+import { StudentInternshipsResponse, InternshipWithRelations } from "@shared-types/internship";
 import { useQuery } from "@tanstack/react-query";
 import { getStudentInternships } from "src/api/internships-api";
-import type { InternshipWithRelations, StudentInternshipsResponse } from "src/api/internships-api";
 
 function normalize(res: StudentInternshipsResponse): InternshipWithRelations[] {
   if (Array.isArray(res)) return res;

@@ -1,7 +1,8 @@
 "use client";
 
+import { ResetPasswordPayload } from "@shared-types/auth";
 import { useMutation } from "@tanstack/react-query";
-import { ResetPasswordPayload, resetPassword } from "src/api/auth-api";
+import { resetPassword } from "src/api/password-api";
 
 export function useResetPasswordMutation() {
   return useMutation({

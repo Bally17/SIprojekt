@@ -1,15 +1,16 @@
 import { api } from "@lib/ApiProvider";
-import type { StudentProfile } from "@type/backend/StudentProfile";
-import type { Company } from "@type/backend/Company";
+import { CompanySearchResponse } from "@shared-types/company";
+import { StudentSearchResponse } from "@shared-types/student";
+import { ENDPOINTS } from "src/constants/Endpoints";
 
 /* STUDENTS */
 export function searchStudents(q: string) {
   const qs = q.trim() ? `?q=${encodeURIComponent(q)}` : "";
-  return api.get<StudentProfile[] | { results?: StudentProfile[] }>(`/users/students/search/${qs}`);
+  return api.get<StudentSearchResponse>(ENDPOINTS.SEARCH_STUDENTS(qs));
 }
 
 /* COMPANIES */
-export function searchCompaniesAll(q: string) {
+export function searchCompanies(q: string) {
   const qs = q.trim() ? `?q=${encodeURIComponent(q)}` : "";
-  return api.get<Company[] | { results?: Company[] }>(`/companies/search/${qs}`);
+  return api.get<CompanySearchResponse>(ENDPOINTS.SEARCH_COMPANIES(qs));
 }

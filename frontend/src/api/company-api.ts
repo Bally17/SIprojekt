@@ -1,38 +1,17 @@
 // src/api/company-api.ts
 import { api } from "@lib/ApiProvider";
-import type { CompanyRegistration } from "@type/backend/CompanyRegistration";
-
-/* ----------------------------------------
- * TYPES
- * ---------------------------------------- */
-
-export type CompanyProfile = {
-  id: number;
-  nazov: string;
-  ico: string;
-  dic?: string | null;
-  ic_dph?: string | null;
-  adresa?: string | null;
-  email: string;
-  telefon?: string | null;
-  web?: string | null;
-
-  // pre dashboard
-  status?: string | null;
-  created_at?: string;
-  updated_at?: string;
-
-  [key: string]: unknown;
-};
+import { CompanyRegistration, CompanyProfile } from "@shared-types/company";
+import { ENDPOINTS } from "src/constants/Endpoints";
 
 /* ----------------------------------------
  * API FUNCTIONS
  * ---------------------------------------- */
 
 export async function registerCompany(payload: CompanyRegistration) {
-  return api.post("/auth/register/company/", payload);
+  return api.post(ENDPOINTS.REGISTER_COMPANY, payload);
 }
 
+//do buducna
 export async function getCompanyProfile() {
   return api.get<CompanyProfile>("/companies/me/");
 }

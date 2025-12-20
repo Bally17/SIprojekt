@@ -1,8 +1,8 @@
 // src/hook/useStudentProfileQuery.ts
 "use client";
 
+import { StudentProfile } from "@shared-types/student";
 import { useQuery } from "@tanstack/react-query";
-import { StudentProfile } from "@type/backend/StudentProfile";
 import { getStudentProfile } from "src/api/student-api";
 
 export function useStudentProfileQuery() {

@@ -5,6 +5,7 @@ import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { useRegisterStudentMutation } from "src/hook/useRegisterStudentMutation";
+import { getErrorMessage } from "@utils/errorActions";
 
 type RegisterStudentFormState = {
   firstName: string;
@@ -51,36 +52,6 @@ export default function RegisterFormStudent() {
     return null;
   };
 
-  const serializeErrorValue = (value: unknown): string => {
-    if (value == null) return "";
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      return String(value);
-    }
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return "[unserializable]";
-    }
-  };
-
-  const getErrorMessage = (err: any) => {
-    const data = err?.response?.data;
-
-    if (!data) return msgs.auth.error;
-    if (typeof data === "string") return data;
-    if (data.detail) return data.detail;
-
-    const parts: string[] = [];
-
-    for (const [key, val] of Object.entries(data ?? {})) {
-      const serialized = serializeErrorValue(val);
-      if (serialized) parts.push(`${key}: ${serialized}`);
-    }
-
-    return parts.join(" | ") || msgs.auth.error;
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -123,7 +94,7 @@ export default function RegisterFormStudent() {
     } catch (err: any) {
       notifyWarning({
         title: msgs.auth.errorTitle,
-        description: getErrorMessage(err),
+        description: getErrorMessage(err, msgs.auth.error),
       });
     }
   };

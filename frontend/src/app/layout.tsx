@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import type { ReactNode } from "react";
 import { getMessages } from "@i18n/getMessages";
-import { Locale } from "@type/props/common/globalTypes";
 import { AppProviders } from "@lib/AppProviders";
+import { Locale } from "@shared-types/core/common";
 
 export const metadata: Metadata = {
   title: "Praxy - správa odbornej praxe jednoducho",

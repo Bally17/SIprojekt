@@ -5,8 +5,8 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
 import { api, getAccessToken } from "@lib/ApiProvider";
-import { Internship } from "@type/backend/Internship";
-import InternshipDocument from "@type/backend/InternshipDocument";
+import { Internship, InternshipDocument } from "@shared-types/internship";
+import { BASE_URL } from "src/constants/Endpoints";
 
 type Props = {
   internship: Internship;
@@ -21,10 +21,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 const buildMediaUrl = (path: string) => {
   if (/^https?:\/\//.test(path)) return path;
-  const backend = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(
-    /\/api\/?$/,
-    "",
-  );
+  const backend = BASE_URL.replace(/\/api\/?$/, "");
   return `${backend}/media/${path.replace(/^\/?/, "")}`;
 };
 
@@ -69,8 +66,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
     try {
       setUploading(true);
 
-      const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      const res = await fetch(`${baseURL}/documents/${reportDoc.id}/upload/`, {
+      const res = await fetch(`${BASE_URL}/documents/${reportDoc.id}/upload/`, {
         method: "POST",
         headers: {
           ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
@@ -167,17 +163,17 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
           <span className="font-semibold text-primary-900">
             {internship.student_full_name || `#${internship.student}`}
           </span>
-          <span className="text-xs text-gray-500">{internship.student_email || "—"}</span>
+          <span className="text-xs text-gray-500">{internship.student_email || "-"}</span>
         </div>
       </td>
 
       <td className="px-4 py-4 align-top">
         <div className="text-sm text-gray-700">
           <p className="font-medium">
-            {internship.rok} • {internship.semester}
+            {internship.rok} - {internship.semester}
           </p>
           <p className="text-xs text-gray-500">
-            {internship.datum_zaciatku} – {internship.datum_konca}
+            {internship.datum_zaciatku} - {internship.datum_konca}
           </p>
         </div>
       </td>
@@ -243,7 +239,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
                       {internship.student_full_name || `#${internship.student}`}
                     </h4>
                     <p className="text-xs text-gray-500">
-                      {msgs.common.companyDocs.termLabel}: {internship.rok} • {internship.semester}
+                      {msgs.common.companyDocs.termLabel}: {internship.rok} - {internship.semester}
                     </p>
                   </div>
                   <button

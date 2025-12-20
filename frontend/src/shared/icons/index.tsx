@@ -1,13 +1,13 @@
-import ClassNameParamType from "@type/props/icons/ClassNameParamType";
 import React from "react";
 import getIconByName from "./getIconByName";
 import IconName from "./iconName";
+import { ClassNameParamType } from "@shared-types/ui/icons";
 
-interface IconProps {
+type IconProps = {
   name: IconName;
   className?: ClassNameParamType;
   size?: number;
-}
+} & React.SVGProps<SVGSVGElement>;
 
 export const Icon = ({ name, className, size, ...rest }: IconProps) => {
   const IconCmp = getIconByName(name);

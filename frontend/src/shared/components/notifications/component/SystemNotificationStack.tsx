@@ -2,47 +2,14 @@
 
 import { useLocalization } from "@i18n/client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import SystemNotification, { SystemNotificationProps } from "./SystemNotification";
+import SystemNotification from "./SystemNotification";
 
-export type NotificationStackItem = {
-  id: string | number;
-  /**
-   * Automatické zatváranie (default true)
-   */
-  autoClose?: boolean;
-  /**
-   * Trvanie v milisekundách (default 4000)
-   */
-  durationMs?: number;
-  /**
-   * Pozastaví timer pri hover (default true)
-   */
-  pauseOnHover?: boolean;
-} & Omit<SystemNotificationProps, "onClose">;
-
-export type SystemNotificationStackProps = {
-  items: NotificationStackItem[];
-  position?: "top-right" | "top-left" | "bottom-right" | "bottom-left";
-  spacing?: "default" | "comfortable" | "compact";
-  /**
-   * Šírka jedného toastu (px alebo vlastná CSS hodnota). Default 360px.
-   */
-  toastWidth?: number | string;
-  onDismiss?: (id: NotificationStackItem["id"]) => void;
-};
-
-const positionClasses: Record<NonNullable<SystemNotificationStackProps["position"]>, string> = {
-  "top-right": "top-6 right-6 items-end",
-  "top-left": "top-6 left-6 items-start",
-  "bottom-right": "bottom-6 right-6 items-end",
-  "bottom-left": "bottom-6 left-6 items-start",
-};
-
-const spacingClasses: Record<NonNullable<SystemNotificationStackProps["spacing"]>, string> = {
-  default: "gap-3",
-  comfortable: "gap-4",
-  compact: "gap-2",
-};
+import { positionClasses, spacingClasses } from "@data/notificationVariantStyles";
+import { DEFAULT_TOAST_WIDTH, EXIT_ANIMATION_MS } from "src/constants/GlobalConst";
+import {
+  NotificationStackItem,
+  SystemNotificationStackProps,
+} from "@shared-types/ui/notifications";
 
 export const SystemNotificationStack = ({
   items,
@@ -73,17 +40,6 @@ export const SystemNotificationStack = ({
     </div>
   );
 };
-
-type ToastItemProps = {
-  item: NotificationStackItem;
-  toastWidth: number | string;
-  fallbackCloseLabel: string;
-  onDismiss?: (id: NotificationStackItem["id"]) => void;
-};
-
-const COMPLETION_DELAY_MS = 220;
-const EXIT_ANIMATION_MS = 320;
-const DEFAULT_TOAST_WIDTH = 420;
 
 const useProgressTimer = ({
   durationMs,
@@ -135,6 +91,13 @@ const useProgressTimer = ({
       }
     };
   }, [durationMs, enabled, paused, onComplete]);
+};
+
+type ToastItemProps = {
+  item: NotificationStackItem;
+  toastWidth: number | string;
+  fallbackCloseLabel: string;
+  onDismiss?: (id: NotificationStackItem["id"]) => void;
 };
 
 export const ToastItem = ({ item, toastWidth, fallbackCloseLabel, onDismiss }: ToastItemProps) => {

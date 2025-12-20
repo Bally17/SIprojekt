@@ -1,8 +1,8 @@
 "use client";
 
+import { StudentProfile } from "@shared-types/student";
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query";
-import { searchStudents } from "src/api/student-api";
-import type { StudentProfile } from "@type/backend/StudentProfile";
+import { searchStudents } from "src/api/search-api";
 
 type StudentSearchKey = readonly ["student-search", string];
 

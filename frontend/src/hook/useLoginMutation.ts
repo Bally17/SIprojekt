@@ -1,7 +1,8 @@
 "use client";
 
+import { LoginResponse, LoginPayload } from "@shared-types/auth";
 import { useMutation } from "@tanstack/react-query";
-import { login, type LoginPayload, type LoginResponse } from "src/api/auth-api";
+import { login } from "src/api/auth-api";
 
 export function useLoginMutation() {
   return useMutation<LoginResponse, any, LoginPayload>({

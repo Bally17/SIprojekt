@@ -1,0 +1,11 @@
+export type IntegerOrNull = number | null;
+export type FloatOrNull = number | null;
+export type DateOrNull = string | null;
+export type BooleanOrNull = boolean | null;
+export type LongOrNull = number | null;
+export type Nillable<T> = T | null | undefined;
+export type Nullable<T> = T | null;
+export type StringOrNull = string | null;
+export type StringOrNill = StringOrNull | undefined;
+export type Undefinable<T> = T | undefined;
+export type Unknownable<T> = T | unknown;

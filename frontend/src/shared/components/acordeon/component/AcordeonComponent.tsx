@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import "@utils/idUsing";
-import {
-  AcordeonComponentProps,
-  variantClasses,
-} from "@type/props/acordeon/AcordeonComponentProps";
+import { IntegerOrNull } from "@shared-types/core/primitives";
+import { accordionVariantClasses, AcordeonComponentProps } from "@shared-types/ui/accordion";
 
 export const AcordeonComponent = ({
   data,
@@ -16,24 +14,24 @@ export const AcordeonComponent = ({
   chevronClassName,
   contentClassName,
 }: AcordeonComponentProps) => {
-  const v = variantClasses[variant];
-  const [open, setOpen] = useState<number | null>(defaultOpen);
+  const v = accordionVariantClasses[variant];
+  const [open, setOpen] = useState<IntegerOrNull>(defaultOpen);
 
   return (
     <div className={className ?? v.wrapper}>
       {data.map((it, i) => (
-        <div key={it.q.idUsing()} className={itemClassName ?? v.item}>
+        <div key={it.a.idUsing()} className={itemClassName ?? v.item}>
           <button
             type="button"
             onClick={() => setOpen(open === i ? null : i)}
             className={headerClassName ?? v.header}
           >
-            <span className={titleClassName ?? v.title}>{it.q}</span>
+            <span className={titleClassName ?? v.title}>{it.a}</span>
             <span className={chevronClassName ?? v.chevron} aria-hidden>
               {open === i ? "-" : "+"}
             </span>
           </button>
-          {open === i && <div className={contentClassName ?? v.content}>{it.a}</div>}
+          {open === i && <div className={contentClassName ?? v.content}>{it.b}</div>}
         </div>
       ))}
     </div>

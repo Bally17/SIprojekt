@@ -1,9 +1,9 @@
 // src/hook/useGarantInternshipsQuery.ts
 "use client";
 
+import { Internship } from "@shared-types/internship";
 import { useQuery } from "@tanstack/react-query";
 import { getGarantInternships } from "src/api/guarant-internships-api";
-import type { Internship } from "@type/backend/Internship";
 
 export function useGarantInternshipsQuery(filters: Record<string, string>) {
   return useQuery<Internship[]>({

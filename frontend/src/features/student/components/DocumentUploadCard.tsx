@@ -5,10 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import { Internship } from "@type/backend/Internship";
-import InternshipDocument from "@type/backend/InternshipDocument";
-
 import { useUploadDocumentMutation } from "@hook/useUploadDocumentMutation";
+import { Internship, InternshipDocument } from "@shared-types/internship";
+import { StatusType } from "@shared-types/core/common";
+import { BASE_URL } from "src/constants/Endpoints";
 
 type InternshipWithDocuments = Internship & {
   documents?: InternshipDocument[];
@@ -19,13 +19,13 @@ type DocumentUploadCardProps = {
   onSuccess?: () => void;
 };
 
-const STATUS_BADGE: Record<string, string> = {
+const STATUS_BADGE: Record<StatusType, string> = {
   nahrany: "bg-yellow-50 text-yellow-700",
   potvrdeny: "bg-emerald-50 text-emerald-700",
   zamietnuty: "bg-red-50 text-red-700",
 };
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:8000";
+const baseUrl = BASE_URL?.replace(/\/api$/, "") || "http://localhost:8000";
 
 export default function DocumentUploadCard({
   internship,
@@ -75,7 +75,7 @@ export default function DocumentUploadCard({
         };
       }
 
-      const code = doc.stav_dokumentu || "nahrany";
+      const code = (doc.stav_dokumentu ?? "nahrany") as StatusType;
       return {
         label: labels[code] ?? msgs.common.documents.statusUnknown,
         badge: STATUS_BADGE[code] || "bg-gray-100 text-gray-600",

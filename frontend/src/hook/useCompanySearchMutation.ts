@@ -1,6 +1,6 @@
+import { Company } from "@shared-types/company";
 import { useMutation } from "@tanstack/react-query";
-import { searchCompanies } from "src/api/internships-api";
-import type { Company } from "@type/backend/Company";
+import { searchCompanies } from "src/api/search-api";
 
 export function useCompanySearchMutation() {
   return useMutation<Company[], unknown, string>({

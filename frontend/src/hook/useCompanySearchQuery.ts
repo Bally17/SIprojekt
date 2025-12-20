@@ -1,8 +1,8 @@
 "use client";
 
+import { Company } from "@shared-types/company";
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query";
-import { searchCompanies } from "src/api/internships-api";
-import type { Company } from "@type/backend/Company";
+import { searchCompanies } from "src/api/search-api";
 
 type CompanySearchKey = readonly ["company-search", string];
 

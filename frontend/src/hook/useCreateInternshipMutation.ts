@@ -1,5 +1,6 @@
+import { CreateInternshipPayload } from "@shared-types/internship";
 import { useMutation } from "@tanstack/react-query";
-import { createInternship, type CreateInternshipPayload } from "src/api/internships-api";
+import { createInternship } from "src/api/internships-api";
 
 export function useCreateInternshipMutation() {
   return useMutation({

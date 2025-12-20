@@ -8,10 +8,9 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
-import SystemNotificationStack, {
-  type NotificationStackItem,
-} from "./component/SystemNotificationStack";
-import type { SystemNotificationVariant } from "./component/SystemNotification";
+import SystemNotificationStack from "./component/SystemNotificationStack";
+import { NotificationStackItem } from "@shared-types/ui/notifications";
+import { SystemNotificationVariant } from "@shared-types/core/common";
 
 type ToastInput = Omit<NotificationStackItem, "id"> & {
   id?: NotificationStackItem["id"];

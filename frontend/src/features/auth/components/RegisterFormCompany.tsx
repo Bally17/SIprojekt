@@ -5,6 +5,7 @@ import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { useRegisterCompanyMutation } from "src/hook/useRegisterCompanyMutation";
+import { getErrorMessage } from "@utils/errorActions";
 
 type RegisterCompanyFormState = {
   companyName: string;
@@ -39,35 +40,6 @@ export default function RegisterFormCompany() {
     if (phoneDigits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
 
     return null;
-  };
-
-  const serializeErrorValue = (value: unknown): string => {
-    if (value == null) return "";
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean")
-      return String(value);
-
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return "[unserializable]";
-    }
-  };
-
-  const getErrorMessage = (err: any) => {
-    const data = err?.response?.data;
-
-    if (!data) return msgs.auth.error;
-    if (typeof data === "string") return data;
-    if (data.detail) return data.detail;
-
-    const parts: string[] = [];
-    for (const [key, value] of Object.entries(data ?? {})) {
-      const serialized = serializeErrorValue(value);
-      if (serialized) parts.push(`${key}: ${serialized}`);
-    }
-
-    return parts.join(" | ") || msgs.auth.error;
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,10 +79,10 @@ export default function RegisterFormCompany() {
         contactEmail: "",
         contactPhone: "",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       notifyWarning({
         title: msgs.auth.errorTitle,
-        description: getErrorMessage(err),
+        description: getErrorMessage(err, msgs.auth.error),
       });
     }
   };

@@ -4,25 +4,22 @@ import { useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-
-import {
-  STAV_OPTIONS,
-  STAV_LABEL,
-  SEMESTER_LABEL,
-  STAV_BADGE_CLASS,
-  Stav,
-} from "@type/props/common/StateInternship";
-
-import { GarantInternshipUpdate } from "@type/backend/GarantInternshipUpdate";
-import { Internship } from "@type/backend/Internship";
-
 import { getAccessToken } from "@lib/ApiProvider";
-
-// React-query hooks
 import { useGarantInternshipsQuery } from "src/hook/useGarantInternshipsQuery";
 import { useUpdateGarantInternshipMutation } from "src/hook/useUpdateGarantInternshipMutation";
 import { useStudentSearchQuery } from "src/hook/useStudentSearchQuery";
 import { useCompanySearchQuery } from "src/hook/useCompanySearchQuery";
+import {
+  SEMESTER_LABEL,
+  STAV_BADGE_CLASS,
+  STAV_LABEL,
+  Nullable,
+  StringOrNull,
+  Stav,
+  STAV_OPTIONS,
+} from "@shared-types/index";
+import { Internship, GarantInternshipUpdate } from "@shared-types/internship";
+import { BASE_URL } from "src/constants/Endpoints";
 
 // ---------------------------------------------
 // FILTERS
@@ -60,6 +57,13 @@ const normalizeInternships = (res: any): Internship[] => {
 // ---------------------------------------------
 // TABLE COMPONENT
 // ---------------------------------------------
+interface GarantInternshipsTableSectionProps {
+  internships: Internship[];
+  loading: boolean;
+  errorMessage: string | null;
+  msgs: any;
+  onEdit: (i: Internship) => void;
+}
 
 function GarantInternshipsTableSection({
   internships,
@@ -67,13 +71,7 @@ function GarantInternshipsTableSection({
   errorMessage,
   msgs,
   onEdit,
-}: Readonly<{
-  internships: Internship[];
-  loading: boolean;
-  errorMessage: string | null;
-  msgs: any;
-  onEdit: (i: Internship) => void;
-}>) {
+}: Readonly<GarantInternshipsTableSectionProps>) {
   let body = null;
 
   if (loading) {
@@ -110,16 +108,16 @@ function GarantInternshipsTableSection({
               <div className="text-xs text-ink-400">{i.student_email}</div>
             </td>
 
-            <td className="px-4 py-4 text-sm text-ink-900">{i.company_name || "—"}</td>
+            <td className="px-4 py-4 text-sm text-ink-900">{i.company_name || "-"}</td>
 
-            <td className="px-4 py-4 text-sm text-ink-900">{i.study_program || "—"}</td>
+            <td className="px-4 py-4 text-sm text-ink-900">{i.study_program || "-"}</td>
 
             <td className="px-4 py-4 text-sm text-ink-900">
               <div>
-                {i.rok} · {SEMESTER_LABEL[i.semester] ?? i.semester}
+                {i.rok} - {SEMESTER_LABEL[i.semester] ?? i.semester}
               </div>
               <div className="text-xs text-ink-400">
-                {i.datum_zaciatku} – {i.datum_konca}
+                {i.datum_zaciatku} - {i.datum_konca}
               </div>
             </td>
 
@@ -189,9 +187,9 @@ export default function GarantInternshipsDashboard() {
   const { msgs } = useLocalization();
   const { success, warning, info } = useSystemNotifications();
 
-  const [editingInternship, setEditingInternship] = useState<Internship | null>(null);
-  const [editForm, setEditForm] = useState<GarantInternshipUpdate | null>(null);
-  const [editError, setEditError] = useState<string | null>(null);
+  const [editingInternship, setEditingInternship] = useState<Nullable<Internship>>(null);
+  const [editForm, setEditForm] = useState<Nullable<GarantInternshipUpdate>>(null);
+  const [editError, setEditError] = useState<StringOrNull>(null);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
@@ -330,9 +328,8 @@ export default function GarantInternshipsDashboard() {
       });
 
       const qs = buildQueryString(apiFilters);
-      const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-      const res = await fetch(`${baseURL}/internships/garant/internships/export/${qs}`, {
+      const res = await fetch(`${BASE_URL}/internships/garant/internships/export/${qs}`, {
         headers: {
           ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
         },

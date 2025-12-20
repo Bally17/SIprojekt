@@ -1,9 +1,9 @@
 // src/hook/useUpdateGarantInternshipMutation.ts
 "use client";
 
+import { GarantInternshipUpdate } from "@shared-types/internship";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateGarantInternship } from "src/api/guarant-internships-api";
-import type { GarantInternshipUpdate } from "@type/backend/GarantInternshipUpdate";
 
 export function useUpdateGarantInternshipMutation() {
   const queryClient = useQueryClient();

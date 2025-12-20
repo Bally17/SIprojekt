@@ -1,6 +1,6 @@
 import { api } from "@lib/ApiProvider";
-import type { Internship } from "@type/backend/Internship";
-import type { GarantInternshipUpdate } from "@type/backend/GarantInternshipUpdate";
+import { Internship, GarantInternshipUpdate } from "@shared-types/internship";
+import { ENDPOINTS } from "src/constants/Endpoints";
 
 /* ----------------------------------------
  * GET LIST OF INTERNSHIPS FOR GARANT
@@ -15,7 +15,7 @@ export function getGarantInternships(params: Record<string, string>) {
     Object.entries(params).filter(([_, value]) => value !== ""),
   ).toString();
 
-  const url = qs ? `/internships/garant/internships/?${qs}` : `/internships/garant/internships/`;
+  const url = ENDPOINTS.INTERNSHIPS_GARANT(qs ? `?${qs}` : "");
 
   return api.get<GarantInternshipsResponse>(url);
 }
@@ -25,5 +25,5 @@ export function getGarantInternships(params: Record<string, string>) {
  * ---------------------------------------- */
 
 export function updateGarantInternship(id: number, payload: GarantInternshipUpdate) {
-  return api.patch(`/internships/garant/internships/${id}/`, payload);
+  return api.patch(ENDPOINTS.INTERNSHIPS_GARANT_UPDATE(id), payload);
 }

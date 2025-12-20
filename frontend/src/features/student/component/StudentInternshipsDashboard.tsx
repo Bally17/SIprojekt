@@ -7,14 +7,13 @@ import { Select } from "@components/select";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
 
-import { Semester, SEMESTER_OPTIONS, STAV_BADGE_CLASS } from "@type/props/common/StateInternship";
-import type { Company } from "@type/backend/Company";
-
 import DocumentUploadCard from "../components/DocumentUploadCard";
 
 import { useStudentInternshipsQuery } from "@hook/useStudentInternshipsQuery";
 import { useCompanySearchMutation } from "@hook/useCompanySearchMutation";
 import { useCreateInternshipMutation } from "@hook/useCreateInternshipMutation";
+import { Company } from "@shared-types/company";
+import { Semester, STAV_BADGE_CLASS, SEMESTER_OPTIONS } from "@shared-types/core/internshipState";
 
 export default function StudentDashboardPage() {
   const { msgs } = useLocalization();
@@ -71,14 +70,14 @@ export default function StudentDashboardPage() {
       event.preventDefault();
 
       if (!form.firma_id) {
-        notifyWarning({ title: "Chýba firma", description: "Vyberte firmu zo zoznamu." });
+        notifyWarning({ title: "Chyba firma", description: "Vyberte firmu zo zoznamu." });
         return;
       }
 
       if (form.datum_zaciatku && form.datum_konca && form.datum_konca < form.datum_zaciatku) {
         notifyWarning({
-          title: "Chybný dátum",
-          description: "Dátum ukončenia musí byť po dátume začiatku.",
+          title: "Chybny datum",
+          description: "Datum ukoncenia musi byt po datume zaciatku.",
         });
         return;
       }
@@ -86,8 +85,8 @@ export default function StudentDashboardPage() {
       const year = new Date().getFullYear();
       if (form.rok < year - 1 || form.rok > year + 2) {
         notifyWarning({
-          title: "Chybný rok",
-          description: "Rok praxe je mimo povoleného intervalu.",
+          title: "Chybny rok",
+          description: "Rok praxe je mimo povoleneho intervalu.",
         });
         return;
       }
@@ -98,8 +97,8 @@ export default function StudentDashboardPage() {
       });
 
       notifySuccess({
-        title: "Prax vytvorená",
-        description: "Dohoda bola automaticky vygenerovaná.",
+        title: "Prax vytvorena",
+        description: "Dohoda bola automaticky vygenerovana.",
       });
 
       setForm((prev) => ({ ...prev, firma_id: "", datum_zaciatku: "", datum_konca: "" }));
@@ -132,7 +131,7 @@ export default function StudentDashboardPage() {
           >
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-cyan-700">
-                {internship.firma?.nazov || "Neznáma firma"}
+                {internship.firma?.nazov || "Neznama firma"}
               </h3>
 
               <span
@@ -145,7 +144,7 @@ export default function StudentDashboardPage() {
             </div>
 
             <p className="mt-1 text-sm text-gray-600">
-              {internship.semester} {internship.rok} • {internship.datum_zaciatku} →{" "}
+              {internship.semester} {internship.rok} - {internship.datum_zaciatku} -{" "}
               {internship.datum_konca}
             </p>
 
@@ -274,9 +273,7 @@ export default function StudentDashboardPage() {
 
       {/* LIST */}
       <section>
-        <h2 className="mb-4 text-2xl font-semibold text-gray-800">
-          📋 {msgs.common.internships.my}
-        </h2>
+        <h2 className="mb-4 text-2xl font-semibold text-gray-800">{msgs.common.internships.my}</h2>
         {listContent}
       </section>
     </>

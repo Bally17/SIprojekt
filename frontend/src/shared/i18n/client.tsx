@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useMemo } from "react";
 import type { Messages } from "@i18n/getMessages";
-import { Locale } from "@type/props/common/globalTypes";
+import { Locale } from "@shared-types/core/common";
 
 type Ctx = { locale: Locale; messages: Messages };
 const I18nCtx = createContext<Ctx | null>(null);

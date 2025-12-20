@@ -1,8 +1,8 @@
 import { getAccessToken } from "@lib/ApiProvider";
+import { ENDPOINTS } from "src/constants/Endpoints";
 
 export async function exportGarantInternships(params: Record<string, string>) {
-  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-  const url = new URL(`${base}/internships/garant/internships/export/`);
+  const url = new URL(ENDPOINTS.INTERNSHIPS_GARAN_EXPORT);
 
   const qs = new URLSearchParams();
 
