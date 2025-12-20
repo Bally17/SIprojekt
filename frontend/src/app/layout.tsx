@@ -3,7 +3,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import { getMessages } from "@i18n/getMessages";
 import { Locale } from "@type/props/common/globalTypes";
-import { AppProviders } from "./AppProviders";
+import { AppProviders } from "@lib/AppProviders";
 
 export const metadata: Metadata = {
   title: "Praxy - správa odbornej praxe jednoducho",

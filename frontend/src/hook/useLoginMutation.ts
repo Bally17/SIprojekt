@@ -1,15 +1,10 @@
 "use client";
 
-import type { RoleType } from "@type/props/common/globalTypes";
-import { login, type LoginResponse } from "@lib/api";
-import { useApiMutation } from "@lib/api";
-
-export type LoginVariables = {
-  role: RoleType;
-  email: string;
-  password: string;
-};
+import { useMutation } from "@tanstack/react-query";
+import { login, type LoginPayload, type LoginResponse } from "src/api/auth-api";
 
 export function useLoginMutation() {
-  return useApiMutation<LoginResponse, LoginVariables>(login);
+  return useMutation<LoginResponse, any, LoginPayload>({
+    mutationFn: (payload) => login(payload),
+  });
 }

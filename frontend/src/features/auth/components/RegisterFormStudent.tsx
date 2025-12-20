@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import { api } from "@lib/api-client";
+import { useRegisterStudentMutation } from "src/hook/useRegisterStudentMutation";
 
 type RegisterStudentFormState = {
   firstName: string;
@@ -17,7 +17,6 @@ type RegisterStudentFormState = {
 };
 
 export default function RegisterFormStudent() {
-  // Lokálny stav formulára
   const [form, setForm] = useState<RegisterStudentFormState>({
     firstName: "",
     lastName: "",
@@ -28,11 +27,10 @@ export default function RegisterFormStudent() {
     studyField: "",
   });
 
-  // Stav UI (spinner + hlášky)
-  const [loading, setLoading] = useState(false);
-
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+
+  const mutation = useRegisterStudentMutation();
 
   const allowedStudentDomains = ["student.ukf.sk", "ukf.sk"];
 
@@ -47,59 +45,66 @@ export default function RegisterFormStudent() {
       return `Email musí byť z domény ${allowedStudentDomains.join(", ")}.`;
     }
 
-    const phoneDigits = form.phone.replace(/\D/g, "");
-    if (phoneDigits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
+    const digits = form.phone.replaceAll(/\D/g, "");
+    if (digits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
 
     return null;
   };
 
+  const serializeErrorValue = (value: unknown): string => {
+    if (value == null) return "";
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[unserializable]";
+    }
+  };
+
   const getErrorMessage = (err: any) => {
     const data = err?.response?.data;
+
     if (!data) return msgs.auth.error;
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
 
     const parts: string[] = [];
-    Object.entries(data).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        parts.push(`${key}: ${value.join(", ")}`);
-      } else if (value) {
-        parts.push(`${key}: ${String(value)}`);
-      }
-    });
+
+    for (const [key, val] of Object.entries(data ?? {})) {
+      const serialized = serializeErrorValue(val);
+      if (serialized) parts.push(`${key}: ${serialized}`);
+    }
+
     return parts.join(" | ") || msgs.auth.error;
   };
 
-  // Aktualizácia vstupov → state
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit handler: mapovanie na backend field names + POST
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setLoading(true);
 
     const clientError = validateForm();
     if (clientError) {
       notifyWarning({ title: msgs.auth.errorTitle, description: clientError });
-      setLoading(false);
       return;
     }
 
-    const payload = {
-      meno: form.firstName,
-      priezvisko: form.lastName,
-      adresa: form.address,
-      email: form.studentEmail,
-      alternativny_email: form.altEmail || "",
-      telefon: form.phone,
-      studijny_program: form.studyField,
-    };
-
     try {
-      await api.post("/auth/register/student/", payload);
+      await mutation.mutateAsync({
+        meno: form.firstName,
+        priezvisko: form.lastName,
+        adresa: form.address,
+        email: form.studentEmail,
+        alternativny_email: form.altEmail || "",
+        telefon: form.phone,
+        studijny_program: form.studyField,
+      });
 
       notifySuccess({
         title: msgs.auth.successRegister,
@@ -116,20 +121,10 @@ export default function RegisterFormStudent() {
         studyField: "",
       });
     } catch (err: any) {
-      const message =
-        getErrorMessage(err) ||
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        msgs.auth.errorTitle;
-
-      console.error("❌ Chyba pri registrácii:", err?.response?.data || err);
-
       notifyWarning({
         title: msgs.auth.errorTitle,
-        description: message,
+        description: getErrorMessage(err),
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -146,72 +141,72 @@ export default function RegisterFormStudent() {
 
       <input
         name="firstName"
-        placeholder={msgs.auth.name}
-        onChange={handleChange}
-        value={form.firstName}
         className={input}
         required
+        value={form.firstName}
+        onChange={handleChange}
+        placeholder={msgs.auth.name}
       />
       <input
         name="lastName"
-        placeholder={msgs.auth.surename}
-        onChange={handleChange}
-        value={form.lastName}
         className={input}
         required
+        value={form.lastName}
+        onChange={handleChange}
+        placeholder={msgs.auth.surename}
       />
       <input
         name="address"
-        placeholder={msgs.auth.address}
-        onChange={handleChange}
-        value={form.address}
         className={input}
         required
+        value={form.address}
+        onChange={handleChange}
+        placeholder={msgs.auth.address}
       />
+
       <input
         type="email"
         name="studentEmail"
-        placeholder={msgs.auth.email}
-        onChange={handleChange}
-        value={form.studentEmail}
         className={input}
         required
+        value={form.studentEmail}
+        onChange={handleChange}
+        placeholder={msgs.auth.email}
       />
       <input
         type="email"
         name="altEmail"
-        placeholder={msgs.auth.altEmail}
-        onChange={handleChange}
-        value={form.altEmail}
         className={input}
+        value={form.altEmail}
+        onChange={handleChange}
+        placeholder={msgs.auth.altEmail}
       />
       <input
         type="tel"
         name="phone"
-        placeholder={msgs.auth.phone}
-        onChange={handleChange}
-        value={form.phone}
         className={input}
         required
+        value={form.phone}
+        onChange={handleChange}
+        placeholder={msgs.auth.phone}
       />
       <input
         name="studyField"
-        placeholder={msgs.auth.studyField}
-        onChange={handleChange}
-        value={form.studyField}
         className={input}
         required
+        value={form.studyField}
+        onChange={handleChange}
+        placeholder={msgs.auth.studyField}
       />
 
       <Button
         type="submit"
         variant="primary"
         className="w-full"
-        disabled={loading}
-        loading={loading}
-        aria-busy={loading}
+        disabled={mutation.isPending}
+        loading={mutation.isPending}
       >
-        {loading ? msgs.auth.submitting : msgs.auth.registerStudent}
+        {mutation.isPending ? msgs.auth.submitting : msgs.auth.registerStudent}
       </Button>
     </form>
   );

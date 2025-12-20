@@ -1,13 +1,11 @@
+// \src\lib\ApiProvider.ts
 const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-// Pomenovania pre storage:
 const REFRESH_KEY = "refresh_token";
 const ACCESS_SS_KEY = "access_token_ss";
 
-// In-memory access token (bezpečné:
 let accessTokenMemory: string | null = null;
 
-// Načítanie access tokenu zo sessionStorage pri reloade tabu
 function loadInitialTokens() {
   if (typeof window === "undefined") return;
   const access = sessionStorage.getItem(ACCESS_SS_KEY);
@@ -90,7 +88,6 @@ export async function request<T = unknown>(url: string, options: RequestInit = {
     } catch (err) {
       clearAuthTokens();
 
-      // zabalíme chybu do axios-like objektu
       const error: any = err instanceof Error ? err : new Error("Unauthorized");
       error.status = 401;
       if (!error.response) {
@@ -100,7 +97,6 @@ export async function request<T = unknown>(url: string, options: RequestInit = {
     }
   }
 
-  // Iné chyby (4xx/5xx)
   if (!res.ok) {
     let errorBody: any = null;
     try {
@@ -121,7 +117,6 @@ export async function request<T = unknown>(url: string, options: RequestInit = {
     throw error;
   }
 
-  // 204 No Content
   if (res.status === 204) {
     return undefined as T;
   }
@@ -148,10 +143,6 @@ bc?.addEventListener("message", (ev: MessageEvent<BroadcastMsg>) => {
     clearAuthTokens();
   }
 });
-
-/** ----------------------------
- *  REFRESH CONTROL
- * ----------------------------- */
 
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;
@@ -188,10 +179,8 @@ async function doRefresh(): Promise<string> {
 
   if (!newAccess) throw new Error("No access token returned");
 
-  // Uloženie tokenov
   setAuthTokens({ access: newAccess, refresh: newRefresh });
 
-  // Broadcast do ostatných tabov
   bc?.postMessage({ type: "refresh-success", access: newAccess, refresh: newRefresh });
 
   return newAccess;

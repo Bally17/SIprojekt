@@ -54,8 +54,12 @@ const flatten = (obj, prefix = "") => {
 // Načíta všetky namespaces v jazyku a vráti mapu { nsName: json }
 const loadLangNamespaces = (lang) => {
   const langDir = path.join(LOCALES_DIR, lang);
-  if (!fs.existsSync(langDir)) throw new Error(`Locales directory for '${lang}' not found: ${langDir}`);
-  const files = fs.readdirSync(langDir).filter((f) => f.endsWith(".json")).sort();
+  if (!fs.existsSync(langDir))
+    throw new Error(`Locales directory for '${lang}' not found: ${langDir}`);
+  const files = fs
+    .readdirSync(langDir)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
   const map = {};
   for (const f of files) {
     const ns = path.basename(f, ".json"); // 'common', 'auth', ...
@@ -70,7 +74,8 @@ const namespacedKeys = (nsMap) =>
 const toSet = (arr) => new Set(arr);
 
 // === Load locales ===
-const globSync = globMod.globSync || globMod.sync || globMod.default?.globSync || globMod.default?.sync;
+const globSync =
+  globMod.globSync || globMod.sync || globMod.default?.globSync || globMod.default?.sync;
 
 const locales = {};
 for (const lang of LANGS) locales[lang] = loadLangNamespaces(lang);
@@ -89,13 +94,18 @@ const usedKeys = new Set();
 const hardcoded = [];
 
 // Zachytíme rôzne vzory návratu z useLocalization()
-const tVars = new Set(["t"]);   // pre t('x.y')
-const msgsVars = new Set();     // premenne, ktoré držia 'msgs' (napr. msgs, m)
-const i18nVars = new Set();     // premenne, ktoré držia celý návrat z hooku (napr. i18n)
+const tVars = new Set(["t"]); // pre t('x.y')
+const msgsVars = new Set(); // premenne, ktoré držia 'msgs' (napr. msgs, m)
+const i18nVars = new Set(); // premenne, ktoré držia celý návrat z hooku (napr. i18n)
+const namespaceNames = new Set(Object.keys(locales[LANGS[0]] || {}));
 
 // Pomocná funkcia: pridá kľúč; ak je bez namespace, doplní DEFAULT_NS[0]
 const addKey = (key) => {
   if (!key || typeof key !== "string") return;
+
+  // Ignoruj "kontajner" kľúče ako 'auth', 'common', 'guarant' (namespace objekt)
+  if (!key.includes(".") && namespaceNames.has(key)) return;
+
   if (key.includes(".")) usedKeys.add(key);
   else if (DEFAULT_NS[0]) usedKeys.add(`${DEFAULT_NS[0]}.${key}`);
   else usedKeys.add(key);
@@ -106,7 +116,11 @@ const hasI18nIgnore = (path) => {
   const check = (n) =>
     n?.leadingComments?.some((c) => /i18n-ignore/.test(c.value)) ||
     n?.trailingComments?.some((c) => /i18n-ignore/.test(c.value));
-  return check(path.node) || check(path.parentPath?.node) || check(path.findParent((p) => p.isJSXElement())?.node);
+  return (
+    check(path.node) ||
+    check(path.parentPath?.node) ||
+    check(path.findParent((p) => p.isJSXElement())?.node)
+  );
 };
 
 // helper: zloží kľúč z MemberExpression chainu typu msgs.auth.success alebo i18n.msgs.auth.success
@@ -129,7 +143,12 @@ function extractMsgsKeyFromMember(node) {
   if (cur.type === "MemberExpression" || cur.type === "OptionalMemberExpression") {
     const right = cur.property;
     const left = cur.object;
-    if (right?.type === "Identifier" && right.name === "msgs" && left?.type === "Identifier" && i18nVars.has(left.name)) {
+    if (
+      right?.type === "Identifier" &&
+      right.name === "msgs" &&
+      left?.type === "Identifier" &&
+      i18nVars.has(left.name)
+    ) {
       return parts.join(".");
     }
   }
@@ -139,7 +158,8 @@ function extractMsgsKeyFromMember(node) {
 // univerzálny helper: vyťahuje i18n kľúče z ľubovoľného výrazu (ternár, ??, ||, volanie, ...)
 function collectKeysFromExpr(expr) {
   if (!expr) return;
-  const isMem = (n) => n && (n.type === "MemberExpression" || n.type === "OptionalMemberExpression");
+  const isMem = (n) =>
+    n && (n.type === "MemberExpression" || n.type === "OptionalMemberExpression");
 
   if (isMem(expr)) {
     const k = extractMsgsKeyFromMember(expr);
@@ -149,11 +169,19 @@ function collectKeysFromExpr(expr) {
 
   if (expr.type === "CallExpression") {
     const cal = expr.callee;
+
+    // NEW: prechádzaj aj objekt volania (napr. [msgs...].map(...), arr.filter(...), obj.fn(...))
+    if (cal && (cal.type === "MemberExpression" || cal.type === "OptionalMemberExpression")) {
+      collectKeysFromExpr(cal.object);
+    }
+
+    // zachyť prípad, keď sa volá metóda priamo na msgs.* (msgs.common.x.replace(...))
     if (isMem(cal)) {
       const base = cal.object || cal;
       const k = extractMsgsKeyFromMember(base);
       if (k) addKey(k);
     }
+
     for (const a of expr.arguments || []) collectKeysFromExpr(a);
     return;
   }
@@ -164,7 +192,10 @@ function collectKeysFromExpr(expr) {
     return;
   }
 
-  if (expr.type === "LogicalExpression" || expr.type === "BinaryExpression" /* includes '??' in parser */) {
+  if (
+    expr.type === "LogicalExpression" ||
+    expr.type === "BinaryExpression" /* includes '??' in parser */
+  ) {
     collectKeysFromExpr(expr.left);
     collectKeysFromExpr(expr.right);
     return;
@@ -180,6 +211,35 @@ function collectKeysFromExpr(expr) {
       if (p.type === "ObjectProperty") collectKeysFromExpr(p.value);
     }
     return;
+  }
+}
+
+// Zbiera kľúče z destructuringu: const { a, b: alias, nested: { c } } = msgs.auth;
+function collectKeysFromObjectPattern(pattern, baseKey) {
+  if (!pattern || pattern.type !== "ObjectPattern" || !baseKey) return;
+
+  for (const prop of pattern.properties || []) {
+    if (prop.type !== "ObjectProperty") continue;
+
+    const k =
+      prop.key.type === "Identifier"
+        ? prop.key.name
+        : prop.key.type === "StringLiteral"
+          ? prop.key.value
+          : null;
+
+    if (!k) continue;
+
+    const nextBase = `${baseKey}.${k}`;
+
+    // nested destructuring: { nested: { x } }
+    if (prop.value?.type === "ObjectPattern") {
+      collectKeysFromObjectPattern(prop.value, nextBase);
+      continue;
+    }
+
+    // normal: { a } or { a: alias } or { a = "default" }
+    addKey(nextBase);
   }
 }
 
@@ -222,6 +282,13 @@ for (const f of files) {
 
       // zachyť i18n kľúče už v initializéroch (useState(msgs.auth.checking), atď.)
       if (init) collectKeysFromExpr(init);
+
+      if (init && path.node.id?.type === "ObjectPattern") {
+        if (init.type === "MemberExpression" || init.type === "OptionalMemberExpression") {
+          const base = extractMsgsKeyFromMember(init);
+          if (base) collectKeysFromObjectPattern(path.node.id, base);
+        }
+      }
 
       if (
         init &&
@@ -287,7 +354,10 @@ for (const f of files) {
       // msgs.common.x.y.replace(...) – zober base objekt
       if (callee.type === "MemberExpression" || callee.type === "OptionalMemberExpression") {
         const base = callee.object;
-        if (base && (base.type === "MemberExpression" || base.type === "OptionalMemberExpression")) {
+        if (
+          base &&
+          (base.type === "MemberExpression" || base.type === "OptionalMemberExpression")
+        ) {
           const k = extractMsgsKeyFromMember(base);
           if (k) addKey(k);
         }
@@ -327,8 +397,8 @@ for (const f of files) {
         name?.type === "JSXIdentifier"
           ? name.name
           : name?.type === "JSXMemberExpression"
-          ? `${name.object.name}.${name.property.name}`
-          : "Unknown";
+            ? `${name.object.name}.${name.property.name}`
+            : "Unknown";
 
       if (IGNORE_TAGS.has(tag)) return;
 
@@ -397,16 +467,22 @@ let hasError = false;
 const failIf = (arr) => arr.length && (hasError = true);
 
 // Chýbajúce preklady (používa sa v kóde, ale nie je v locale)
-printGroup(`Missing in ${A} (used but not translated)`, missingInA); failIf(missingInA);
-printGroup(`Missing in ${B} (used but not translated)`, missingInB); failIf(missingInB);
+printGroup(`Missing in ${A} (used but not translated)`, missingInA);
+failIf(missingInA);
+printGroup(`Missing in ${B} (used but not translated)`, missingInB);
+failIf(missingInB);
 
 // Rozdielny tvar medzi jazykmi (kľúč existuje len v jednom)
-printGroup(`Shape mismatch: present in ${A} only`, shapeOnlyA); failIf(shapeOnlyA);
-printGroup(`Shape mismatch: present in ${B} only`, shapeOnlyB); failIf(shapeOnlyB);
+printGroup(`Shape mismatch: present in ${A} only`, shapeOnlyA);
+failIf(shapeOnlyA);
+printGroup(`Shape mismatch: present in ${B} only`, shapeOnlyB);
+failIf(shapeOnlyB);
 
 // Nepoužívané kľúče
-printGroup(`Unused in ${A}`, unusedInA); failIf(unusedInA);
-printGroup(`Unused in ${B}`, unusedInB); failIf(unusedInB);
+printGroup(`Unused in ${A}`, unusedInA);
+failIf(unusedInA);
+printGroup(`Unused in ${B}`, unusedInB);
+failIf(unusedInB);
 
 // Hardcoded texty
 if (hardcoded.length) {

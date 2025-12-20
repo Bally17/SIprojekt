@@ -1,16 +1,17 @@
+// \src\lib\AppProviders.tsx
 "use client";
 
 import type { ReactNode } from "react";
-import { QueryProvider } from "@lib/query-provider";
+import { QueryProvider } from "@lib/QueryProvider";
 import { LocalizationProvider } from "@i18n/client";
 import { SystemNotificationsProvider } from "@components/notifications";
 import type { Locale } from "@type/props/common/globalTypes";
-import { AuthProvider } from "@constants";
+import { AuthProvider } from "./AuthProvider";
 
 type Props = {
   children: ReactNode;
   locale: Locale;
-  messages: any; // alebo presnejší typ podľa tvojho i18n
+  messages: any;
 };
 
 export function AppProviders({ children, locale, messages }: Readonly<Props>) {

@@ -4,20 +4,20 @@ import { useState } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import { api } from "@lib/api-client";
+import { useForgotPasswordMutation } from "src/hook/useForgotPasswordMutation";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
   const { msgs } = useLocalization();
   const { info: notifyInfo, warning: notifyWarning } = useSystemNotifications();
 
+  const mutation = useForgotPasswordMutation();
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setLoading(true);
 
     try {
-      await api.post("/auth/password/reset/", { email });
+      await mutation.mutateAsync({ email });
 
       notifyInfo({
         title: msgs.auth.submitted,
@@ -35,8 +35,6 @@ export default function ForgotPasswordForm() {
         title: msgs.auth.error,
         description: message,
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -63,10 +61,10 @@ export default function ForgotPasswordForm() {
         type="submit"
         variant="primary"
         className="w-full"
-        disabled={loading}
-        loading={loading}
+        disabled={mutation.isPending}
+        loading={mutation.isPending}
       >
-        {loading ? msgs.auth.submitting : msgs.auth.submit}
+        {mutation.isPending ? msgs.auth.submitting : msgs.auth.submit}
       </Button>
     </form>
   );

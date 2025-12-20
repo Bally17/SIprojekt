@@ -154,11 +154,8 @@
     "filters": {
       "year": "Rok",
       "company": "Firma",
-      "companyPlaceholder": "Názov alebo IČO",
       "student": "Študent",
-      "studentPlaceholder": "Meno alebo e-mail",
       "field": "Študijný program",
-      "fieldPlaceholder": "Názov programu",
       "state": "Stav",
       "statePlaceholder": "Vyberte stav"
     },
@@ -179,23 +176,14 @@
     "edit": {
       "title": "Upraviť prax",
       "description": "Aktualizuj študenta, firmu, termíny aj stav jednej praxe.",
-      "legend": "Vyhľadaj študenta alebo firmu podľa mena, e-mailu či kontaktu.",
       "studentSearch": "Vyhľadaj študenta",
-      "studentSearchPlaceholder": "Meno, priezvisko alebo e-mail",
-      "studentSelected": "Vybraný študent:",
       "companySearch": "Vyhľadaj firmu",
-      "companySearchPlaceholder": "Názov firmy alebo kontakt",
-      "companySelected": "Vybraná firma:",
-      "searchHint": "Zadaj aspoň 2 znaky pre zobrazenie výsledkov.",
       "startDate": "Dátum začiatku",
       "endDate": "Dátum konca",
       "statusNote": "Poznámka k zmene stavu",
-      "statusNotePlaceholder": "Dôvod zmeny (voliteľné)",
-      "statusNoteHint": "Poznámka sa uloží do histórie (max. 500 znakov).",
       "submit": "Uložiť zmeny",
       "success": "Prax bola aktualizovaná.",
-      "error": "Úprava praxe zlyhala.",
-      "nothingToUpdate": "Vyplň aspoň jedno pole na uloženie zmien."
+      "error": "Úprava praxe zlyhala."
     }
   },
   "oauth": {
