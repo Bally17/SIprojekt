@@ -43,13 +43,20 @@ export function getRefreshToken() {
 }
 
 export async function request<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers);
+  const isFormData = options.body instanceof FormData;
+
+  if (!isFormData && !headers.has("Content-Type")) {
+    // FormData si pridá vlastný boundary; Content-Type je len pre JSON
+    headers.set("Content-Type", "application/json");
+  }
+  if (getAccessToken() && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${getAccessToken()}`);
+  }
+
   const res = await fetch(baseURL + url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-      ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-    },
+    headers,
   });
 
   // 401 → pokus o refresh
