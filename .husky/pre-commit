@@ -3,5 +3,7 @@
 
 set -e
 
+node frontend/scripts/no-console-frontend.mjs
+
 npx --no -- lint-staged --cwd frontend --verbose
 npm --prefix frontend run typecheck
