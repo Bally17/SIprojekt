@@ -38,16 +38,17 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // predvolený typ – ak prax nie je schválená, default je "vykaz"
-  const [selectedType, setSelectedType] = useState<"zmluva" | "vykaz">(
-    isNotApproved ? "vykaz" : "zmluva",
-  );
+  // Default vyber v modale, dohoda a vykaz sa dá hneď, zmluva až o stave praxe schválená
+  const [selectedType, setSelectedType] = useState<"dohoda" | "zmluva" | "vykaz">("dohoda");
 
   // Vyhľadáme existujúce dokumenty priradené k praxi.
-  const contractDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "dohoda");
-  const agreementDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "zmluva");
+  const agreementDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "dohoda");
+  const contractDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "zmluva");
   const reportDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "vykaz");
-  const currentDoc = selectedType === "zmluva" ? agreementDoc : reportDoc;
+  const currentDoc =
+    selectedType === "zmluva" ? contractDoc : selectedType === "dohoda" ? agreementDoc : reportDoc;
+  const hasContractRecord = Boolean(contractDoc?.id);
+  const generatedAgreementUrl = `${baseUrl}/media/dohody/dohoda_prax_${internship.id}.pdf`;
 
   // useApi pre upload (FormData) – url override použijeme pri execute
   const { loading: uploading, execute: executeUpload } = useApi<unknown, FormData, {}>({
@@ -96,15 +97,24 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
       return { label, badge };
     };
 
+    const missingStatus = getInfo(undefined);
+    const isGeneratedAgreement = Boolean(
+      agreementDoc?.subor_url &&
+        (agreementDoc.subor_url.includes("/dohody/") ||
+          agreementDoc.subor_url.includes(`/dohoda_prax_${internship.id}.pdf`)),
+    );
+
     return {
-      contract: getInfo(contractDoc),
-      agreement: getInfo(agreementDoc),
+      // Dohoda: vygenerovaný súbor (dohody/…) nepočítaj ako nahraný, ukáž "čaká", až reálny upload prepne stav
+      contract: agreementDoc && !isGeneratedAgreement ? getInfo(agreementDoc) : missingStatus,
+      agreement: getInfo(contractDoc),
       report: getInfo(reportDoc),
     };
   }, [
-    contractDoc,
     agreementDoc,
+    contractDoc,
     reportDoc,
+    internship.id,
     msgs.common.documents.statusMissing,
     msgs.common.documents.statusUploaded,
     msgs.common.documents.statusApproved,
@@ -112,19 +122,22 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
     msgs.common.documents.statusUnknown,
   ]);
 
-  // ak prax stratí z hocijakého dôvodu stav "schválená", prepne sa upload automaticky na výkaz
+  // Zmluva (oficiálna) sa dá nahrávať až keď je prax schválená a existuje záznam "zmluva"
+  const isContractLocked = isNotApproved || !hasContractRecord;
+
+  // Zmluvu v modale povoľ len keď je prax schválená a existuje záznam zmluvy
   useEffect(() => {
-    if (isNotApproved && selectedType === "zmluva") {
-      setSelectedType("vykaz");
+    if (isContractLocked && selectedType === "zmluva") {
+      setSelectedType("dohoda");
     }
-  }, [isNotApproved, selectedType]);
+  }, [isContractLocked, selectedType]);
 
   // Multipart upload na aktuálne zvolený dokument (zmluva/výkaz) cez useApi
   const uploadDocument = async (): Promise<boolean> => {
     if (!file || !currentDoc) return false;
 
-    const isAgreementUploadLocked = selectedType === "zmluva" && isNotApproved;
-    if (isAgreementUploadLocked) {
+    const isContractUploadLocked = selectedType === "zmluva" && isContractLocked;
+    if (isContractUploadLocked) {
       notifyWarning({
         title: msgs.common.documents.errorTitle,
         description: msgs.common.documents.agreementLocked,
@@ -155,8 +168,6 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
     if (droppedFile) setFile(droppedFile);
   };
 
-  const isAgreementLocked = isNotApproved;
-
   return (
     <>
       <div className="mt-4 space-y-3 rounded-2xl border border-cyan-100 bg-cyan-50/40 p-4">
@@ -179,7 +190,7 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
         </div>
 
         <div className="space-y-3">
-          {/* Dohoda – len na stiahnutie, upload rieši systém */}
+          {/* Dohoda – generovaná na stiahnutie + možnosť nahrať podpísanú */}
           <div className="rounded-xl border border-cyan-100 bg-white/70 p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
@@ -188,17 +199,24 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
                   {msgs.common.documents.contractTitle}
                 </div>
                 <p className="text-xs text-cyan-700">{msgs.common.documents.contractDescription}</p>
-              </div>
-              {contractDoc?.subor_url ? (
-                <a
-                  href={`${baseUrl}/media/${contractDoc.subor_url}`}
-                  download={`Dohoda_prax_${internship.id}.pdf`}
-                  className="inline-flex items-center justify-center gap-1 self-center rounded-full border border-cyan-200 px-3 py-1.5 text-[11px] font-semibold text-cyan-700 transition hover:bg-cyan-100"
+                <span
+                  className={`inline-flex min-w-[150px] flex-col items-center justify-center rounded-full px-3 py-0.5 text-center text-[11px] font-semibold leading-tight ${statusInfo.contract.badge}`}
                 >
-                  <Icon name="download" className="h-3.5 w-3.5" />
-                  {msgs.common.documents.downloadLabel}
-                </a>
-              ) : null}
+                  {statusInfo.contract.label}
+                </span>
+              </div>
+              <div className="flex flex-col items-start gap-2 sm:items-end">
+                {agreementDoc ? (
+                  <a
+                    href={generatedAgreementUrl}
+                    download={`Dohoda_prax_${internship.id}.pdf`}
+                    className="inline-flex items-center justify-center gap-1 rounded-full border border-cyan-200 px-3 py-1.5 text-[11px] font-semibold text-cyan-700 transition hover:bg-cyan-100"
+                  >
+                    <Icon name="download" className="h-3.5 w-3.5" />
+                    {msgs.common.documents.downloadLabel}
+                  </a>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -210,7 +228,7 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
                 {msgs.common.documents.agreementTitle}
               </div>
               <p className="text-xs text-cyan-700">{msgs.common.documents.agreementDescription}</p>
-              {isAgreementLocked && (
+              {isContractLocked && (
                 <div className="flex items-center gap-2 text-[11px] font-semibold text-amber-700">
                   <Icon name="lock-keyhole" className="h-3.5 w-3.5" />
                   {msgs.common.documents.agreementLocked}
@@ -269,9 +287,9 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
             <div className="mt-4 flex items-center gap-2 text-[11px] font-semibold text-cyan-900">
               <span>{msgs.common.documents.typeLabel}</span>
               <div className="inline-flex rounded-full border border-cyan-200 p-1">
-                {(["zmluva", "vykaz"] as const).map((type) => {
-                  const isAgreement = type === "zmluva";
-                  const disabled = isAgreement && isAgreementLocked;
+                {(["dohoda", "zmluva", "vykaz"] as const).map((type) => {
+                  const isContractType = type === "zmluva";
+                  const disabled = isContractType && isContractLocked;
                   const isActive = selectedType === type;
 
                   return (
@@ -291,16 +309,18 @@ const DocumentUploadCard = ({ internship, onSuccess }: DocumentUploadCardProps) 
                             : "text-cyan-700 hover:bg-cyan-50"
                       }`}
                     >
-                      {isAgreement
-                        ? msgs.common.documents.typeAgreement
-                        : msgs.common.documents.typeReport}
+                      {type === "dohoda"
+                        ? msgs.common.documents.contractTitle
+                        : isContractType
+                          ? msgs.common.documents.typeAgreement
+                          : msgs.common.documents.typeReport}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {isAgreementLocked && (
+            {isContractLocked && (
               <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
                 <Icon name="lock-keyhole" className="h-4 w-4" />
                 {msgs.common.documents.agreementLocked}
