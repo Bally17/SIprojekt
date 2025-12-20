@@ -1,20 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import { RoleType } from "@type/props/common/globalTypes";
-import { setAuthTokens } from "@lib/api-client";
-import { useQueryClient } from "@tanstack/react-query";
-import { useLoginMutation } from "src/hook/useLoginMutation";
+import type { RoleType } from "@type/props/common/globalTypes";
+import { useAuth } from "src/lib/AuthProvider";
 
 export default function LoginForm() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
   const [userType, setUserType] = useState<RoleType>("student");
   const isStudent = userType === "student";
   const isCompany = userType === "company";
@@ -27,54 +21,32 @@ export default function LoginForm() {
 
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+  const { login, loginLoading } = useAuth();
 
-  const { mutateAsync: loginMutation, isPending } = useLoginMutation();
-
-  // Sync vstupov do state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Odoslanie loginu - študenti vs firmy vs garanti
+  const getEmailPlaceholder = useCallback(() => {
+    if (userType === "student") return msgs.auth.studentEmail;
+    if (userType === "company") return msgs.auth.companyEmail;
+    return msgs.auth.guarantEmail;
+  }, [userType, msgs.auth.studentEmail, msgs.auth.companyEmail, msgs.auth.guarantEmail]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const res = await loginMutation({
+      await login({
         role: userType,
         email: form.email,
         password: form.password,
       });
 
-      console.log("Login úspešný:", res);
-
-      // Uloženie tokenov
-      const accessToken = res.access_token || res.tokens?.access;
-      const refreshToken = res.refresh_token || res.tokens?.refresh;
-      if (accessToken) {
-        setAuthTokens({ access: accessToken, refresh: refreshToken });
-      }
-
-      // Uloženie používateľa na localStorage
-      localStorage.setItem("user", JSON.stringify(res.user));
-
-      // Naplniť cache profilu, aby sa hneď nemuselo refetchovať
-      queryClient.setQueryData(["profile"], res.user);
-
       notifySuccess({
         title: msgs.auth.successLogin,
         description: msgs.auth.successLogin,
       });
-
-      // Redirect podľa roly
-      const role = res.user.rola;
-      if (role === "firma") {
-        router.push("/dashboard/company");
-      } else if (role === "garant") {
-        router.push("/dashboard/garant");
-      } else {
-        router.push("/dashboard/student");
-      }
     } catch (err: any) {
       const message =
         err?.response?.data?.message ||
@@ -92,10 +64,11 @@ export default function LoginForm() {
     }
   };
 
-  // OAuth len pre firmy (študenti cez školský login/heslo)
+  // OAuth len pre firmy
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:8000/auth/google/login/";
   };
+
   const handleGithubLogin = () => {
     window.location.href = "http://localhost:8000/auth/github/login/";
   };
@@ -107,13 +80,13 @@ export default function LoginForm() {
       <h2 className="text-2xl font-semibold text-primary-900 text-center">{msgs.auth.title}</h2>
 
       {/* Prepínač typu používateľa */}
-      <div className="flex justify-center gap-3 mb-4 flex-wrap">
+      <div className="mb-4 flex flex-wrap justify-center gap-3">
         <Button
           type="button"
           onClick={() => setUserType("student")}
           variant={isStudent ? "primary" : "ghost"}
           className={`rounded-full px-4 py-2 text-sm ${
-            isStudent ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+            isStudent ? "" : "border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
           aria-pressed={isStudent}
         >
@@ -125,7 +98,7 @@ export default function LoginForm() {
           onClick={() => setUserType("company")}
           variant={isCompany ? "primary" : "ghost"}
           className={`rounded-full px-4 py-2 text-sm ${
-            isCompany ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+            isCompany ? "" : "border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
           aria-pressed={isCompany}
         >
@@ -137,7 +110,7 @@ export default function LoginForm() {
           onClick={() => setUserType("garant")}
           variant={isGarant ? "primary" : "ghost"}
           className={`rounded-full px-4 py-2 text-sm ${
-            isGarant ? "" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+            isGarant ? "" : "border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
           aria-pressed={isGarant}
         >
@@ -150,13 +123,7 @@ export default function LoginForm() {
         <input
           type="email"
           name="email"
-          placeholder={
-            userType === "student"
-              ? msgs.auth.studentEmail
-              : userType === "company"
-                ? msgs.auth.companyEmail
-                : msgs.auth.guarantEmail
-          }
+          placeholder={getEmailPlaceholder()}
           value={form.email}
           onChange={handleChange}
           className={input}
@@ -183,28 +150,28 @@ export default function LoginForm() {
           type="submit"
           variant="primary"
           className="w-full"
-          disabled={isPending}
-          loading={isPending}
+          disabled={loginLoading}
+          loading={loginLoading}
         >
-          {isPending ? msgs.auth.logining : msgs.auth.login}
+          {loginLoading ? msgs.auth.logining : msgs.auth.login}
         </Button>
       </form>
 
       {/* OAuth blok – len pre firmy */}
       {userType === "company" && (
-        <div className="text-center mt-6 space-y-2">
-          <p className="text-gray-500 mb-2">{msgs.auth.orWith}</p>
+        <div className="mt-6 space-y-2 text-center">
+          <p className="mb-2 text-gray-500">{msgs.auth.orWith}</p>
 
           <Button
             type="button"
             onClick={handleGoogleLogin}
             variant="ghost"
-            className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200"
+            className="flex w-full items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200"
           >
             <Image
               src="https://www.svgrepo.com/show/475656/google-color.svg"
               alt="Google"
-              className="w-5 h-5"
+              className="h-5 w-5"
               width={20}
               height={20}
             />
@@ -215,12 +182,12 @@ export default function LoginForm() {
             type="button"
             onClick={handleGithubLogin}
             variant="ghost"
-            className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200"
+            className="flex w-full items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200"
           >
             <Image
               src="https://www.svgrepo.com/show/512317/github-142.svg"
               alt="GitHub"
-              className="w-5 h-5"
+              className="h-5 w-5"
               width={20}
               height={20}
             />
@@ -229,7 +196,7 @@ export default function LoginForm() {
         </div>
       )}
 
-      <div className="text-center text-sm text-gray-600 mt-4">
+      <div className="mt-4 text-center text-sm text-gray-600">
         <p>
           {msgs.auth.noAccount}
           <a href="/auth/register/student" className="text-cyan-700 hover:underline">

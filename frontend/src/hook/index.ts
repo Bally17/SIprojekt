@@ -1,1 +1,0 @@
-export { useProfileQuery } from "./useProfileQuery";

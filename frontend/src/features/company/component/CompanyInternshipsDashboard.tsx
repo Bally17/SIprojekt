@@ -4,95 +4,94 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { Table } from "@components/table";
 import { useLocalization } from "@i18n/client";
-import { api } from "@lib/api-client";
+
 import PendingInternships from "./components/PendingInternships";
 import CompanyDocumentsCard from "./components/CompanyDocumentsCard";
-import { TableFilters } from "@type/props/table";
+
 import { TABLE_NAMES } from "src/constants/Table";
-import { Internship } from "@type/backend/Internship";
+import { TableFilters } from "@type/props/table";
 import { SEMESTER_OPTIONS, STAV_OPTIONS } from "@type/props/common/StateInternship";
 
-type CompanyInternshipsResponse = {
-  firma: {
-    id: number;
-    email: string;
-    meno?: string | null;
-    priezvisko?: string | null;
-  };
-  internships: Internship[];
-};
-
-type PaginatedCompanyInternshipsResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: CompanyInternshipsResponse;
-};
-
-type CompanyInternshipsApiResponse =
-  | CompanyInternshipsResponse
-  | PaginatedCompanyInternshipsResponse;
-
-// pomocný builder na query string (rovnaký pattern ako pri garantovi)
-const buildQueryString = (params: Record<string, string>) => {
-  const entries = Object.entries(params).filter(([, value]) => value !== "");
-  if (!entries.length) return "";
-  const searchParams = new URLSearchParams(entries as [string, string][]);
-  return `?${searchParams.toString()}`;
-};
+import {
+  useCompanyInternshipsQuery,
+  extractInternships,
+} from "src/hook/useCompanyInternshipsQuery";
 
 export default function CompanyInternshipsDashboard() {
-  const [internships, setInternships] = useState<Internship[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
+  const { warning: notifyWarning } = useSystemNotifications();
+  const { msgs } = useLocalization();
+
+  const errorLoadInternships = msgs.common.error.errorLoadInternships;
+
   const [filters, setFilters] = useState<TableFilters>({
     rok: "",
     semester: "",
     stav: "",
   });
 
-  const { msgs } = useLocalization();
-  const { warning: notifyWarning } = useSystemNotifications();
+  const apiFilters = useMemo(
+    () =>
+      Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== "")) as Record<
+        string,
+        string
+      >,
+    [filters],
+  );
 
-  const fetchInternships = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const { data, isLoading, error, refetch } = useCompanyInternshipsQuery(apiFilters);
 
-    try {
-      const rawFilters = Object.fromEntries(
-        Object.entries(filters).filter(([, value]) => value !== ""),
-      ) as Record<string, string>;
+  const serialize = useCallback((value: unknown): string => {
+    if (value == null) return "";
 
-      const qs = buildQueryString(rawFilters);
-
-      const res = await api.get<CompanyInternshipsApiResponse>(
-        `/internships/company/me/internships/${qs}`,
-      );
-
-      const payload =
-        "results" in res
-          ? (res.results as CompanyInternshipsResponse)
-          : (res as CompanyInternshipsResponse);
-
-      setInternships(payload?.internships || []);
-    } catch (err: any) {
-      const data = err?.response?.data;
-      const message =
-        data?.error || data?.detail || err?.message || msgs.common.error.errorLoadInternships;
-
-      setError(message);
-      notifyWarning({
-        title: msgs.common.error.errorLoadInternships,
-        description: message,
-      });
-    } finally {
-      setLoading(false);
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      return String(value);
     }
-  }, [filters, msgs.common.error.errorLoadInternships, notifyWarning]);
 
+    if (Array.isArray(value)) {
+      return value.map((v) => serialize(v)).join(", ");
+    }
+
+    if (typeof value === "object") {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return "[unserializable]";
+      }
+    }
+
+    return "";
+  }, []);
+
+  const getErrorMessage = useCallback(
+    (err: any): string => {
+      const data = err?.response?.data;
+      if (!data) return errorLoadInternships;
+      if (typeof data === "string") return data;
+      if (data.detail) return data.detail;
+
+      const parts: string[] = [];
+      for (const [k, v] of Object.entries(data)) {
+        const s = serialize(v);
+        if (s) parts.push(`${k}: ${s}`);
+      }
+      return parts.join(" | ") || errorLoadInternships;
+    },
+    [errorLoadInternships, serialize],
+  );
+
+  // warning sa zobrazí, keď je error (effect je lint-clean)
   useEffect(() => {
-    fetchInternships();
-  }, [fetchInternships]);
+    if (!error) return;
+
+    notifyWarning({
+      title: errorLoadInternships,
+      description: getErrorMessage(error),
+    });
+  }, [error, notifyWarning, errorLoadInternships, getErrorMessage]);
+
+  const errorText = error ? getErrorMessage(error) : null;
+
+  const internships = extractInternships(data);
 
   const resetFilters = () =>
     setFilters({
@@ -101,42 +100,40 @@ export default function CompanyInternshipsDashboard() {
       stav: "",
     });
 
-  const displayedInternships = useMemo(() => internships, [internships]);
-
   return (
     <div className="space-y-10">
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-4 border border-gray-100">
-        <PendingInternships onChange={fetchInternships} />
+        <PendingInternships onChange={() => refetch()} />
       </section>
 
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
         <Table
-          data={displayedInternships}
+          data={internships}
           name={TABLE_NAMES.ALL_INTERNSHIPS}
           document
           showFilters
           filters={filters}
           onFiltersChange={setFilters}
-          onApplyFilters={fetchInternships}
+          onApplyFilters={() => refetch()}
           onResetFilters={resetFilters}
           semesterOptions={SEMESTER_OPTIONS}
           stavOptions={STAV_OPTIONS}
-          isLoading={loading}
-          isError={error || null}
+          isLoading={isLoading}
+          isError={errorText}
         />
       </section>
 
       <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
         <Table
-          data={displayedInternships}
+          data={internships}
           name={TABLE_NAMES.COMPANY_DOCUMENTS}
-          isLoading={loading}
-          isError={error || null}
+          isLoading={isLoading}
+          isError={errorText}
           showEmpty
           actionMessage={msgs.common.companyDocs.empty}
           columnCountOverride={5}
           renderRow={(internship) => (
-            <CompanyDocumentsCard internship={internship} onChange={fetchInternships} />
+            <CompanyDocumentsCard internship={internship} onChange={() => refetch()} />
           )}
         />
       </section>

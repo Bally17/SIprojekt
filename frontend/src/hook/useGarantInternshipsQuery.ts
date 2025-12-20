@@ -1,0 +1,21 @@
+// src/hook/useGarantInternshipsQuery.ts
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { getGarantInternships } from "src/api/guarant-internships-api";
+import type { Internship } from "@type/backend/Internship";
+
+export function useGarantInternshipsQuery(filters: Record<string, string>) {
+  return useQuery<Internship[]>({
+    queryKey: ["garant-internships", filters],
+    queryFn: async () => {
+      const res = await getGarantInternships(filters);
+
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res.results)) return res.results;
+      if (Array.isArray(res.internships)) return res.internships;
+
+      return [];
+    },
+  });
+}

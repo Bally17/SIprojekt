@@ -1,105 +1,77 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useMemo } from "react";
 import { Button } from "@components/button";
-import { useSystemNotifications } from "@components/notifications";
 import { Table } from "@components/table";
+import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import { api } from "@lib/api-client";
-import { Internship } from "@type/backend/Internship";
 import { TABLE_NAMES } from "src/constants/Table";
 
-type PendingResponse = {
-  results?: {
-    firma?: {
-      meno?: string | null;
-      priezvisko?: string | null;
-      email: string;
-    };
-    internships?: Internship[];
-  };
-};
+import { usePendingInternshipsQuery } from "src/hook/usePendingInternshipsQuery";
+import { useConfirmInternshipMutation } from "src/hook/useConfirmInternshipMutation";
+import { useRejectInternshipMutation } from "src/hook/useRejectInternshipMutation";
 
 type PendingInternshipsProps = {
   onChange?: () => void;
 };
 
 export default function PendingInternships({ onChange }: Readonly<PendingInternshipsProps>) {
-  const [internships, setInternships] = useState<Internship[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
-
   const { msgs } = useLocalization();
-  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+  const { success, warning } = useSystemNotifications();
 
-  // Volá API endpoint, ukladá načítané praxe do state
-  const fetchPending = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const pending = usePendingInternshipsQuery();
+  const confirmMutation = useConfirmInternshipMutation();
+  const rejectMutation = useRejectInternshipMutation();
 
-    try {
-      const res = await api.get<PendingResponse>("/internships/company/me/internships/pending/");
+  const internships = useMemo(() => {
+    const list = pending.data?.results?.internships ?? [];
+    return Array.isArray(list) ? list : [];
+  }, [pending.data?.results?.internships]);
 
-      const list = res.results?.internships ?? [];
-      setInternships(Array.isArray(list) ? list : []);
-    } catch (err: any) {
-      const data = err?.response?.data;
-      const message =
-        data?.error || data?.detail || err?.message || msgs.common.error.errorLoadInternships;
+  const getErrorMessage = (err: any) => {
+    return (
+      err?.response?.data?.detail ||
+      err?.response?.data?.error ||
+      err?.message ||
+      msgs.common.error.errorLoadInternships
+    );
+  };
 
-      setError(message);
-      notifyWarning({
-        title: msgs.common.error.errorLoadInternships,
-        description: message,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [msgs.common.error.errorLoadInternships, notifyWarning]);
-
-  // Načíta čakajúce praxe po načítaní komponentu
-  useEffect(() => {
-    fetchPending();
-  }, [fetchPending]);
-
-  // Potvrdí alebo zamietne prax a odstráni ju zo zoznamu
   const handleAction = async (id: number, action: "confirm" | "reject") => {
-    setError("");
-
     try {
-      const endpoint = `/internships/company/${action}/${id}/`;
-      await api.patch(endpoint, {});
+      if (action === "confirm") {
+        await confirmMutation.mutateAsync(id);
+        success({
+          title: msgs.common.internships.management,
+          description: msgs.common.internships.new,
+        });
+      } else {
+        await rejectMutation.mutateAsync(id);
+        warning({
+          title: msgs.common.error.errorAction,
+          description: msgs.common.error.errorAction,
+        });
+      }
 
-      setInternships((prev) => prev.filter((item) => item.id !== id));
       onChange?.();
-
-      notifySuccess({
-        title:
-          action === "confirm" ? msgs.common.internships.management : msgs.common.error.errorAction,
-        description:
-          action === "confirm" ? msgs.common.internships.new : msgs.common.error.errorAction,
-      });
     } catch (err: any) {
-      const data = err?.response?.data;
-      const message = data?.error || data?.detail || err?.message || msgs.common.error.errorAction;
-
-      setError(message);
-      notifyWarning({
+      warning({
         title: msgs.common.error.errorAction,
-        description: message,
+        description: getErrorMessage(err),
       });
     }
   };
 
-  if (loading) {
+  if (pending.isLoading) {
     return <p className="text-center text-gray-500">{msgs.common.loading.pending}</p>;
   }
 
-  if (error) {
+  if (pending.isError) {
     return (
       <div className="text-center">
-        <p className="text-red-600">{error}</p>
-        <Button type="button" variant="primary" className="mt-4" onClick={fetchPending}>
+        <p className="text-red-600">{getErrorMessage(pending.error)}</p>
+
+        <Button type="button" variant="primary" className="mt-4" onClick={() => pending.refetch()}>
           {msgs.common.tryAgain}
         </Button>
       </div>
@@ -113,8 +85,8 @@ export default function PendingInternships({ onChange }: Readonly<PendingInterns
       rowActions
       onAction={handleAction}
       actionMessage={msgs.common.internships.empty}
-      isLoading={loading}
-      isError={error || null}
+      isLoading={pending.isLoading}
+      isError={pending.isError ? getErrorMessage((pending as any).error) : null}
       showEmpty
     />
   );

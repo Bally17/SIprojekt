@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import { api, getAccessToken } from "@lib/api-client";
+import { api, getAccessToken } from "@lib/ApiProvider";
 import { Internship } from "@type/backend/Internship";
 import InternshipDocument from "@type/backend/InternshipDocument";
 

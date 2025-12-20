@@ -1,4 +1,4 @@
-export interface CompanyRegistration {
+export type CompanyRegistration = {
   email: string;
   password?: string;
   nazov: string;
@@ -6,4 +6,4 @@ export interface CompanyRegistration {
   kontaktna_osoba_email: string;
   kontaktna_osoba_telefon: string;
   adresa?: string | null;
-}
+};

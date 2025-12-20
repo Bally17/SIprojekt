@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import { api } from "@lib/api-client";
+import { useRegisterCompanyMutation } from "src/hook/useRegisterCompanyMutation";
 
 type RegisterCompanyFormState = {
   companyName: string;
@@ -16,7 +16,6 @@ type RegisterCompanyFormState = {
 };
 
 export default function RegisterFormCompany() {
-  // Lokálny stav formulára (controlled inputs)
   const [form, setForm] = useState<RegisterCompanyFormState>({
     companyName: "",
     companyEmail: "",
@@ -26,75 +25,80 @@ export default function RegisterFormCompany() {
     contactPhone: "",
   });
 
-  const [loading, setLoading] = useState(false);
-
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+
+  const mutation = useRegisterCompanyMutation();
 
   const validateForm = () => {
     if (form.companyName.trim().length < 2) return "Názov firmy musí mať aspoň 2 znaky.";
     if (form.address.trim().length < 5) return "Adresa musí mať aspoň 5 znakov.";
     if (form.contactName.trim().length < 3) return "Meno kontaktnej osoby musí mať aspoň 3 znaky.";
-    const phoneDigits = form.contactPhone.replace(/\D/g, "");
+
+    const phoneDigits = form.contactPhone.replaceAll(/\D/g, "");
     if (phoneDigits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
+
     return null;
+  };
+
+  const serializeErrorValue = (value: unknown): string => {
+    if (value == null) return "";
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean")
+      return String(value);
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[unserializable]";
+    }
   };
 
   const getErrorMessage = (err: any) => {
     const data = err?.response?.data;
+
     if (!data) return msgs.auth.error;
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
 
     const parts: string[] = [];
-    Object.entries(data).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        parts.push(`${key}: ${value.join(", ")}`);
-      } else if (value) {
-        parts.push(`${key}: ${String(value)}`);
-      }
-    });
+    for (const [key, value] of Object.entries(data ?? {})) {
+      const serialized = serializeErrorValue(value);
+      if (serialized) parts.push(`${key}: ${serialized}`);
+    }
+
     return parts.join(" | ") || msgs.auth.error;
   };
 
-  // Aktualizácia vstupov → state
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit handler: mapovanie na backend field names + POST
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setLoading(true);
 
     const clientError = validateForm();
     if (clientError) {
       notifyWarning({ title: msgs.auth.errorTitle, description: clientError });
-      setLoading(false);
       return;
     }
 
-    // payload presne podľa API
-    const payload = {
-      email: form.companyEmail,
-      nazov: form.companyName,
-      adresa: form.address,
-      kontaktna_osoba_meno: form.contactName,
-      kontaktna_osoba_email: form.contactEmail,
-      kontaktna_osoba_telefon: form.contactPhone,
-    };
-
     try {
-      // api.post vracia priamo response body, tu ho nepotrebujeme
-      await api.post("/auth/register/company/", payload);
+      await mutation.mutateAsync({
+        email: form.companyEmail,
+        nazov: form.companyName,
+        adresa: form.address,
+        kontaktna_osoba_meno: form.contactName,
+        kontaktna_osoba_email: form.contactEmail,
+        kontaktna_osoba_telefon: form.contactPhone,
+      });
 
       notifySuccess({
         title: msgs.auth.successRegister,
         description: msgs.auth.registerCompany,
       });
 
-      // Reset formulára
       setForm({
         companyName: "",
         companyEmail: "",
@@ -104,21 +108,10 @@ export default function RegisterFormCompany() {
         contactPhone: "",
       });
     } catch (err: any) {
-      const message =
-        getErrorMessage(err) ||
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        msgs.auth.errorTitle;
-
-      // Log do konzoly pre debug
-      console.error("❌ Chyba registrácie:", err);
-
       notifyWarning({
         title: msgs.auth.errorTitle,
-        description: message,
+        description: getErrorMessage(err),
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -194,11 +187,10 @@ export default function RegisterFormCompany() {
         type="submit"
         variant="primary"
         className="w-full"
-        disabled={loading}
-        loading={loading}
-        aria-busy={loading}
+        disabled={mutation.isPending}
+        loading={mutation.isPending}
       >
-        {loading ? msgs.auth.submitting : msgs.auth.registerCompany}
+        {mutation.isPending ? msgs.auth.submitting : msgs.auth.registerCompany}
       </Button>
     </form>
   );

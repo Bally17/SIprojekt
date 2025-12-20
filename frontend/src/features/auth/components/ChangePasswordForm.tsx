@@ -1,22 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import { api } from "@lib/api-client";
-import { getProfile, type ProfileUser } from "@lib/api";
-
-type ChangePasswordFormProps = {
-  onSubmit?: (payload: {
-    currentPassword: string;
-    newPassword: string;
-    newPasswordConfirm: string;
-  }) => Promise<void> | void;
-
-  loading?: boolean;
-};
+import { useAuth } from "@lib/AuthProvider";
+import { useChangePasswordMutation } from "src/hook/useChangePasswordMutation";
 
 type FormState = {
   currentPassword: string;
@@ -24,55 +14,20 @@ type FormState = {
   newPasswordConfirm: string;
 };
 
-type ChangePasswordResponse = {
-  user?: ProfileUser | null;
-};
-
-export default function ChangePasswordForm({
-  onSubmit,
-  loading = false,
-}: Readonly<ChangePasswordFormProps>) {
+export default function ChangePasswordForm() {
   const { msgs } = useLocalization();
   const router = useRouter();
+  const { user } = useAuth();
+
   const [form, setForm] = useState<FormState>({
     currentPassword: "",
     newPassword: "",
     newPasswordConfirm: "",
   });
-  const [submitting, setSubmitting] = useState(false);
+
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
-  const defaultSubmit = useCallback(
-    async ({ currentPassword, newPassword, newPasswordConfirm }: FormState) => {
-      // api.post vracia priamo telo odpovede, nie res.data
-      const response = await api.post<ChangePasswordResponse>("/auth/password/change/", {
-        current_password: currentPassword,
-        new_password: newPassword,
-        new_password_confirm: newPasswordConfirm,
-      });
-
-      let latestUser: ProfileUser | null = response.user ?? null;
-
-      // fallback – ak backend nevrátil usera po zmene hesla
-      if (!latestUser) {
-        try {
-          latestUser = await getProfile();
-        } catch {
-          latestUser = null;
-        }
-      }
-
-      if (latestUser) {
-        localStorage.setItem("user", JSON.stringify(latestUser));
-      }
-
-      const roleKey = String(latestUser?.rola || latestUser?.role || "").toLowerCase();
-      const redirectTarget = roleKey === "firma" ? "/dashboard/company" : "/dashboard/student";
-
-      router.push(redirectTarget);
-    },
-    [router],
-  );
+  const mutation = useChangePasswordMutation();
 
   const handleChange = (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -81,57 +36,69 @@ export default function ChangePasswordForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (form.newPassword.length < 8) {
-      notifyWarning({
-        title: msgs.auth.error,
-        description: msgs.auth.passwordTooShort,
-      });
+    const { currentPassword, newPassword, newPasswordConfirm } = form;
+
+    if (newPassword.length < 8) {
+      notifyWarning({ title: msgs.auth.error, description: msgs.auth.passwordTooShort });
       return;
     }
 
-    if (form.newPassword !== form.newPasswordConfirm) {
-      notifyWarning({
-        title: msgs.auth.error,
-        description: msgs.auth.passwordMismatch,
-      });
+    if (newPassword !== newPasswordConfirm) {
+      notifyWarning({ title: msgs.auth.error, description: msgs.auth.passwordMismatch });
       return;
     }
 
     try {
-      setSubmitting(true);
-      const submitHandler = onSubmit ?? defaultSubmit;
-
-      await submitHandler({
-        currentPassword: form.currentPassword,
-        newPassword: form.newPassword,
-        newPasswordConfirm: form.newPasswordConfirm,
+      // API request
+      const res = await mutation.mutateAsync({
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirm: newPasswordConfirm,
       });
+
+      // Preferujeme user z API, inak vezmeme user z AuthProvideru
+      const effectiveUser = res.user ?? user;
+
+      // Presmerovanie podľa role
+      const roleKey = String(effectiveUser?.rola || effectiveUser?.role || "").toLowerCase();
+
+      const redirect =
+        roleKey === "firma"
+          ? "/dashboard/company"
+          : roleKey === "student"
+            ? "/dashboard/student"
+            : "/dashboard";
 
       notifySuccess({
         title: msgs.auth.succesResetPassword,
         description: msgs.auth.setNewPassword,
       });
 
-      setForm({ currentPassword: "", newPassword: "", newPasswordConfirm: "" });
-    } catch (submitError: any) {
-      const message =
-        submitError?.response?.data?.message ||
-        submitError?.response?.data?.error_description ||
-        submitError?.response?.data?.error ||
-        submitError?.response?.data?.detail ||
-        submitError?.message ||
-        "Nepodarilo sa zmeniť heslo. Skúste znova.";
+      router.push(redirect);
+
+      // Reset form
+      setForm({
+        currentPassword: "",
+        newPassword: "",
+        newPasswordConfirm: "",
+      });
+    } catch (err: any) {
+      const description =
+        err?.response?.data?.message ||
+        err?.response?.data?.error_description ||
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Nepodarilo sa zmeniť heslo.";
 
       notifyWarning({
         title: msgs.auth.error,
-        description: message,
+        description,
       });
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  const isSubmitting = submitting || loading;
+  const isSubmitting = mutation.isPending;
   const inputClasses =
     "w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-400";
 
@@ -146,11 +113,10 @@ export default function ChangePasswordForm({
       <p className="text-sm text-gray-600 text-center">{msgs.auth.newPasswordInfoParagraph}</p>
 
       <div className="space-y-1">
-        <label htmlFor="currentPassword" className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-gray-700">
           {msgs.auth.newGeneratedPassword}
         </label>
         <input
-          id="currentPassword"
           type="password"
           value={form.currentPassword}
           onChange={handleChange("currentPassword")}
@@ -160,11 +126,8 @@ export default function ChangePasswordForm({
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="newPassword" className="text-sm font-medium text-gray-700">
-          {msgs.auth.newPassword}
-        </label>
+        <label className="text-sm font-medium text-gray-700">{msgs.auth.newPassword}</label>
         <input
-          id="newPassword"
           type="password"
           value={form.newPassword}
           onChange={handleChange("newPassword")}
@@ -175,11 +138,8 @@ export default function ChangePasswordForm({
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="newPasswordConfirm" className="text-sm font-medium text-gray-700">
-          {msgs.auth.confirmPassword}
-        </label>
+        <label className="text-sm font-medium text-gray-700">{msgs.auth.confirmPassword}</label>
         <input
-          id="newPasswordConfirm"
           type="password"
           value={form.newPasswordConfirm}
           onChange={handleChange("newPasswordConfirm")}

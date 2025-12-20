@@ -1,13 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import { api } from "@lib/api-client";
-import { useApiGetQuery, useApiMutation } from "@lib/api";
-import { useAuth } from "@constants";
+import { api } from "@lib/ApiProvider"; // TOTO si nechávame
+import { useAuth } from "@lib/AuthProvider"; // TOTO si nechávame
+
+// --------------------------------------------------
+// TYPES
+// --------------------------------------------------
 
 type OAuthClient = {
   client_id: string;
@@ -25,14 +28,16 @@ type CreateClientPayload = {
   name: string;
   redirect_uris: string[];
   scope?: string;
-  client_id?: string;
-  client_secret?: string;
   is_public: boolean;
   allow_password_grant: boolean;
   allow_private_jwt: boolean;
   public_key?: string;
   service_user_id?: number;
 };
+
+// --------------------------------------------------
+// INITIAL FORM
+// --------------------------------------------------
 
 const initialFormState = {
   name: "",
@@ -45,12 +50,51 @@ const initialFormState = {
   service_user_id: "",
 };
 
+// --------------------------------------------------
+// API FUNCTIONS
+// --------------------------------------------------
+
+async function fetchOAuthClients(): Promise<OAuthClient[]> {
+  const res = await api.get("/auth/oauth/clients/");
+  return res as OAuthClient[];
+}
+
+async function createOAuthClient(payload: CreateClientPayload): Promise<OAuthClient> {
+  const res = await api.post("/auth/oauth/clients/", payload);
+  return res as OAuthClient;
+}
+
+async function deleteOAuthClient(id: string): Promise<void> {
+  await api.delete(`/auth/oauth/clients/${id}/`);
+}
+
+// --------------------------------------------------
+// COMPONENT
+// --------------------------------------------------
+
 export default function OAuthClientsSection() {
   const { user } = useAuth();
   const { msgs } = useLocalization();
+  const { success, warning } = useSystemNotifications();
   const queryClient = useQueryClient();
-  const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
+  // HOOKY MUSIA BYŤ MIMO PODMIENOK (inak React hodí chybu)
+  const clientsQuery = useQuery({
+    queryKey: ["oauth-clients"],
+    queryFn: fetchOAuthClients,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (payload: CreateClientPayload) => createOAuthClient(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["oauth-clients"] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteOAuthClient(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["oauth-clients"] }),
+  });
+
+  // Lokálny UI state
   const [form, setForm] = useState(initialFormState);
   const [lastCredentials, setLastCredentials] = useState<{
     client_id?: string;
@@ -58,20 +102,7 @@ export default function OAuthClientsSection() {
   } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const {
-    data: clients = [],
-    isLoading,
-    error,
-  } = useApiGetQuery<OAuthClient[]>(["oauth-clients"], "/auth/oauth/clients/");
-
-  const createMutation = useApiMutation<OAuthClient, CreateClientPayload>((payload) =>
-    api.post("/auth/oauth/clients/", payload),
-  );
-
-  const deleteMutation = useApiMutation<void, string>((id) =>
-    api.delete(`/auth/oauth/clients/${id}/`),
-  );
-
+  // PARSED REDIRECTS
   const parsedRedirects = useMemo(
     () =>
       form.redirect_uris
@@ -81,9 +112,12 @@ export default function OAuthClientsSection() {
     [form.redirect_uris],
   );
 
-  if (user?.rola !== "garant") {
-    return null;
-  }
+  // PODMIENKA IBA NA RENDER — HOOKY UŽ SÚ ZAVOLANÉ
+  if (user?.rola !== "garant") return null;
+
+  // --------------------------------------------------
+  // HANDLERS
+  // --------------------------------------------------
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -100,6 +134,7 @@ export default function OAuthClientsSection() {
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     setLastCredentials(null);
     setFormError(null);
 
@@ -117,7 +152,7 @@ export default function OAuthClientsSection() {
       try {
         const parsed = new URL(uri);
         if (!["http:", "https:"].includes(parsed.protocol)) {
-          throw new Error("Protocol must be http or https");
+          throw new Error();
         }
       } catch {
         setFormError(msgs.common.oauth.validation.redirectInvalid.replace("{uri}", uri));
@@ -137,66 +172,61 @@ export default function OAuthClientsSection() {
       is_public: form.is_public,
       allow_password_grant: form.allow_password_grant,
       allow_private_jwt: form.allow_private_jwt,
+      public_key: form.allow_private_jwt ? form.public_key.trim() : undefined,
       service_user_id:
         form.service_user_id && Number(form.service_user_id) > 0
           ? Number(form.service_user_id)
           : undefined,
-      public_key: form.allow_private_jwt ? form.public_key.trim() || undefined : undefined,
     };
 
     try {
       const created = await createMutation.mutateAsync(payload);
+
       setLastCredentials({
         client_id: (created as any).client_id,
         client_secret: (created as any).client_secret,
       });
-      notifySuccess({
-        title: msgs.common.successTitle,
-        description: msgs.common.success,
-      });
+
+      success({ title: msgs.common.successTitle, description: msgs.common.success });
+
       setForm(initialFormState);
-      await queryClient.invalidateQueries({ queryKey: ["oauth-clients"] });
     } catch (err: any) {
-      const resp = err?.response?.data;
       const description =
-        resp?.detail ||
-        resp?.error ||
-        resp?.message ||
-        (typeof resp === "string" ? resp : "") ||
+        err?.response?.data?.detail ||
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
         err?.message ||
         msgs.common.error.errorSave;
-      if (description) {
-        setFormError(description);
-      }
-      notifyWarning({
-        title: msgs.common.error.errorSave,
-        description,
-      });
+
+      setFormError(description);
+      warning({ title: msgs.common.error.errorSave, description });
     }
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = window.confirm(msgs.common.oauth.deleteConfirm);
-    if (!confirmed) return;
+    if (!window.confirm(msgs.common.oauth.deleteConfirm)) return;
+
     try {
       await deleteMutation.mutateAsync(id);
-      await queryClient.invalidateQueries({ queryKey: ["oauth-clients"] });
-      notifySuccess({
-        title: msgs.common.successTitle,
-        description: msgs.common.oauth.deleteSuccess,
-      });
+      success({ title: msgs.common.successTitle, description: msgs.common.oauth.deleteSuccess });
     } catch (err: any) {
       const description =
         err?.response?.data?.detail ||
         err?.response?.data?.error ||
         err?.message ||
         msgs.common.error.errorDelete;
-      notifyWarning({
-        title: msgs.common.error.errorDelete,
-        description,
-      });
+
+      warning({ title: msgs.common.error.errorDelete, description });
     }
   };
+
+  // --------------------------------------------------
+  // UI (NEZMENENÉ)
+  // --------------------------------------------------
+
+  const clients = clientsQuery.data ?? [];
+  const isLoading = clientsQuery.isLoading;
+  const error = clientsQuery.error;
 
   return (
     <section className="space-y-6 rounded-lg border border-gray-100 bg-white p-6 shadow-sm">

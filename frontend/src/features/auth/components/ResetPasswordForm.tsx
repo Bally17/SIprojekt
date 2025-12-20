@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import { api } from "@lib/api-client";
-import { TokenVerify } from "@type/backend/TokenVerify";
+
+import { useResetPasswordMutation } from "src/hook/useResetPasswordMutation";
+import type { TokenVerify } from "@type/backend/TokenVerify";
 
 type ResetPasswordFormState = {
   newPassword: string;
@@ -17,10 +18,42 @@ export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
     newPassword: "",
     confirmPassword: "",
   });
-  const [loading, setLoading] = useState(false);
 
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+
+  const mutation = useResetPasswordMutation();
+
+  const serializeErrorValue = (value: unknown): string => {
+    if (value == null) return "";
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[unserializable]";
+    }
+  };
+
+  const getErrorMessage = (err: any) => {
+    const data = err?.response?.data;
+
+    if (!data) return msgs.auth.error;
+    if (typeof data === "string") return data;
+    if (data.detail) return data.detail;
+
+    const dataObj: Record<string, unknown> = data ?? {};
+    const parts: string[] = [];
+
+    for (const [key, value] of Object.entries(dataObj)) {
+      const serialized = serializeErrorValue(value);
+      if (serialized) parts.push(`${key}: ${serialized}`);
+    }
+
+    return parts.join(" | ") || msgs.auth.error;
+  };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -46,10 +79,8 @@ export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
       return;
     }
 
-    setLoading(true);
-
     try {
-      await api.post("/auth/password/reset/confirm/", {
+      await mutation.mutateAsync({
         token,
         new_password: form.newPassword,
         new_password_confirm: form.confirmPassword,
@@ -62,15 +93,10 @@ export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
         description: msgs.auth.setNewPassword,
       });
     } catch (err: any) {
-      const data = err?.response?.data;
-      const message = data?.error || data?.detail || data?.message || msgs.auth.notNewPassword;
-
       notifyWarning({
         title: msgs.auth.error,
-        description: message,
+        description: getErrorMessage(err),
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -94,7 +120,6 @@ export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
         onChange={handleChange}
         className={input}
         required
-        minLength={8}
       />
       <input
         type="password"
@@ -104,18 +129,16 @@ export default function ResetPasswordForm({ token }: Readonly<TokenVerify>) {
         onChange={handleChange}
         className={input}
         required
-        minLength={8}
       />
 
       <Button
         type="submit"
         variant="primary"
         className="w-full"
-        disabled={loading}
-        loading={loading}
-        aria-busy={loading}
+        disabled={mutation.isPending}
+        loading={mutation.isPending}
       >
-        {loading ? msgs.auth.saving : msgs.auth.savePassword}
+        {mutation.isPending ? msgs.auth.saving : msgs.auth.savePassword}
       </Button>
     </form>
   );

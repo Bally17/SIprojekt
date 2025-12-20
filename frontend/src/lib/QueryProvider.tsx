@@ -1,3 +1,4 @@
+// \src\lib\QueryProvider.tsx
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,13 +10,12 @@ type Props = {
 };
 
 export function QueryProvider({ children }: Readonly<Props>) {
-  // jeden QueryClient na celý život komponentu
   const [client] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: 1, // môžeš poladiť
+            retry: 1,
             refetchOnWindowFocus: false,
           },
         },
