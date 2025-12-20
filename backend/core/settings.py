@@ -271,16 +271,48 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@studentpraxe.sk")
 
 # -----------------------------------------------------------------------------
+# LOGGING (toggleable via env)
+# -----------------------------------------------------------------------------
+LOGGING_ENABLED = os.getenv('LOGGING_ENABLED', 'true').lower() == 'true'
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+
+LOGGING_BASE = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': LOG_LEVEL,
+    },
+}
+
+LOGGING_DISABLED = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'handlers': {
+        'null': {'class': 'logging.NullHandler'},
+    },
+    'root': {'handlers': ['null'], 'level': 'CRITICAL'},
+}
+
+LOGGING = LOGGING_BASE if LOGGING_ENABLED else LOGGING_DISABLED
+
+# -----------------------------------------------------------------------------
 # DOCKER ŠPECIFIKÁ
 # -----------------------------------------------------------------------------
 if os.getenv('DOCKER_CONTAINER'):
     ALLOWED_HOSTS.extend(['web', 'backend', '0.0.0.0'])
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {'console': {'class': 'logging.StreamHandler'}},
-        'root': {'handlers': ['console'], 'level': 'INFO'},
-    }
+    LOGGING = LOGGING_BASE if LOGGING_ENABLED else LOGGING_DISABLED
 
 # -----------------------------------------------------------------------------
 # SECURITY (PROD hardening)
