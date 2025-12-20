@@ -5,6 +5,7 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.users.models import User
 
@@ -16,6 +17,8 @@ from .helpers import signer, generate_password
 class StudentRegistrationView(generics.CreateAPIView):
     serializer_class = StudentRegistrationSerializer
     permission_classes = [AllowAny]
+    throttle_scope = "registration"
+    throttle_classes = [ScopedRateThrottle]
 
     def send_activation_email(self, user, password):
         """Odošle aktivačný email so zahashovaným tokenom"""
@@ -70,6 +73,8 @@ Tím Študentskej praxe
 class CompanyRegistrationView(generics.CreateAPIView):
     serializer_class = CompanyRegistrationSerializer
     permission_classes = [AllowAny]
+    throttle_scope = "registration"
+    throttle_classes = [ScopedRateThrottle]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

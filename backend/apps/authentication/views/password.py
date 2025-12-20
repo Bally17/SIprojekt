@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.core.signing import BadSignature, SignatureExpired
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.users.models import User
 
@@ -22,6 +23,7 @@ from .helpers import (
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def password_reset_request(request):
     """Prijme email a odošle reset link, ak používateľ existuje."""
     serializer = PasswordResetRequestSerializer(data=request.data)
@@ -39,10 +41,12 @@ def password_reset_request(request):
         {"message": "Ak účet existuje, poslali sme resetovací odkaz na email."},
         status=status.HTTP_200_OK,
     )
+password_reset_request.throttle_scope = "password_reset"
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def password_reset_confirm(request):
     """Overí token a nastaví nové heslo."""
     serializer = PasswordResetConfirmSerializer(data=request.data)
@@ -68,6 +72,7 @@ def password_reset_confirm(request):
     user.save()
 
     return Response({"message": "Heslo bolo úspešne zresetované."}, status=status.HTTP_200_OK)
+password_reset_confirm.throttle_scope = "password_reset"
 
 
 @api_view(["POST"])
