@@ -1,5 +1,5 @@
 from .helpers import get_tokens_for_user, get_user_data, signer, password_reset_signer
-from .login import login_view, company_login_view, garant_login_view, profile, logout_view
+from .login import login_view, company_login_view, garant_login_view, profile, profile_missing_fields, logout_view
 from .oauth_server import oauth_authorize, oauth_token, oauth_userinfo, oauth_clients, oauth_client_detail
 from .password import password_reset_request, password_reset_confirm, change_password
 from .registration import StudentRegistrationView, CompanyRegistrationView, activate_account
@@ -14,6 +14,7 @@ __all__ = [
     "company_login_view",
     "garant_login_view",
     "profile",
+    "profile_missing_fields",
     "logout_view",
     "oauth_authorize",
     "oauth_token",

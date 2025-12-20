@@ -3,8 +3,8 @@ import { Footer, Navbar } from "@features/landing";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      <Navbar />
+    <div className="flex min-h-screen flex-col bg-primary-50">
+      <Navbar showLandingLinks={false} />
       <main className="flex-1 pt-28 pb-16">
         <div className="max-w-7xl mx-auto px-6">
           <BackButton />
@@ -13,7 +13,7 @@ export default function LoginPage() {
           <LoginForm />
         </div>
       </main>
-      <Footer />
+      <Footer showLandingLinks={false} />
     </div>
   );
 }

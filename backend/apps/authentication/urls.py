@@ -14,6 +14,7 @@ urlpatterns = [
     path('login/garant/', views.garant_login_view, name='garant-login'),
     path('google/', views.google_auth, name='google-auth'),
     path('profile/', views.profile, name='profile'),
+    path('profile/missing/', views.profile_missing_fields, name='profile-missing-fields'),
     path('logout/', views.logout_view, name='logout'),
     
     # Token management

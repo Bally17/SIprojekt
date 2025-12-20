@@ -16,7 +16,7 @@ services:
       - db
     volumes:
       - ./backend:/app # len raz!
-    entrypoint: ["/app/entrypoint.sh"]
+    entrypoint: ["sh", "/app/entrypoint.sh"]
     networks:
       - moja-network
 
@@ -46,7 +46,7 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - REACT_APP_API_URL=http://localhost:8000/api
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
     command: npm run dev

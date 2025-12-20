@@ -8,7 +8,7 @@ export default function Features() {
   const { msgs } = useLocalization();
 
   return (
-    <section id="features" className="section bg-paper">
+    <section id="features" className="section bg-primary-50">
       <div className="container-wide">
         <h2 className="text-3xl font-bold text-ink-900 mb-8">{msgs.common.page.features}</h2>
 

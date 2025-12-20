@@ -68,6 +68,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',      # CORS najvyššie
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # serve static files (e.g., swagger assets) in prod
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     # CSRF middleware môže ostať; s JWTAuthentication nevyžaduješ CSRF
@@ -148,6 +149,7 @@ USE_TZ = True
 # -----------------------------------------------------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -214,6 +216,18 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',  # per-view scopes (login/reset/registration)
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': os.getenv('THROTTLE_RATE_ANON', '100/min'),
+        'user': os.getenv('THROTTLE_RATE_USER', '300/min'),
+        'login': os.getenv('THROTTLE_RATE_LOGIN', '20/min'),
+        'password_reset': os.getenv('THROTTLE_RATE_PASSWORD_RESET', '10/min'),
+        'registration': os.getenv('THROTTLE_RATE_REGISTRATION', '5/min'),
+    },
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
@@ -271,16 +285,48 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@studentpraxe.sk")
 
 # -----------------------------------------------------------------------------
+# LOGGING (toggleable via env)
+# -----------------------------------------------------------------------------
+LOGGING_ENABLED = os.getenv('LOGGING_ENABLED', 'true').lower() == 'true'
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+
+LOGGING_BASE = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': LOG_LEVEL,
+    },
+}
+
+LOGGING_DISABLED = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'handlers': {
+        'null': {'class': 'logging.NullHandler'},
+    },
+    'root': {'handlers': ['null'], 'level': 'CRITICAL'},
+}
+
+LOGGING = LOGGING_BASE if LOGGING_ENABLED else LOGGING_DISABLED
+
+# -----------------------------------------------------------------------------
 # DOCKER ŠPECIFIKÁ
 # -----------------------------------------------------------------------------
 if os.getenv('DOCKER_CONTAINER'):
     ALLOWED_HOSTS.extend(['web', 'backend', '0.0.0.0'])
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {'console': {'class': 'logging.StreamHandler'}},
-        'root': {'handlers': ['console'], 'level': 'INFO'},
-    }
+    LOGGING = LOGGING_BASE if LOGGING_ENABLED else LOGGING_DISABLED
 
 # -----------------------------------------------------------------------------
 # SECURITY (PROD hardening)

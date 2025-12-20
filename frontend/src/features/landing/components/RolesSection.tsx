@@ -12,7 +12,7 @@ export default function RolesSection() {
   const [tab, setTab] = useState<RoleType>("student");
 
   return (
-    <section id="roles" className="section">
+    <section id="roles" className="section bg-primary-50">
       <div className="container-wide">
         <h2 className="text-3xl font-bold text-ink-900 mb-2">{msgs.common.role.title}</h2>
         <p className="text-ink-500 mb-6">{msgs.common.role.subtitle}</p>

@@ -1,48 +1,58 @@
 "use client";
 
+import Image from "next/image";
 import { useLocalization } from "@i18n/client";
 
-export default function Footer() {
+//volitelný prop, určuje či sa zobrazia anchor odkazy, na landing je true inak false
+type FooterProps = {
+  showLandingLinks?: boolean;
+};
+
+export default function Footer({ showLandingLinks = true }: Readonly<FooterProps>) {
   const { msgs } = useLocalization();
   const year = String(new Date().getFullYear());
   return (
     <footer id="contact" className="bg-primary-900 text-white">
       <div className="container-wide py-12">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-2xl font-bold text-white">
-            <div className="bg-white text-primary-900 rounded-md px-2 py-1">
-              {msgs.common.brand.logoLetter}
-            </div>
-            {msgs.common.brand.logoText}
-          </div>
+        <div className="flex items-center">
+          <Image
+            src="/images/logo_fpvai_footer.png"
+            alt={msgs.common.brand.logoText}
+            width={180}
+            height={48}
+            className="h-12 w-auto"
+            priority
+          />
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 mt-8 text-sm">
-          <div>
-            <div className="font-semibold mb-3">{msgs.common.page.menu}</div>
-            <ul className="space-y-2 text-white/80">
-              <li>
-                <a href="#how" className="hover:underline">
-                  {msgs.common.page.howItWorks}
-                </a>
-              </li>
-              <li>
-                <a href="#features" className="hover:underline">
-                  {msgs.common.page.features}
-                </a>
-              </li>
-              <li>
-                <a href="#faq" className="hover:underline">
-                  {msgs.common.page.faq}
-                </a>
-              </li>
-              <li>
-                <a href="#contact" className="hover:underline">
-                  {msgs.common.page.contact}
-                </a>
-              </li>
-            </ul>
-          </div>
+          {showLandingLinks && (
+            <div>
+              <div className="font-semibold mb-3">{msgs.common.page.menu}</div>
+              <ul className="space-y-2 text-white/80">
+                <li>
+                  <a href="#how-it-works" className="hover:underline">
+                    {msgs.common.page.howItWorks}
+                  </a>
+                </li>
+                <li>
+                  <a href="#features" className="hover:underline">
+                    {msgs.common.page.features}
+                  </a>
+                </li>
+                <li>
+                  <a href="#faq" className="hover:underline">
+                    {msgs.common.page.faq}
+                  </a>
+                </li>
+                <li>
+                  <a href="#contact" className="hover:underline">
+                    {msgs.common.page.contact}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          )}
           <div>
             <div className="font-semibold mb-3">{msgs.auth.loginRegister}</div>
             <ul className="space-y-2 text-white/80">

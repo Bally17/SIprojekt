@@ -1,7 +1,8 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -24,6 +25,7 @@ def _build_login_response(user):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def login_view(request):
     """Normal email/password login for students"""
     serializer = LoginSerializer(data=request.data)
@@ -43,10 +45,12 @@ def login_view(request):
         return Response(_build_login_response(user), status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+login_view.throttle_scope = "login"
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def company_login_view(request):
     """Email/password login for companies"""
     serializer = LoginSerializer(data=request.data)
@@ -69,10 +73,12 @@ def company_login_view(request):
         return Response(_build_login_response(user), status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+company_login_view.throttle_scope = "login"
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def garant_login_view(request):
     """Email/password login for garants"""
     serializer = LoginSerializer(data=request.data)
@@ -95,6 +101,7 @@ def garant_login_view(request):
         return Response(_build_login_response(user), status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+garant_login_view.throttle_scope = "login"
 
 
 @api_view(["GET"])
@@ -103,6 +110,19 @@ def profile(request):
     """Get user profile"""
     user_data = get_user_data(request.user)
     return Response({"user": user_data})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def profile_missing_fields(request):
+    """
+    Get user profile with info about missing required fields we need to collect.
+    Useful after OAuth (GitHub/Google) to prompt user to complete data.
+    """
+    user = request.user
+    required_fields = ["meno", "priezvisko", "telefon", "adresa"]
+    missing = [field for field in required_fields if not getattr(user, field)]
+    return Response({"user": get_user_data(user), "missing_required_fields": missing})
 
 
 @api_view(["POST"])
