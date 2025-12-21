@@ -76,13 +76,21 @@ export default function Footer({ showLandingLinks = true }: Readonly<FooterProps
           </div>
           <div>
             <div className="font-semibold mb-3">{msgs.common.page.mobile}</div>
-            <div className="flex gap-3 opacity-80">
-              <div className="h-10 w-32 rounded-lg bg-white/10 grid place-items-center">
-                {msgs.common.page.appStore}
-              </div>
-              <div className="h-10 w-32 rounded-lg bg-white/10 grid place-items-center">
-                {msgs.common.page.googlePlay}
-              </div>
+            <div className="flex gap-3 opacity-90">
+              <Image
+                src="/images/game_14857377.png"
+                alt="Store badge 1"
+                width={64}
+                height={64}
+                className="h-12 w-12"
+              />
+              <Image
+                src="/images/game_16566128.png"
+                alt="Store badge 2"
+                width={64}
+                height={64}
+                className="h-12 w-12"
+              />
             </div>
           </div>
         </div>
