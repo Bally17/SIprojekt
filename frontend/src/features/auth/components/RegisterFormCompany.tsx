@@ -6,6 +6,7 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { useRegisterCompanyMutation } from "src/hook/useRegisterCompanyMutation";
 import { getErrorMessage } from "@utils/errorActions";
+import { useForm, type FieldErrors } from "react-hook-form";
 
 type RegisterCompanyFormState = {
   companyName: string;
@@ -17,45 +18,28 @@ type RegisterCompanyFormState = {
 };
 
 export default function RegisterFormCompany() {
-  const [form, setForm] = useState<RegisterCompanyFormState>({
-    companyName: "",
-    companyEmail: "",
-    address: "",
-    contactName: "",
-    contactEmail: "",
-    contactPhone: "",
-  });
-
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
-
   const mutation = useRegisterCompanyMutation();
 
-  const validateForm = () => {
-    if (form.companyName.trim().length < 2) return "Názov firmy musí mať aspoň 2 znaky.";
-    if (form.address.trim().length < 5) return "Adresa musí mať aspoň 5 znakov.";
-    if (form.contactName.trim().length < 3) return "Meno kontaktnej osoby musí mať aspoň 3 znaky.";
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<RegisterCompanyFormState>({
+    defaultValues: {
+      companyName: "",
+      companyEmail: "",
+      address: "",
+      contactName: "",
+      contactEmail: "",
+      contactPhone: "",
+    },
+    mode: "onSubmit",
+  });
 
-    const phoneDigits = form.contactPhone.replaceAll(/\D/g, "");
-    if (phoneDigits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
-
-    return null;
-  };
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const clientError = validateForm();
-    if (clientError) {
-      notifyWarning({ title: msgs.auth.errorTitle, description: clientError });
-      return;
-    }
-
+  const onSubmit = async (form: RegisterCompanyFormState) => {
     try {
       await mutation.mutateAsync({
         email: form.companyEmail,
@@ -71,14 +55,7 @@ export default function RegisterFormCompany() {
         description: msgs.auth.registerCompany,
       });
 
-      setForm({
-        companyName: "",
-        companyEmail: "",
-        address: "",
-        contactName: "",
-        contactEmail: "",
-        contactPhone: "",
-      });
+      reset();
     } catch (err: unknown) {
       notifyWarning({
         title: msgs.auth.errorTitle,
@@ -87,11 +64,20 @@ export default function RegisterFormCompany() {
     }
   };
 
+  const onInvalid = (errs: FieldErrors<RegisterCompanyFormState>) => {
+    const firstMessage =
+      Object.values(errs)
+        .map((e) => e?.message)
+        .find((m): m is string => typeof m === "string" && m.length > 0) ?? msgs.auth.error;
+
+    notifyWarning({ title: msgs.auth.errorTitle, description: firstMessage });
+  };
+
   const input = "w-full border rounded px-3 py-2";
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit(onSubmit, onInvalid)}
       className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto"
     >
       <h2 className="text-2xl font-semibold text-primary-900 text-center">
@@ -99,60 +85,59 @@ export default function RegisterFormCompany() {
       </h2>
 
       <input
-        name="companyName"
-        value={form.companyName}
-        onChange={handleChange}
         placeholder={msgs.auth.companyName}
         className={input}
-        required
+        {...register("companyName", {
+          required: "Názov firmy je povinný.",
+          validate: (v) => v.trim().length >= 2 || "Názov firmy musí mať aspoň 2 znaky.",
+        })}
       />
 
       <input
         type="email"
-        name="companyEmail"
-        value={form.companyEmail}
-        onChange={handleChange}
         placeholder={msgs.auth.companyLoginEmail}
         className={input}
-        required
+        {...register("companyEmail", {
+          required: "Email firmy je povinný.",
+        })}
       />
 
       <input
-        name="address"
-        value={form.address}
-        onChange={handleChange}
         placeholder={msgs.auth.companyAddress}
         className={input}
-        required
+        {...register("address", {
+          required: "Adresa je povinná.",
+          validate: (v) => v.trim().length >= 5 || "Adresa musí mať aspoň 5 znakov.",
+        })}
       />
 
       <input
-        name="contactName"
-        value={form.contactName}
-        onChange={handleChange}
         placeholder={msgs.auth.contactName}
         className={input}
-        required
+        {...register("contactName", {
+          required: "Meno kontaktnej osoby je povinné.",
+          validate: (v) => v.trim().length >= 3 || "Meno kontaktnej osoby musí mať aspoň 3 znaky.",
+        })}
       />
 
       <input
         type="email"
-        name="contactEmail"
-        value={form.contactEmail}
-        onChange={handleChange}
         placeholder={msgs.auth.contactEmail}
         className={input}
-        required
+        {...register("contactEmail", {
+          required: "Email kontaktnej osoby je povinný.",
+        })}
       />
 
       <input
         type="tel"
-        name="contactPhone"
-        value={form.contactPhone}
-        onChange={handleChange}
         placeholder={msgs.auth.contactPhone}
         className={input}
-        required
+        {...register("contactPhone", {
+          required: "Telefón je povinný.",
+          validate: (v) =>
+            v.replaceAll(/\D/g, "").length >= 7 || "Telefón musí mať aspoň 7 číslic.",
+        })}
       />
 
       <Button
