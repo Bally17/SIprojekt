@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useLocalization } from "@i18n/client";
+import Link from "next/link";
 
 //volitelný prop, určuje či sa zobrazia anchor odkazy, na landing je true inak false
 type FooterProps = {
@@ -56,20 +57,40 @@ export default function Footer({ showLandingLinks = true }: Readonly<FooterProps
           <div>
             <div className="font-semibold mb-3">{msgs.auth.loginRegister}</div>
             <ul className="space-y-2 text-white/80">
-              <li>{msgs.auth.login}</li>
-              <li>{msgs.auth.registerForStudent}</li>
-              <li>{msgs.auth.registerForCompany}</li>
+              <li>
+                <Link href="/auth/login" className="hover:underline">
+                  {msgs.auth.login}
+                </Link>
+              </li>
+              <li>
+                <Link href="/auth/register/student" className="hover:underline">
+                  {msgs.auth.registerForStudent}
+                </Link>
+              </li>
+              <li>
+                <Link href="/auth/register/company" className="hover:underline">
+                  {msgs.auth.registerForCompany}
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
             <div className="font-semibold mb-3">{msgs.common.page.mobile}</div>
-            <div className="flex gap-3 opacity-80">
-              <div className="h-10 w-32 rounded-lg bg-white/10 grid place-items-center">
-                {msgs.common.page.appStore}
-              </div>
-              <div className="h-10 w-32 rounded-lg bg-white/10 grid place-items-center">
-                {msgs.common.page.googlePlay}
-              </div>
+            <div className="flex gap-3 opacity-90">
+              <Image
+                src="/images/game_14857377.png"
+                alt="Store badge 1"
+                width={64}
+                height={64}
+                className="h-12 w-12"
+              />
+              <Image
+                src="/images/game_16566128.png"
+                alt="Store badge 2"
+                width={64}
+                height={64}
+                className="h-12 w-12"
+              />
             </div>
           </div>
         </div>
