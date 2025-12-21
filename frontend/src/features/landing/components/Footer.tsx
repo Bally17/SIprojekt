@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useLocalization } from "@i18n/client";
+import Link from "next/link";
 
 //volitelný prop, určuje či sa zobrazia anchor odkazy, na landing je true inak false
 type FooterProps = {
@@ -56,9 +57,21 @@ export default function Footer({ showLandingLinks = true }: Readonly<FooterProps
           <div>
             <div className="font-semibold mb-3">{msgs.auth.loginRegister}</div>
             <ul className="space-y-2 text-white/80">
-              <li>{msgs.auth.login}</li>
-              <li>{msgs.auth.registerForStudent}</li>
-              <li>{msgs.auth.registerForCompany}</li>
+              <li>
+                <Link href="/auth/login" className="hover:underline">
+                  {msgs.auth.login}
+                </Link>
+              </li>
+              <li>
+                <Link href="/auth/register/student" className="hover:underline">
+                  {msgs.auth.registerForStudent}
+                </Link>
+              </li>
+              <li>
+                <Link href="/auth/register/company" className="hover:underline">
+                  {msgs.auth.registerForCompany}
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
