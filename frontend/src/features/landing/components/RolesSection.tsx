@@ -12,7 +12,7 @@ export default function RolesSection() {
   const [tab, setTab] = useState<RoleType>("student");
 
   return (
-    <section id="roles" className="section bg-primary-50">
+    <section id="roles" className="section bg-paper">
       <div className="container-wide">
         <h2 className="text-3xl font-bold text-ink-900 mb-2">{msgs.common.role.title}</h2>
         <p className="text-ink-500 mb-6">{msgs.common.role.subtitle}</p>
@@ -23,9 +23,9 @@ export default function RolesSection() {
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`w-full text-left px-4 py-3 flex items-center gap-2 border-b last:border-b-0 ${tab === t.key ? "bg-primary-50 text-primary-700 font-medium" : "hover:bg-slate-50"}`}
+                className={`w-full text-left px-4 py-3 flex items-center gap-2 border-b border-primary-300 last:border-b-0 ${tab === t.key ? "bg-soft text-primary-700 font-medium" : "hover:bg-soft"}`}
               >
-                <span className="h-6 w-6 grid place-items-center rounded-full bg-slate-100">
+                <span className="badge">
                   <Icon name={t.icon} className="h-4 w-4" />
                 </span>
                 {t.label}
@@ -40,7 +40,7 @@ export default function RolesSection() {
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  className={`px-3 py-2 rounded-lg border text-sm ${tab === t.key ? "bg-primary-600 text-white border-primary-600" : "hover:bg-slate-50"}`}
+                  className={`px-3 py-2 rounded-lg border border-primary-600 text-primary-700 text-sm ${tab === t.key ? "bg-primary-600 text-white border-primary-600" : "hover:bg-soft"}`}
                 >
                   {t.label}
                 </button>
