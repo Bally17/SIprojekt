@@ -12,7 +12,7 @@ export default function Footer({ showLandingLinks = true }: Readonly<FooterProps
   const { msgs } = useLocalization();
   const year = String(new Date().getFullYear());
   return (
-    <footer id="contact" className="bg-primary-900 text-white">
+    <footer id="contact" className="bg-primary-600 text-white">
       <div className="container-wide py-12">
         <div className="flex items-center">
           <Image

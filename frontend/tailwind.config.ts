@@ -11,27 +11,37 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // ✅ Tailwind Emerald (HEX)
         primary: {
-          50: "#f0fdf4",
-          100: "#dcfce7",
-          200: "#b9f8cf",
-          300: "#7bf1a8",
-          400: "#05df72",
-          500: "#00c951", // hlavná zelená
-          600: "#00a63e",
-          700: "#008236",
-          800: "#016630",
-          900: "#016630",
+          50: "#ecfdf5",
+          100: "#d1fae5",
+          200: "#a7f3d0",
+          300: "#6ee7b7",
+          400: "#34d399",
+          500: "#10b981", // MAIN
+          600: "#059669",
+          700: "#047857",
+          800: "#065f46",
+          900: "#064e3b",
         },
+
+        // ✅ TEXT COLORS (neutrálne, nech zelená nepôsobí "muddied")
         ink: {
-          900: "#0f172a", // titulky
-          800: "#172036",
-          700: "#1f2937", // text
-          500: "#6b7280", // sekundárny
+          900: "#0f172a", // slate-900
+          800: "#1e293b", // slate-800
+          700: "#334155", // slate-700
+          500: "#64748b", // slate-500
         },
-        paper: "#f5f7fb",
-        night: "#0b2038",
+
+        // ✅ BACKGROUNDS & SURFACES
+        paper: "#f8fafc", // slate-50
+        soft: "#ecfdf5", // emerald-50 (jemné zelené sekcie/hover)
+        border: "#e2e8f0", // slate-200
+
+        // ✅ Optional dark
+        night: "#020617", // slate-950
       },
+
       boxShadow: {
         soft: "0 4px 24px rgba(15, 23, 42, 0.06)",
       },

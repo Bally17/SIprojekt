@@ -26,7 +26,7 @@ body {
   @apply bg-white rounded-2xl shadow-soft p-5;
 }
 .badge {
-  @apply inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-50 text-primary-700 text-sm font-semibold;
+  @apply inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-100 text-primary-700 text-sm font-semibold;
 }
 
 @layer components {
