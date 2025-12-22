@@ -3,7 +3,7 @@ import { Footer, Navbar } from "@features/landing";
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-primary-50">
+    <div className="flex min-h-screen flex-col bg-paper">
       <Navbar showLandingLinks={false} />
       <main className="flex-1 pt-28 pb-16">
         <div className="max-w-7xl mx-auto px-6">
