@@ -77,7 +77,7 @@ export default function LoginForm() {
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto">
-      <h2 className="text-2xl font-semibold text-primary-900 text-center">{msgs.auth.title}</h2>
+      <h2 className="text-2xl font-semibold text-ink-900 text-center">{msgs.auth.title}</h2>
 
       {/* Prepínač typu používateľa */}
       <div className="mb-4 flex flex-wrap justify-center gap-3">
@@ -141,7 +141,7 @@ export default function LoginForm() {
         />
 
         <div className="text-right text-sm">
-          <a href="/auth/forgot-password" className="text-cyan-700 hover:underline">
+          <a href="/auth/forgot-password" className="text-ink-500 hover:underline">
             {msgs.auth.forgot}
           </a>
         </div>
@@ -199,11 +199,11 @@ export default function LoginForm() {
       <div className="mt-4 text-center text-sm text-gray-600">
         <p>
           {msgs.auth.noAccount}
-          <a href="/auth/register/student" className="text-cyan-700 hover:underline">
+          <a href="/auth/register/student" className="text-ink-500 hover:underline">
             {msgs.auth.student}
           </a>
           {msgs.auth.or}
-          <a href="/auth/register/company" className="text-cyan-700 hover:underline">
+          <a href="/auth/register/company" className="text-ink-500 hover:underline">
             {msgs.auth.company}
           </a>
         </p>

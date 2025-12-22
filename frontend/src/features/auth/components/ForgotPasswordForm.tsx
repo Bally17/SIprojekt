@@ -43,7 +43,7 @@ export default function ForgotPasswordForm() {
       onSubmit={handleSubmit}
       className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto"
     >
-      <h2 className="text-2xl font-semibold text-primary-900 text-center">
+      <h2 className="text-2xl font-semibold text-ink-900 text-center">
         {msgs.auth.forgotPassword}
       </h2>
       <p className="text-sm text-gray-600 text-center">{msgs.auth.description}</p>

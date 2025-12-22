@@ -8,7 +8,7 @@ export default function ResetPasswordPage({
   const decodedToken = decodeURIComponent(params.token);
 
   return (
-    <div className="min-h-screen bg-primary-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-paper flex items-center justify-center p-6">
       <ResetPasswordForm token={decodedToken} />
     </div>
   );
