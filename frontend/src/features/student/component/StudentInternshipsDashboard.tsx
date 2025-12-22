@@ -130,7 +130,7 @@ export default function StudentDashboardPage() {
             className="rounded-xl border border-cyan-100 bg-white p-5 shadow-sm transition hover:shadow-md"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-cyan-700">
+              <h3 className="text-lg font-semibold text-primary-600">
                 {internship.firma?.nazov || "Neznama firma"}
               </h3>
 
@@ -163,7 +163,7 @@ export default function StudentDashboardPage() {
         className="space-y-5 rounded-xl border border-cyan-100 bg-white p-6 shadow-sm transition hover:shadow-md"
       >
         <div className="flex items-center gap-2">
-          <Icon name="calendar-plus" className="text-cyan-600" />
+          <Icon name="calendar-plus" className="text-primary-600" />
           <h2 className="text-xl font-semibold text-gray-800">{msgs.common.internships.new}</h2>
         </div>
 
