@@ -266,7 +266,7 @@ export const TableComponent = ({
               value={filters.rok}
               onChange={handleLocalChange}
               placeholder={msgs.common.date.year}
-              className="border rounded px-3 py-2 text-sm"
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
 
             <Select<Semester>
@@ -274,7 +274,7 @@ export const TableComponent = ({
               value={semesterValue}
               options={semesterOpts}
               emptyOptionLabel={msgs.common.date.semester}
-              className="border rounded px-3 py-2 text-sm"
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               onChangeValue={(val) =>
                 handleLocalChange({
                   target: { name: "semester", value: val } as any,
@@ -287,7 +287,7 @@ export const TableComponent = ({
               value={stavValue}
               options={stavOpts}
               emptyOptionLabel={msgs.common.internships.state}
-              className="border rounded px-3 py-2 text-sm"
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               onChangeValue={(val) =>
                 handleLocalChange({
                   target: { name: "stav", value: val } as any,
@@ -300,7 +300,12 @@ export const TableComponent = ({
                 <Button type="button" onClick={onApplyFilters} variant="primary" className="flex-1">
                   {msgs.common.filter}
                 </Button>
-                <Button type="button" onClick={onResetFilters} variant="ghost" className="flex-1">
+                <Button
+                  type="button"
+                  onClick={onResetFilters}
+                  variant="ghost"
+                  className="flex-1 border border-primary-600 bg-white text-primary-600 hover:bg-primary-50"
+                >
                   {msgs.common.reset}
                 </Button>
               </div>
