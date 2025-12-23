@@ -129,7 +129,7 @@ const DashboardNavbar = () => {
                 variant="ghost"
                 onClick={() => setLangMenuOpen((prev) => !prev)}
                 aria-label={msgs.common.language.switcher}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-700 hover:bg-primary-100"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white-50 text-primary-700 hover:bg-primary-100"
               >
                 <Icon name="globe" className="h-5 w-5" />
               </Button>

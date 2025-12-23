@@ -160,7 +160,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
     <tr key={internship.id} className="border-t text-sm">
       <td className="px-4 py-4 align-top">
         <div className="flex flex-col">
-          <span className="font-semibold text-primary-900">
+          <span className="font-semibold text-ink-900">
             {internship.student_full_name || `#${internship.student}`}
           </span>
           <span className="text-xs text-gray-500">{internship.student_email || "-"}</span>
@@ -180,19 +180,19 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
 
       <td className="px-4 py-4 align-top">
         <div className="flex flex-col gap-1">
-          <span className="font-medium text-primary-900">{msgs.common.documents.reportTitle}</span>
+          <span className="font-medium text-ink-900">{msgs.common.documents.reportTitle}</span>
           {reportDoc?.subor_url ? (
             <a
               href={buildMediaUrl(reportDoc.subor_url)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-cyan-700 hover:underline"
+              className="inline-flex items-center gap-1 text-xs text-ink-700 hover:underline"
             >
               <Icon name="download" className="h-3.5 w-3.5" />
               {msgs.common.documents.downloadLabel}
             </a>
           ) : (
-            <span className="text-xs text-gray-400">{msgs.common.companyDocs.noReport}</span>
+            <span className="text-xs text-ink-400">{msgs.common.companyDocs.noReport}</span>
           )}
         </div>
       </td>
@@ -235,7 +235,7 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                       {msgs.common.companyDocs.sectionTitle}
                     </p>
-                    <h4 className="mt-1 text-base font-semibold text-primary-900">
+                    <h4 className="mt-1 text-base font-semibold text-ink-900">
                       {internship.student_full_name || `#${internship.student}`}
                     </h4>
                     <p className="text-xs text-gray-500">

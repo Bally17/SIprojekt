@@ -196,7 +196,7 @@ export default function DocumentUploadCard({
               <a
                 href={`${baseUrl}/media/${contractDoc.subor_url}`}
                 download={`Dohoda_prax_${internship.id}.pdf`}
-                className="inline-flex items-center gap-1 rounded-full border border-primary-100 px-3 py-1.5 text-[11px] font-semibold text-ink-700 hover:bg-soft"
+                className="inline-flex items-center gap-1 rounded-full border border-primary-600 px-3 py-1.5 text-[11px] font-semibold text-primary-600 transition hover:bg-primary-50"
               >
                 <Icon name="download" className="h-3.5 w-3.5" />
                 {msgs.common.documents.downloadLabel}

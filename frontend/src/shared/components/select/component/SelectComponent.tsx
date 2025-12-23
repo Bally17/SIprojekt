@@ -13,7 +13,8 @@ type SelectComponentProps<T extends string> = Omit<
   emptyOptionLabel?: string;
 };
 
-const base = "border w-full rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500";
+const base =
+  "border w-full rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500";
 
 export default function SelectComponent<T extends string>({
   value,

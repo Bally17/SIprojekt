@@ -215,7 +215,7 @@ export const TableComponent = ({
                 <button
                   type="button"
                   onClick={() => setDocPreview(item)}
-                  className="inline-flex items-center gap-2 rounded-full border border-primary-100 px-3 py-1.5 text-xs font-semibold text-primary-900 transition hover:bg-primary-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-primary-600 px-3 py-1.5 text-xs font-semibold text-primary-600 transition hover:bg-primary-50"
                 >
                   <Icon name="file-text" className="h-4 w-4" />
                   {msgs.common.documents.openPreview}
@@ -227,7 +227,8 @@ export const TableComponent = ({
           {rowActions && (
             <td className="px-4 py-3 space-x-2">
               <Button
-                variant="success"
+                variant="primary"
+                className="bg-primary-600 hover:bg-primary-700"
                 loading={busy[item.id] === "confirm"}
                 onClick={() => runAction(item.id, "confirm")}
               >
@@ -251,8 +252,8 @@ export const TableComponent = ({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-3xl font-semibold text-primary-900">{title}</h2>
-          <p className="text-sm text-primary-700">{subTitle}</p>
+          <h2 className="text-3xl font-semibold text-ink-900">{title}</h2>
+          <p className="text-sm text-ink-700">{subTitle}</p>
         </div>
 
         {showFilters && filters && (
@@ -266,7 +267,7 @@ export const TableComponent = ({
               value={filters.rok}
               onChange={handleLocalChange}
               placeholder={msgs.common.date.year}
-              className="border rounded px-3 py-2 text-sm"
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
 
             <Select<Semester>
@@ -274,7 +275,7 @@ export const TableComponent = ({
               value={semesterValue}
               options={semesterOpts}
               emptyOptionLabel={msgs.common.date.semester}
-              className="border rounded px-3 py-2 text-sm"
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               onChangeValue={(val) =>
                 handleLocalChange({
                   target: { name: "semester", value: val } as any,
@@ -287,7 +288,7 @@ export const TableComponent = ({
               value={stavValue}
               options={stavOpts}
               emptyOptionLabel={msgs.common.internships.state}
-              className="border rounded px-3 py-2 text-sm"
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               onChangeValue={(val) =>
                 handleLocalChange({
                   target: { name: "stav", value: val } as any,
@@ -300,7 +301,12 @@ export const TableComponent = ({
                 <Button type="button" onClick={onApplyFilters} variant="primary" className="flex-1">
                   {msgs.common.filter}
                 </Button>
-                <Button type="button" onClick={onResetFilters} variant="ghost" className="flex-1">
+                <Button
+                  type="button"
+                  onClick={onResetFilters}
+                  variant="ghost"
+                  className="flex-1 border border-primary-600 bg-white text-primary-600 hover:bg-primary-50"
+                >
                   {msgs.common.reset}
                 </Button>
               </div>

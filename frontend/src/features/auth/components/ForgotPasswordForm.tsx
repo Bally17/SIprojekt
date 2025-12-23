@@ -54,7 +54,7 @@ export default function ForgotPasswordForm() {
         onChange={(event) => setEmail(event.target.value)}
         placeholder={msgs.auth.yourEmail}
         required
-        className="w-full border rounded px-3 py-2"
+        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
       />
 
       <Button
