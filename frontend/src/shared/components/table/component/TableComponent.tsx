@@ -251,8 +251,8 @@ export const TableComponent = ({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-3xl font-semibold text-primary-900">{title}</h2>
-          <p className="text-sm text-primary-700">{subTitle}</p>
+          <h2 className="text-3xl font-semibold text-ink-900">{title}</h2>
+          <p className="text-sm text-ink-700">{subTitle}</p>
         </div>
 
         {showFilters && filters && (

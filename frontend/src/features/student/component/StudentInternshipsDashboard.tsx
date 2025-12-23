@@ -178,7 +178,7 @@ export default function StudentDashboardPage() {
             value={searchQuery}
             onChange={handleCompanySearchChange}
             placeholder={msgs.common.action.company}
-            className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           />
 
           {companySearch.isPending && (
@@ -215,7 +215,7 @@ export default function StudentDashboardPage() {
               type="number"
               value={form.rok}
               onChange={(e) => setForm((prev) => ({ ...prev, rok: Number(e.target.value) }))}
-              className="w-full rounded-lg border p-2.5 focus:ring-2 focus:ring-cyan-500"
+              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
 
@@ -242,7 +242,7 @@ export default function StudentDashboardPage() {
               type="date"
               value={form.datum_zaciatku}
               onChange={(e) => setForm((prev) => ({ ...prev, datum_zaciatku: e.target.value }))}
-              className="w-full rounded-lg border p-2.5 focus:ring-2 focus:ring-cyan-500"
+              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
 
@@ -254,7 +254,7 @@ export default function StudentDashboardPage() {
               type="date"
               value={form.datum_konca}
               onChange={(e) => setForm((prev) => ({ ...prev, datum_konca: e.target.value }))}
-              className="w-full rounded-lg border p-2.5 focus:ring-2 focus:ring-cyan-500"
+              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
         </div>
