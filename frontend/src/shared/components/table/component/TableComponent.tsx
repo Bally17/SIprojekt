@@ -215,7 +215,7 @@ export const TableComponent = ({
                 <button
                   type="button"
                   onClick={() => setDocPreview(item)}
-                  className="inline-flex items-center gap-2 rounded-full border border-primary-100 px-3 py-1.5 text-xs font-semibold text-primary-900 transition hover:bg-primary-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-primary-600 px-3 py-1.5 text-xs font-semibold text-primary-600 transition hover:bg-primary-50"
                 >
                   <Icon name="file-text" className="h-4 w-4" />
                   {msgs.common.documents.openPreview}
@@ -227,7 +227,8 @@ export const TableComponent = ({
           {rowActions && (
             <td className="px-4 py-3 space-x-2">
               <Button
-                variant="success"
+                variant="primary"
+                className="bg-primary-600 hover:bg-primary-700"
                 loading={busy[item.id] === "confirm"}
                 onClick={() => runAction(item.id, "confirm")}
               >
