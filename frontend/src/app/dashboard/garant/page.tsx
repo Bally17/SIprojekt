@@ -10,7 +10,7 @@ export default function GarantDashboardPage() {
     <Card
       title={msgs.common.guarant.title}
       subtitle={msgs.common.guarant.subtitle}
-      titleClassName="text-4xl font-bold text-primary-900 tracking-tight"
+      titleClassName="text-4xl font-bold text-ink-900 tracking-tight"
     >
       <div className="space-y-10">
         <GarantInternshipsDashboard />

@@ -177,7 +177,7 @@ export default function OAuthClientsSection() {
   const error = clientsQuery.error;
 
   return (
-    <section className="space-y-6 rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+    <section className="space-y-6 rounded-lg border border-primary-200 bg-white p-6 shadow-sm">
       <div className="space-y-1">
         <h2 className="text-3xl font-semibold text-primary-900">{msgs.common.oauth.title}</h2>
         <p className="text-sm text-ink-500">{msgs.common.oauth.subtitle}</p>
@@ -193,7 +193,7 @@ export default function OAuthClientsSection() {
               <span className="text-xs text-ink-400">{msgs.common.loading.loading}</span>
             ) : null}
           </div>
-          <div className="mt-3 overflow-x-auto rounded-lg border border-gray-100">
+          <div className="mt-3 overflow-x-auto rounded-lg border border-primary-200">
             <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50">
                 <tr>
@@ -263,7 +263,7 @@ export default function OAuthClientsSection() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-100 bg-gray-50 p-4 shadow-inner">
+        <div className="rounded-lg border border-primary-100 bg-primary-50 p-4 shadow-inner">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-primary-900">
               {msgs.common.oauth.form.title}
@@ -384,7 +384,7 @@ export default function OAuthClientsSection() {
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="w-full rounded-md bg-primary-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-800 disabled:opacity-60"
+              className="w-full rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-800 disabled:opacity-60"
             >
               {createMutation.isPending
                 ? msgs.common.loading.loading
