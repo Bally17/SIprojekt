@@ -97,7 +97,7 @@ export default function RegisterFormStudent() {
           className={input}
           {...register("firstName", {
             required: "Meno je povinné.",
-            validate: (v) => v.trim().length >= 2 || "Meno musí mať aspoň 2 znaky.",
+            validate: (v: string) => v.trim().length >= 2 || "Meno musí mať aspoň 2 znaky.",
           })}
         />
         {errors.firstName?.message && <p className={errorText}>{errors.firstName.message}</p>}
@@ -109,7 +109,7 @@ export default function RegisterFormStudent() {
           className={input}
           {...register("lastName", {
             required: "Priezvisko je povinné.",
-            validate: (v) => v.trim().length >= 2 || "Priezvisko musí mať aspoň 2 znaky.",
+            validate: (v: string) => v.trim().length >= 2 || "Priezvisko musí mať aspoň 2 znaky.",
           })}
         />
         {errors.lastName?.message && <p className={errorText}>{errors.lastName.message}</p>}
@@ -121,7 +121,7 @@ export default function RegisterFormStudent() {
           className={input}
           {...register("address", {
             required: "Adresa je povinná.",
-            validate: (v) => v.trim().length >= 5 || "Adresa musí mať aspoň 5 znakov.",
+            validate: (v: string) => v.trim().length >= 5 || "Adresa musí mať aspoň 5 znakov.",
           })}
         />
         {errors.address?.message && <p className={errorText}>{errors.address.message}</p>}
@@ -134,7 +134,7 @@ export default function RegisterFormStudent() {
           className={input}
           {...register("studentEmail", {
             required: "Email je povinný.",
-            validate: (v) => {
+            validate: (v: string) => {
               const domain = v.split("@")[1]?.toLowerCase() ?? "";
               return (
                 allowedStudentDomains.includes(domain as any) ||
@@ -163,7 +163,7 @@ export default function RegisterFormStudent() {
           className={input}
           {...register("phone", {
             required: "Telefón je povinný.",
-            validate: (v) =>
+            validate: (v: string) =>
               v.replaceAll(/\D/g, "").length >= 7 || "Telefón musí mať aspoň 7 číslic.",
           })}
         />
@@ -176,7 +176,7 @@ export default function RegisterFormStudent() {
           className={input}
           {...register("studyField", {
             required: "Študijný program je povinný.",
-            validate: (v) => v.trim().length > 0 || "Študijný program je povinný.",
+            validate: (v: string) => v.trim().length > 0 || "Študijný program je povinný.",
           })}
         />
         {errors.studyField?.message && <p className={errorText}>{errors.studyField.message}</p>}
