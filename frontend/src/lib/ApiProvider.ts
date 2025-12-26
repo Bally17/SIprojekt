@@ -209,28 +209,35 @@ async function refreshToken(): Promise<string> {
   return refreshPromise;
 }
 
+const toBody = (body: any): BodyInit | undefined => {
+  if (body == null) return undefined;
+  if (body instanceof FormData) return body;
+  if (typeof body === "string") return body; // ak niekde posielaš raw string
+  return JSON.stringify(body);
+};
+
 export const api = {
   get: <T>(url: string, options?: RequestInit) => request<T>(url, options),
 
-  post: <T>(url: string, body: any, options: RequestInit = {}) =>
+  post: <T>(url: string, body?: any, options: RequestInit = {}) =>
     request<T>(url, {
       ...options,
       method: "POST",
-      body: JSON.stringify(body),
+      body: toBody(body),
     }),
 
-  put: <T>(url: string, body: any, options: RequestInit = {}) =>
+  put: <T>(url: string, body?: any, options: RequestInit = {}) =>
     request<T>(url, {
       ...options,
       method: "PUT",
-      body: JSON.stringify(body),
+      body: toBody(body),
     }),
 
-  patch: <T>(url: string, body: any, options: RequestInit = {}) =>
+  patch: <T>(url: string, body?: any, options: RequestInit = {}) =>
     request<T>(url, {
       ...options,
       method: "PATCH",
-      body: JSON.stringify(body),
+      body: toBody(body),
     }),
 
   delete: <T>(url: string, options: RequestInit = {}) =>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { useRegisterStudentMutation } from "src/hook/useRegisterStudentMutation";
 import { getErrorMessage } from "@utils/errorActions";
+import { useForm, type FieldErrors } from "react-hook-form";
 
 type RegisterStudentFormState = {
   firstName: string;
@@ -18,54 +18,32 @@ type RegisterStudentFormState = {
 };
 
 export default function RegisterFormStudent() {
-  const [form, setForm] = useState<RegisterStudentFormState>({
-    firstName: "",
-    lastName: "",
-    address: "",
-    studentEmail: "",
-    altEmail: "",
-    phone: "",
-    studyField: "",
-  });
-
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
-
   const mutation = useRegisterStudentMutation();
 
-  const allowedStudentDomains = ["student.ukf.sk", "ukf.sk"];
+  const allowedStudentDomains: string[] = ["student.ukf.sk", "ukf.sk"];
 
-  const validateForm = () => {
-    if (form.firstName.trim().length < 2) return "Meno musí mať aspoň 2 znaky.";
-    if (form.lastName.trim().length < 2) return "Priezvisko musí mať aspoň 2 znaky.";
-    if (form.address.trim().length < 5) return "Adresa musí mať aspoň 5 znakov.";
-    if (!form.studyField.trim()) return "Študijný program je povinný.";
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<RegisterStudentFormState>({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      address: "",
+      studentEmail: "",
+      altEmail: "",
+      phone: "",
+      studyField: "",
+    },
+    mode: "onSubmit",
+    shouldFocusError: true,
+  });
 
-    const emailDomain = form.studentEmail.split("@")[1]?.toLowerCase() || "";
-    if (!allowedStudentDomains.includes(emailDomain)) {
-      return `Email musí byť z domény ${allowedStudentDomains.join(", ")}.`;
-    }
-
-    const digits = form.phone.replaceAll(/\D/g, "");
-    if (digits.length < 7) return "Telefón musí mať aspoň 7 číslic.";
-
-    return null;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const clientError = validateForm();
-    if (clientError) {
-      notifyWarning({ title: msgs.auth.errorTitle, description: clientError });
-      return;
-    }
-
+  const onSubmit = async (form: RegisterStudentFormState) => {
     try {
       await mutation.mutateAsync({
         meno: form.firstName,
@@ -82,16 +60,8 @@ export default function RegisterFormStudent() {
         description: msgs.auth.registerStudent,
       });
 
-      setForm({
-        firstName: "",
-        lastName: "",
-        address: "",
-        studentEmail: "",
-        altEmail: "",
-        phone: "",
-        studyField: "",
-      });
-    } catch (err: any) {
+      reset();
+    } catch (err: unknown) {
       notifyWarning({
         title: msgs.auth.errorTitle,
         description: getErrorMessage(err, msgs.auth.error),
@@ -99,76 +69,117 @@ export default function RegisterFormStudent() {
     }
   };
 
+  const onInvalid = (errs: FieldErrors<RegisterStudentFormState>) => {
+    const firstMessage =
+      Object.values(errs)
+        .map((e) => e?.message)
+        .find((m): m is string => typeof m === "string" && m.length > 0) ?? msgs.auth.error;
+
+    notifyWarning({ title: msgs.auth.errorTitle, description: firstMessage });
+  };
+
   const input = "w-full border rounded px-3 py-2";
+  const errorText = "text-sm text-red-600";
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit(onSubmit, onInvalid)}
       className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto"
     >
       <h2 className="text-2xl font-semibold text-primary-900 text-center">
         {msgs.auth.registerStudent}
       </h2>
 
-      <input
-        name="firstName"
-        className={input}
-        required
-        value={form.firstName}
-        onChange={handleChange}
-        placeholder={msgs.auth.name}
-      />
-      <input
-        name="lastName"
-        className={input}
-        required
-        value={form.lastName}
-        onChange={handleChange}
-        placeholder={msgs.auth.surename}
-      />
-      <input
-        name="address"
-        className={input}
-        required
-        value={form.address}
-        onChange={handleChange}
-        placeholder={msgs.auth.address}
-      />
+      <div>
+        <input
+          placeholder={msgs.auth.name}
+          className={input}
+          {...register("firstName", {
+            required: "Meno je povinné.",
+            validate: (v) => v.trim().length >= 2 || "Meno musí mať aspoň 2 znaky.",
+          })}
+        />
+        {errors.firstName?.message && <p className={errorText}>{errors.firstName.message}</p>}
+      </div>
 
-      <input
-        type="email"
-        name="studentEmail"
-        className={input}
-        required
-        value={form.studentEmail}
-        onChange={handleChange}
-        placeholder={msgs.auth.email}
-      />
-      <input
-        type="email"
-        name="altEmail"
-        className={input}
-        value={form.altEmail}
-        onChange={handleChange}
-        placeholder={msgs.auth.altEmail}
-      />
-      <input
-        type="tel"
-        name="phone"
-        className={input}
-        required
-        value={form.phone}
-        onChange={handleChange}
-        placeholder={msgs.auth.phone}
-      />
-      <input
-        name="studyField"
-        className={input}
-        required
-        value={form.studyField}
-        onChange={handleChange}
-        placeholder={msgs.auth.studyField}
-      />
+      <div>
+        <input
+          placeholder={msgs.auth.surename}
+          className={input}
+          {...register("lastName", {
+            required: "Priezvisko je povinné.",
+            validate: (v) => v.trim().length >= 2 || "Priezvisko musí mať aspoň 2 znaky.",
+          })}
+        />
+        {errors.lastName?.message && <p className={errorText}>{errors.lastName.message}</p>}
+      </div>
+
+      <div>
+        <input
+          placeholder={msgs.auth.address}
+          className={input}
+          {...register("address", {
+            required: "Adresa je povinná.",
+            validate: (v) => v.trim().length >= 5 || "Adresa musí mať aspoň 5 znakov.",
+          })}
+        />
+        {errors.address?.message && <p className={errorText}>{errors.address.message}</p>}
+      </div>
+
+      <div>
+        <input
+          type="email"
+          placeholder={msgs.auth.email}
+          className={input}
+          {...register("studentEmail", {
+            required: "Email je povinný.",
+            validate: (v) => {
+              const domain = v.split("@")[1]?.toLowerCase() ?? "";
+              return (
+                allowedStudentDomains.includes(domain as any) ||
+                `Email musí byť z domény ${allowedStudentDomains.join(", ")}.`
+              );
+            },
+          })}
+        />
+        {errors.studentEmail?.message && <p className={errorText}>{errors.studentEmail.message}</p>}
+      </div>
+
+      <div>
+        <input
+          type="email"
+          placeholder={msgs.auth.altEmail}
+          className={input}
+          {...register("altEmail")}
+        />
+        {errors.altEmail?.message && <p className={errorText}>{errors.altEmail.message}</p>}
+      </div>
+
+      <div>
+        <input
+          type="tel"
+          placeholder={msgs.auth.phone}
+          className={input}
+          {...register("phone", {
+            required: "Telefón je povinný.",
+            validate: (v) =>
+              v.replaceAll(/\D/g, "").length >= 7 || "Telefón musí mať aspoň 7 číslic.",
+          })}
+        />
+        {errors.phone?.message && <p className={errorText}>{errors.phone.message}</p>}
+      </div>
+
+      <div>
+        <input
+          placeholder={msgs.auth.studyField}
+          className={input}
+          {...register("studyField", {
+            required: "Študijný program je povinný.",
+            validate: (v) => v.trim().length > 0 || "Študijný program je povinný.",
+          })}
+        />
+        {errors.studyField?.message && <p className={errorText}>{errors.studyField.message}</p>}
+      </div>
 
       <Button
         type="submit"

@@ -1,5 +1,4 @@
 import { api } from "@lib/ApiProvider";
-import { CompanySearchResponse } from "@shared-types/company";
 import { StudentInternshipsResponse, CreateInternshipPayload } from "@shared-types/internship";
 import { ENDPOINTS } from "src/constants/Endpoints";
 

@@ -1,21 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { Table } from "@components/table";
 import { useLocalization } from "@i18n/client";
-
 import PendingInternships from "./components/PendingInternships";
 import CompanyDocumentsCard from "./components/CompanyDocumentsCard";
-
 import { TABLE_NAMES } from "src/constants/Table";
-
 import {
   useCompanyInternshipsQuery,
   extractInternships,
 } from "src/hook/useCompanyInternshipsQuery";
 import { TableFilters, SEMESTER_OPTIONS, STAV_OPTIONS } from "@shared-types/index";
-import { getErrorMessage } from "@utils/errorActions";
+import { useQueryErrorToast } from "@utils/useQueryErrorToast";
 
 export default function CompanyInternshipsDashboard() {
   const { warning: notifyWarning } = useSystemNotifications();
@@ -40,22 +37,12 @@ export default function CompanyInternshipsDashboard() {
 
   const { data, isLoading, error, refetch } = useCompanyInternshipsQuery(apiFilters);
 
-  const getLoadInternshipsErrorMessage = useCallback(
-    (err: unknown) => getErrorMessage(err, errorLoadInternships),
-    [errorLoadInternships],
-  );
-
-  // warning sa zobrazí, keď je error (effect je lint-clean)
-  useEffect(() => {
-    if (!error) return;
-
-    notifyWarning({
-      title: errorLoadInternships,
-      description: getLoadInternshipsErrorMessage(error),
-    });
-  }, [error, notifyWarning, errorLoadInternships, getLoadInternshipsErrorMessage]);
-
-  const errorText = error ? getLoadInternshipsErrorMessage(error) : null;
+  const errorText = useQueryErrorToast({
+    error,
+    title: errorLoadInternships,
+    fallback: errorLoadInternships,
+    notifyWarning,
+  });
 
   const internships = extractInternships(data);
 
