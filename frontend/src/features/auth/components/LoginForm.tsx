@@ -7,6 +7,13 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { useAuth } from "src/lib/AuthProvider";
 import { RoleType } from "@shared-types/core/common";
+import { useForm, type FieldErrors } from "react-hook-form";
+import { getErrorMessage } from "@utils/errorActions";
+
+type LoginFormState = {
+  email: string;
+  password: string;
+};
 
 export default function LoginForm() {
   const [userType, setUserType] = useState<RoleType>("student");
@@ -14,18 +21,20 @@ export default function LoginForm() {
   const isCompany = userType === "company";
   const isGarant = userType === "garant";
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
-
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
   const { login, loginLoading } = useAuth();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<LoginFormState>({
+    defaultValues: { email: "", password: "" },
+    mode: "onSubmit",
+    shouldFocusError: true,
+  });
 
   const getEmailPlaceholder = useCallback(() => {
     if (userType === "student") return msgs.auth.studentEmail;
@@ -33,9 +42,7 @@ export default function LoginForm() {
     return msgs.auth.guarantEmail;
   }, [userType, msgs.auth.studentEmail, msgs.auth.companyEmail, msgs.auth.guarantEmail]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = async (form: LoginFormState) => {
     try {
       await login({
         role: userType,
@@ -47,21 +54,30 @@ export default function LoginForm() {
         title: msgs.auth.successLogin,
         description: msgs.auth.successLogin,
       });
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        err?.response?.data?.error_description ||
-        err?.response?.data?.error ||
-        err?.response?.data?.detail ||
-        msgs.auth.errorMsg;
 
-      console.error(msgs.auth.errorTitle, err?.response?.data || err?.message);
+      reset({ email: form.email, password: "" });
+    } catch (err: unknown) {
+      // preferuj centrálny handler; ak chceš zachovať "errorMsg" ako fallback, dá sa:
+      const message = getErrorMessage(err, msgs.auth.errorMsg);
+
+      console.error(msgs.auth.errorTitle, err);
+
+      console.error(msgs.auth.errorTitle, (err as any)?.response?.data || (err as any)?.message);
 
       notifyWarning({
         title: msgs.auth.errorTitle,
         description: message,
       });
     }
+  };
+
+  const onInvalid = (errs: FieldErrors<LoginFormState>) => {
+    const firstMessage =
+      Object.values(errs)
+        .map((e) => e?.message)
+        .find((m): m is string => typeof m === "string" && m.length > 0) ?? msgs.auth.errorMsg;
+
+    notifyWarning({ title: msgs.auth.errorTitle, description: firstMessage });
   };
 
   // OAuth len pre firmy
@@ -75,6 +91,7 @@ export default function LoginForm() {
 
   const input =
     "w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500";
+  const errorText = "text-sm text-red-600";
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto">
@@ -120,26 +137,26 @@ export default function LoginForm() {
       </div>
 
       {/* Login formulár */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="email"
-          name="email"
-          placeholder={getEmailPlaceholder()}
-          value={form.email}
-          onChange={handleChange}
-          className={input}
-          required
-        />
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
+        <div>
+          <input
+            type="email"
+            placeholder={getEmailPlaceholder()}
+            className={input}
+            {...register("email", { required: msgs.auth.errorMsg })}
+          />
+          {errors.email?.message && <p className={errorText}>{errors.email.message}</p>}
+        </div>
 
-        <input
-          type="password"
-          name="password"
-          placeholder={msgs.auth.password}
-          value={form.password}
-          onChange={handleChange}
-          className={input}
-          required
-        />
+        <div>
+          <input
+            type="password"
+            placeholder={msgs.auth.password}
+            className={input}
+            {...register("password", { required: msgs.auth.errorMsg })}
+          />
+          {errors.password?.message && <p className={errorText}>{errors.password.message}</p>}
+        </div>
 
         <div className="text-right text-sm">
           <a href="/auth/forgot-password" className="text-ink-500 hover:underline">

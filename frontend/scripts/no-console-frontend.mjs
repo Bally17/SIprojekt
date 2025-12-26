@@ -42,8 +42,13 @@ function main() {
   const files = getStagedFilesInFrontend();
 
   // Vylúčime tento skript, aby sa nikdy nekontroloval (zabraňuje presne tomuto typu „self-hit“)
-  const selfPath = "frontend/scripts/no-console-frontend.mjs";
-  const filtered = files.filter((f) => f !== selfPath);
+  // Výnimky – tieto súbory sa nikdy nekontrolujú
+  const EXCLUDE_FILES = new Set([
+    "frontend/scripts/no-console-frontend.mjs",
+    "frontend/scripts/i18n-check.mjs",
+  ]);
+
+  const filtered = files.filter((f) => !EXCLUDE_FILES.has(f));
 
   if (filtered.length === 0) process.exit(0);
 

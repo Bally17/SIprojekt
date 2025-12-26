@@ -8,8 +8,21 @@ import Icon from "@icons/index";
 import { useAuth } from "@lib/AuthProvider";
 import { CreateOAuthClientPayload } from "@shared-types/oauth";
 import { getOAuthClients, createOAuthClient, deleteOAuthClient } from "src/api/oauth-api";
+import { useForm } from "react-hook-form";
+import { getErrorMessage } from "@utils/errorActions";
 
-const initialFormState = {
+type OAuthClientFormValues = {
+  name: string;
+  redirect_uris: string; // textarea (newline-separated)
+  scope: string;
+  is_public: boolean;
+  allow_password_grant: boolean;
+  allow_private_jwt: boolean;
+  public_key: string;
+  service_user_id: string; // input number, držíme ako string (ľahšie pre RHF)
+};
+
+const initialFormState: OAuthClientFormValues = {
   name: "",
   redirect_uris: "",
   scope: "read write",
@@ -20,13 +33,38 @@ const initialFormState = {
   service_user_id: "",
 };
 
+function parseRedirectUris(raw: string): string[] {
+  return raw
+    .split(/\r?\n/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+function validateRedirectUris(value: string, msgs: any): true | string {
+  const parsed = parseRedirectUris(value);
+  if (!parsed.length) return msgs.common.oauth.validation.redirectRequired;
+
+  for (const uri of parsed) {
+    try {
+      const u = new URL(uri);
+      if (!["http:", "https:"].includes(u.protocol)) {
+        return msgs.common.oauth.validation.redirectInvalid.replace("{uri}", uri);
+      }
+    } catch {
+      return msgs.common.oauth.validation.redirectInvalid.replace("{uri}", uri);
+    }
+  }
+
+  return true;
+}
+
 export default function OAuthClientsSection() {
   const { user } = useAuth();
   const { msgs } = useLocalization();
   const { success, warning } = useSystemNotifications();
   const queryClient = useQueryClient();
 
-  // HOOKY MUSIA BYŤ MIMO PODMIENOK (inak React hodí chybu)
+  // HOOKY mimo podmienok
   const clientsQuery = useQuery({
     queryKey: ["oauth-clients"],
     queryFn: getOAuthClients,
@@ -42,114 +80,94 @@ export default function OAuthClientsSection() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["oauth-clients"] }),
   });
 
-  // Lokálny UI state
-  const [form, setForm] = useState(initialFormState);
+  // RHF
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+    setError,
+    clearErrors,
+  } = useForm<OAuthClientFormValues>({
+    defaultValues: initialFormState,
+    mode: "onSubmit",
+    shouldFocusError: true,
+  });
+
+  const allowPrivateJwt = watch("allow_private_jwt");
+  const redirectUrisRaw = watch("redirect_uris");
+
+  const parsedRedirects = useMemo(
+    () => parseRedirectUris(redirectUrisRaw || ""),
+    [redirectUrisRaw],
+  );
+
+  // UI state mimo formulára
   const [lastCredentials, setLastCredentials] = useState<{
     client_id?: string;
     client_secret?: string;
   } | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
 
-  // PARSED REDIRECTS
-  const parsedRedirects = useMemo(
-    () =>
-      form.redirect_uris
-        .split(/\r?\n/)
-        .map((item) => item.trim())
-        .filter(Boolean),
-    [form.redirect_uris],
-  );
-
-  // PODMIENKA IBA NA RENDER — HOOKY UŽ SÚ ZAVOLANÉ
+  // PODMIENKA iba na render
   if (user?.rola !== "garant") return null;
 
   // --------------------------------------------------
   // HANDLERS
   // --------------------------------------------------
 
-  const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => {
-    const target = event.target;
-    const { name, value } = target;
-
-    if (target instanceof HTMLInputElement && target.type === "checkbox") {
-      setForm((prev) => ({ ...prev, [name]: target.checked }));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const onCreate = handleSubmit(async (values) => {
     setLastCredentials(null);
-    setFormError(null);
+    clearErrors();
 
-    if (!form.name.trim()) {
-      setFormError(msgs.common.oauth.validation.nameRequired);
+    const redirectValidation = validateRedirectUris(values.redirect_uris, msgs);
+    if (redirectValidation !== true) {
+      setError("redirect_uris", { type: "validate", message: redirectValidation });
       return;
     }
 
-    if (!parsedRedirects.length) {
-      setFormError(msgs.common.oauth.validation.redirectRequired);
+    if (values.allow_private_jwt && !values.public_key.trim()) {
+      setError("public_key", {
+        type: "validate",
+        message: msgs.common.oauth.validation.publicKeyRequired,
+      });
       return;
     }
 
-    for (const uri of parsedRedirects) {
-      try {
-        const parsed = new URL(uri);
-        if (!["http:", "https:"].includes(parsed.protocol)) {
-          throw new Error();
-        }
-      } catch {
-        setFormError(msgs.common.oauth.validation.redirectInvalid.replace("{uri}", uri));
-        return;
-      }
-    }
-
-    if (form.allow_private_jwt && !form.public_key.trim()) {
-      setFormError(msgs.common.oauth.validation.publicKeyRequired);
-      return;
-    }
+    const serviceUserIdNum =
+      values.service_user_id && Number(values.service_user_id) > 0
+        ? Number(values.service_user_id)
+        : undefined;
 
     const payload: CreateOAuthClientPayload = {
-      name: form.name.trim(),
+      name: values.name.trim(),
       redirect_uris: parsedRedirects,
-      scope: form.scope.trim() || undefined,
-      is_public: form.is_public,
-      allow_password_grant: form.allow_password_grant,
-      allow_private_jwt: form.allow_private_jwt,
-      public_key: form.allow_private_jwt ? form.public_key.trim() : undefined,
-      service_user_id:
-        form.service_user_id && Number(form.service_user_id) > 0
-          ? Number(form.service_user_id)
-          : undefined,
+      scope: values.scope.trim() || undefined,
+      is_public: values.is_public,
+      allow_password_grant: values.allow_password_grant,
+      allow_private_jwt: values.allow_private_jwt,
+      public_key: values.allow_private_jwt ? values.public_key.trim() : undefined,
+      service_user_id: serviceUserIdNum,
     };
 
     try {
       const created = await createMutation.mutateAsync(payload);
 
       setLastCredentials({
-        client_id: (created as any).client_id,
-        client_secret: (created as any).client_secret,
+        client_id: (created as any)?.client_id,
+        client_secret: (created as any)?.client_secret,
       });
 
       success({ title: msgs.common.successTitle, description: msgs.common.success });
 
-      setForm(initialFormState);
-    } catch (err: any) {
-      const description =
-        err?.response?.data?.detail ||
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        msgs.common.error.errorSave;
-
-      setFormError(description);
+      reset(initialFormState);
+    } catch (err: unknown) {
+      const description = getErrorMessage(err, msgs.common.error.errorSave);
+      // všeobecná chyba formulára – dáme na name, nech sa zobrazí hore
+      setError("name", { type: "server", message: description });
       warning({ title: msgs.common.error.errorSave, description });
     }
-  };
+  });
 
   const handleDelete = async (id: string) => {
     if (!window.confirm(msgs.common.oauth.deleteConfirm)) return;
@@ -157,19 +175,14 @@ export default function OAuthClientsSection() {
     try {
       await deleteMutation.mutateAsync(id);
       success({ title: msgs.common.successTitle, description: msgs.common.oauth.deleteSuccess });
-    } catch (err: any) {
-      const description =
-        err?.response?.data?.detail ||
-        err?.response?.data?.error ||
-        err?.message ||
-        msgs.common.error.errorDelete;
-
+    } catch (err: unknown) {
+      const description = getErrorMessage(err, msgs.common.error.errorDelete);
       warning({ title: msgs.common.error.errorDelete, description });
     }
   };
 
   // --------------------------------------------------
-  // UI (NEZMENENÉ)
+  // UI
   // --------------------------------------------------
 
   const clients = clientsQuery.data ?? [];
@@ -214,6 +227,7 @@ export default function OAuthClientsSection() {
                   </th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-gray-100">
                 {error ? (
                   <tr>
@@ -272,115 +286,138 @@ export default function OAuthClientsSection() {
               <span className="text-xs text-ink-400">{msgs.common.loading.loading}</span>
             ) : null}
           </div>
-          {formError ? (
+
+          {/* “globálna” chyba – použijeme name error ako top banner (server error) */}
+          {errors.name?.type === "server" && errors.name.message ? (
             <div className="mt-3 rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {formError}
+              {errors.name.message}
             </div>
           ) : null}
-          <form className="mt-4 space-y-4" onSubmit={handleCreate}>
+
+          <form className="mt-4 space-y-4" onSubmit={onCreate}>
             <div>
               <label className="text-xs font-semibold uppercase text-ink-500">
                 {msgs.common.oauth.form.labels.name}
               </label>
               <input
                 type="text"
-                name="name"
-                value={form.name}
-                onChange={handleInputChange}
-                required
                 className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
+                {...register("name", {
+                  required: msgs.common.oauth.validation.nameRequired,
+                  validate: (v) => v.trim().length > 0 || msgs.common.oauth.validation.nameRequired,
+                })}
               />
+              {errors.name?.type !== "server" && errors.name?.message ? (
+                <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
+              ) : null}
             </div>
+
             <div>
               <label className="text-xs font-semibold uppercase text-ink-500">
                 {msgs.common.oauth.form.labels.redirectUris}
               </label>
               <textarea
-                name="redirect_uris"
-                value={form.redirect_uris}
-                onChange={handleInputChange}
-                placeholder={msgs.common.oauth.form.placeholder.redirectUris}
                 rows={3}
-                required
+                placeholder={msgs.common.oauth.form.placeholder.redirectUris}
                 className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
+                {...register("redirect_uris", {
+                  required: msgs.common.oauth.validation.redirectRequired,
+                  validate: (v) => validateRedirectUris(v, msgs),
+                })}
               />
               <p className="mt-1 text-xs text-ink-400">
                 {msgs.common.oauth.form.hint.redirectUris}
               </p>
+              {errors.redirect_uris?.message ? (
+                <p className="mt-1 text-xs text-red-600">{errors.redirect_uris.message}</p>
+              ) : null}
             </div>
+
             <div>
               <label className="text-xs font-semibold uppercase text-ink-500">
                 {msgs.common.oauth.form.labels.scope}
               </label>
               <input
                 type="text"
-                name="scope"
-                value={form.scope}
-                onChange={handleInputChange}
                 className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
+                {...register("scope")}
               />
             </div>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="inline-flex items-center gap-2 text-sm text-ink-700">
                 <input
                   type="checkbox"
-                  name="is_public"
-                  checked={form.is_public}
-                  onChange={handleInputChange}
                   className="h-4 w-4 rounded border-gray-300 text-primary-700 focus:ring-primary-400"
+                  {...register("is_public")}
                 />
                 {msgs.common.oauth.form.labels.publicClient}
               </label>
+
               <label className="inline-flex items-center gap-2 text-sm text-ink-700">
                 <input
                   type="checkbox"
-                  name="allow_password_grant"
-                  checked={form.allow_password_grant}
-                  onChange={handleInputChange}
                   className="h-4 w-4 rounded border-gray-300 text-primary-700 focus:ring-primary-400"
+                  {...register("allow_password_grant")}
                 />
                 {msgs.common.oauth.form.labels.passwordGrant}
               </label>
+
               <label className="inline-flex items-center gap-2 text-sm text-ink-700 sm:col-span-2">
                 <input
                   type="checkbox"
-                  name="allow_private_jwt"
-                  checked={form.allow_private_jwt}
-                  onChange={handleInputChange}
                   className="h-4 w-4 rounded border-gray-300 text-primary-700 focus:ring-primary-400"
+                  {...register("allow_private_jwt")}
                 />
                 {msgs.common.oauth.form.labels.privateKeyJwt}
               </label>
             </div>
-            {form.allow_private_jwt ? (
+
+            {allowPrivateJwt ? (
               <div>
                 <label className="text-xs font-semibold uppercase text-ink-500">
                   {msgs.common.oauth.form.labels.publicKey}
                 </label>
                 <textarea
-                  name="public_key"
-                  value={form.public_key}
-                  onChange={handleInputChange}
-                  placeholder={msgs.common.oauth.form.placeholder.publicKey}
                   rows={3}
-                  required
+                  placeholder={msgs.common.oauth.form.placeholder.publicKey}
                   className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
+                  {...register("public_key", {
+                    validate: (v) =>
+                      allowPrivateJwt
+                        ? v.trim().length > 0 || msgs.common.oauth.validation.publicKeyRequired
+                        : true,
+                  })}
                 />
+                {errors.public_key?.message ? (
+                  <p className="mt-1 text-xs text-red-600">{errors.public_key.message}</p>
+                ) : null}
               </div>
             ) : null}
+
             <div>
               <label className="text-xs font-semibold uppercase text-ink-500">
                 {msgs.common.oauth.form.labels.serviceUserId}
               </label>
               <input
                 type="number"
-                name="service_user_id"
-                value={form.service_user_id}
-                onChange={handleInputChange}
                 placeholder={msgs.common.oauth.form.placeholder.serviceUserId}
                 className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-300"
+                {...register("service_user_id", {
+                  validate: (v) => {
+                    if (!v) return true;
+                    const n = Number(v);
+                    if (!Number.isFinite(n)) return msgs.common.oauth.validation.serviceUserInvalid;
+                    if (n <= 0) return msgs.common.oauth.validation.serviceUserInvalid;
+                    return true;
+                  },
+                })}
               />
+              {errors.service_user_id?.message ? (
+                <p className="mt-1 text-xs text-red-600">{errors.service_user_id.message}</p>
+              ) : null}
             </div>
+
             <button
               type="submit"
               disabled={createMutation.isPending}

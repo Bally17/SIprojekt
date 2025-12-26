@@ -4,20 +4,28 @@ import { useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import { api, getAccessToken } from "@lib/ApiProvider";
 import { Internship, InternshipDocument } from "@shared-types/internship";
 import { BASE_URL } from "src/constants/Endpoints";
+import { getErrorMessage } from "@utils/errorActions";
+
+import { useUploadDocumentFileMutation } from "src/hook/useUploadDocumentFileMutation";
+import { useApproveCompanyDocumentMutation } from "src/hook/useApproveCompanyDocumentMutation";
+import { useRejectCompanyDocumentMutation } from "src/hook/useRejectCompanyDocumentMutation";
+import { StatusType } from "@shared-types/index";
 
 type Props = {
   internship: Internship;
   onChange?: () => void;
 };
 
-const STATUS_BADGE: Record<string, string> = {
+const STATUS_BADGE = {
   nahrany: "bg-yellow-50 text-yellow-700",
   potvrdeny: "bg-emerald-50 text-emerald-700",
   zamietnuty: "bg-red-50 text-red-700",
-};
+} satisfies Record<StatusType, string>;
+
+const isStatusType = (v: unknown): v is StatusType =>
+  v === "nahrany" || v === "potvrdeny" || v === "zamietnuty";
 
 const buildMediaUrl = (path: string) => {
   if (/^https?:\/\//.test(path)) return path;
@@ -25,28 +33,51 @@ const buildMediaUrl = (path: string) => {
   return `${backend}/media/${path.replace(/^\/?/, "")}`;
 };
 
-const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
+export default function CompanyDocumentsCard({ internship, onChange }: Props) {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
-  const [uploading, setUploading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
 
-  const reportDoc = internship.documents?.find((doc) => doc.typ_dokumentu === "vykaz");
+  const reportDoc = useMemo(
+    () => internship.documents?.find((doc) => doc.typ_dokumentu === "vykaz"),
+    [internship.documents],
+  );
+
   const uploadInputId = useMemo(() => `company-doc-upload-${internship.id}`, [internship.id]);
   const closeActions = () => setActionsOpen(false);
 
-  const statusLabel = (doc?: InternshipDocument) => {
-    if (!doc || !doc.subor_url) return msgs.common.documents.statusMissing;
-    if (doc.stav_dokumentu === "potvrdeny") return msgs.common.documents.statusApproved;
-    if (doc.stav_dokumentu === "zamietnuty") return msgs.common.documents.statusRejected;
-    return msgs.common.documents.statusUploaded;
-  };
+  const uploadMutation = useUploadDocumentFileMutation();
+  const approveMutation = useApproveCompanyDocumentMutation();
+  const rejectMutation = useRejectCompanyDocumentMutation();
 
-  const badgeClass = (doc?: InternshipDocument) => {
-    if (!doc || !doc.subor_url) return "bg-gray-100 text-gray-500";
-    return STATUS_BADGE[doc.stav_dokumentu || "nahrany"] || "bg-gray-100 text-gray-500";
-  };
+  const uploading = uploadMutation.isPending;
+
+  function getDocInfo(doc?: InternshipDocument) {
+    if (!doc?.subor_url) {
+      return {
+        label: msgs.common.documents.statusMissing,
+        badge: "bg-gray-100 text-gray-500",
+      };
+    }
+
+    const raw = doc.stav_dokumentu ?? "nahrany";
+    const code: StatusType = isStatusType(raw) ? raw : "nahrany";
+
+    const label =
+      code === "potvrdeny"
+        ? msgs.common.documents.statusApproved
+        : code === "zamietnuty"
+          ? msgs.common.documents.statusRejected
+          : msgs.common.documents.statusUploaded;
+
+    return {
+      label,
+      badge: STATUS_BADGE[code] || "bg-gray-100 text-gray-500",
+    };
+  }
+
+  const docInfo = getDocInfo(reportDoc);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!reportDoc) {
@@ -60,98 +91,67 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
-      setUploading(true);
-
-      const res = await fetch(`${BASE_URL}/documents/${reportDoc.id}/upload/`, {
-        method: "POST",
-        headers: {
-          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-        },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        let errorBody: any = null;
-        try {
-          errorBody = await res.json();
-        } catch {
-          // ignore
-        }
-
-        const description =
-          errorBody?.detail || errorBody?.error || msgs.common.companyDocs.uploadError;
-
-        throw new Error(description);
-      }
+      await uploadMutation.mutateAsync({ docId: reportDoc.id, file });
 
       notifySuccess({
         title: msgs.common.companyDocs.uploadSuccess,
         description: msgs.common.companyDocs.uploadDescription,
       });
+
       onChange?.();
       closeActions();
-    } catch (error: any) {
+    } catch (err: unknown) {
       notifyWarning({
         title: msgs.common.companyDocs.uploadError,
-        description: error?.message || msgs.common.companyDocs.uploadError,
+        description: getErrorMessage(err, msgs.common.companyDocs.uploadError),
       });
     } finally {
-      setUploading(false);
       event.target.value = "";
     }
   };
 
   const handleApprove = async () => {
-    if (!reportDoc || !reportDoc.subor_url) return;
+    if (!reportDoc?.subor_url) return;
 
     try {
-      await api.post<unknown>(`/documents/${reportDoc.id}/approve-company/`, {});
+      await approveMutation.mutateAsync(reportDoc.id);
 
       notifySuccess({
         title: msgs.common.companyDocs.approved,
         description: "",
       });
+
       onChange?.();
       closeActions();
-    } catch (err: any) {
-      const data = err?.response?.data;
-      const description =
-        data?.detail || data?.error || err?.message || msgs.common.companyDocs.actionError;
-
+    } catch (err: unknown) {
       notifyWarning({
         title: msgs.common.companyDocs.actionError,
-        description,
+        description: getErrorMessage(err, msgs.common.companyDocs.actionError),
       });
     }
   };
 
   const handleReject = async () => {
-    if (!reportDoc || !reportDoc.subor_url) return;
+    if (!reportDoc?.subor_url) return;
 
     const reason = window.prompt(msgs.common.companyDocs.rejectPrompt);
     if (!reason) return;
 
     try {
-      await api.post<unknown>(`/documents/${reportDoc.id}/reject-company/`, { reason });
+      await rejectMutation.mutateAsync({ docId: reportDoc.id, reason });
 
       notifySuccess({
         title: msgs.common.companyDocs.rejected,
         description: "",
       });
+
       onChange?.();
       closeActions();
-    } catch (err: any) {
-      const data = err?.response?.data;
-      const description =
-        data?.detail || data?.error || err?.message || msgs.common.companyDocs.actionError;
-
+    } catch (err: unknown) {
       notifyWarning({
         title: msgs.common.companyDocs.actionError,
-        description,
+        description: getErrorMessage(err, msgs.common.companyDocs.actionError),
       });
     }
   };
@@ -199,11 +199,9 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
 
       <td className="px-4 py-4 align-top">
         <span
-          className={`inline-flex min-w-[150px] items-center justify-center rounded-full px-3 py-1 text-center text-xs font-semibold leading-tight ${badgeClass(
-            reportDoc,
-          )}`}
+          className={`inline-flex min-w-[150px] items-center justify-center rounded-full px-3 py-1 text-center text-xs font-semibold leading-tight ${docInfo.badge}`}
         >
-          {statusLabel(reportDoc)}
+          {docInfo.label}
         </span>
       </td>
 
@@ -278,20 +276,24 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
                   <button
                     type="button"
                     onClick={handleApprove}
-                    disabled={!reportDoc?.subor_url}
+                    disabled={!reportDoc?.subor_url || approveMutation.isPending}
                     className="flex w-full items-center justify-between rounded-lg border border-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
                   >
-                    {msgs.common.companyDocs.approveButton}
+                    {approveMutation.isPending
+                      ? msgs.common.loading.loading
+                      : msgs.common.companyDocs.approveButton}
                     <Icon name="check-circle-2" className="h-4 w-4" />
                   </button>
 
                   <button
                     type="button"
                     onClick={handleReject}
-                    disabled={!reportDoc?.subor_url}
+                    disabled={!reportDoc?.subor_url || rejectMutation.isPending}
                     className="flex w-full items-center justify-between rounded-lg border border-rose-100 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
                   >
-                    {msgs.common.companyDocs.rejectButton}
+                    {rejectMutation.isPending
+                      ? msgs.common.loading.loading
+                      : msgs.common.companyDocs.rejectButton}
                     <Icon name="x" className="h-4 w-4" />
                   </button>
                 </div>
@@ -302,6 +304,4 @@ const CompanyDocumentsCard = ({ internship, onChange }: Props) => {
       </td>
     </tr>
   );
-};
-
-export default CompanyDocumentsCard;
+}
