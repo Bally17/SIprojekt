@@ -212,6 +212,20 @@ function collectKeysFromExpr(expr) {
     }
     return;
   }
+
+  if (expr.type === "ArrowFunctionExpression" || expr.type === "FunctionExpression") {
+    // validate: (v) => expr
+    if (expr.body?.type === "BlockStatement") {
+      for (const st of expr.body.body || []) {
+        if (st.type === "ReturnStatement") collectKeysFromExpr(st.argument);
+        if (st.type === "ExpressionStatement") collectKeysFromExpr(st.expression);
+      }
+    } else {
+      // validate: (v) => v === newPassword || msgs.auth.passwordMismatch
+      collectKeysFromExpr(expr.body);
+    }
+    return;
+  }
 }
 
 // Zbiera kľúče z destructuringu: const { a, b: alias, nested: { c } } = msgs.auth;

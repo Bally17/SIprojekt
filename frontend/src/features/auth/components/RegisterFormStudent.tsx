@@ -78,15 +78,16 @@ export default function RegisterFormStudent() {
     notifyWarning({ title: msgs.auth.errorTitle, description: firstMessage });
   };
 
-  const input = "w-full border rounded px-3 py-2";
   const errorText = "text-sm text-red-600";
+  const input =
+    "w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500";
 
   return (
     <form
       onSubmit={handleSubmit(onSubmit, onInvalid)}
       className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto"
     >
-      <h2 className="text-2xl font-semibold text-primary-900 text-center">
+      <h2 className="text-2xl font-semibold text-ink-900 text-center">
         {msgs.auth.registerStudent}
       </h2>
 

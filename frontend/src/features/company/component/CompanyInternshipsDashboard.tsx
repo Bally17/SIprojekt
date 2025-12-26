@@ -55,11 +55,11 @@ export default function CompanyInternshipsDashboard() {
 
   return (
     <div className="space-y-10">
-      <section className="bg-white shadow-sm rounded-lg p-6 space-y-4 border border-gray-100">
+      <section className="bg-white shadow-sm rounded-lg p-6 space-y-4 border border-primary-100">
         <PendingInternships onChange={() => refetch()} />
       </section>
 
-      <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
+      <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-primary-100">
         <Table
           data={internships}
           name={TABLE_NAMES.ALL_INTERNSHIPS}
@@ -76,7 +76,7 @@ export default function CompanyInternshipsDashboard() {
         />
       </section>
 
-      <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-100">
+      <section className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-primary-100">
         <Table
           data={internships}
           name={TABLE_NAMES.COMPANY_DOCUMENTS}

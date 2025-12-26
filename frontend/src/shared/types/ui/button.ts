@@ -12,7 +12,7 @@ export const buttonBase =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500";
 
 export const buttonVariants: Record<NonNullable<ButtonProps["variant"]>, string> = {
-  primary: "bg-primary-700 text-white hover:bg-primary-600",
+  primary: "bg-primary-600 text-white hover:bg-primary-700",
   danger: "bg-red-500 text-white hover:bg-red-600",
   ghost: "border border-gray-300 hover:bg-gray-50",
   success: "bg-green-500 text-white hover:bg-green-600 border border-green-500/20",

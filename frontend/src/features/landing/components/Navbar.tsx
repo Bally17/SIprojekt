@@ -16,7 +16,7 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
   const [registerOpen, setRegisterOpen] = useState(false);
 
   return (
-    <header className="fixed w-full top-0 z-50 bg-primary-50/90 backdrop-blur-md border-b border-primary-100 shadow-sm">
+    <header className="fixed w-full top-0 z-50 bg-paper/80 backdrop-blur-md border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <Image
           src="/images/logo_fpvai.png"
@@ -31,14 +31,14 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
           <nav className="hidden md:flex gap-8 text-ink-700 text-sm">
             <a
               href="#how-it-works"
-              className="hover:text-primary-800 transition-colors duration-200"
+              className="hover:text-primary-700 transition-colors duration-200"
             >
               {msgs.common.page.howItWorks}
             </a>
-            <a href="#features" className="hover:text-primary-800 transition-colors duration-200">
+            <a href="#features" className="hover:text-primary-700 transition-colors duration-200">
               {msgs.common.page.features}
             </a>
-            <a href="#faq" className="hover:text-primary-800 transition-colors duration-200">
+            <a href="#faq" className="hover:text-primary-700 transition-colors duration-200">
               {msgs.common.page.faq}
             </a>
           </nav>
@@ -47,7 +47,7 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
         <div className="hidden md:flex items-center gap-3 relative">
           <Link
             href="/auth/login"
-            className="border border-primary-700 px-4 py-2 rounded-md text-sm text-primary-900 hover:bg-primary-100"
+            className="border border-primary-600 px-4 py-2 rounded-md text-sm text-primary-700 hover:bg-soft"
           >
             {msgs.auth.login}
           </Link>
