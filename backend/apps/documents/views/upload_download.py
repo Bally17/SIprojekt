@@ -1,3 +1,7 @@
+import logging
+import os
+
+from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,6 +14,9 @@ from apps.notifications.service import notify_document_uploaded
 from ..models import Dokument
 from ..serializers import DocumentSerializer
 from .helpers import _assert, _user_is_firma, _user_is_garant, _user_is_student
+
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentUploadDownloadMixin:
@@ -103,5 +110,27 @@ class DocumentUploadDownloadMixin:
         if resp:
             return resp
 
-        url = generate_presigned_url(document.subor_url)
-        return Response({"url": url}, status=status.HTTP_200_OK)
+        object_name = document.subor_url
+
+        # Absolútna URL? Vráť rovno.
+        if isinstance(object_name, str) and object_name.startswith(("http://", "https://")):
+            return Response({"url": object_name}, status=status.HTTP_200_OK)
+
+        # Lokálny súbor v MEDIA_ROOT (napr. generované PDF) – zostav plnú URL
+        local_path = os.path.join(settings.MEDIA_ROOT, object_name)
+        if os.path.exists(local_path):
+            absolute_url = request.build_absolute_uri(
+                f"{settings.MEDIA_URL.rstrip('/')}/{object_name.lstrip('/')}"
+            )
+            return Response({"url": absolute_url}, status=status.HTTP_200_OK)
+
+        # Inak skús B2
+        try:
+            url = generate_presigned_url(object_name)
+            return Response({"url": url}, status=status.HTTP_200_OK)
+        except Exception as exc:  # pragma: no cover - závislé od infra
+            logger.exception("❌ Download link generation failed for document %s: %s", document.id, exc)
+            return Response(
+                {"detail": "Download link sa nepodarilo vygenerovať. Skús to neskôr."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

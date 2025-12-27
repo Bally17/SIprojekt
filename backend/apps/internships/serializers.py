@@ -196,21 +196,8 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
                 {"datum_konca": "Dátum ukončenia nemôže byť pred dátumom začiatku."}
             )
 
-        target_state = (attrs.get("stav") or "").lower()
-        instance_state = (getattr(self.instance, "stav", "") or "").lower()
-        if target_state and target_state != instance_state and self.instance:
-            missing_docs = missing_required_documents(self.instance, target_state)
-            force = attrs.get("force", False)
-            if missing_docs and not force:
-                docs_text = ", ".join(missing_docs)
-                raise serializers.ValidationError(
-                    {
-                        "stav": (
-                            f"Pred zmenou stavu na '{target_state}' musia byť potvrdené dokumenty: "
-                            f"{docs_text}."
-                        )
-                    }
-                )
+        # ⚠️ Bypasujeme povinné dokumenty – garant môže schváliť aj bez potvrdenej zmluvy.
+        # Ak chceš obnoviť striktne požiadavky, zapni späť missing_required_documents check.
 
         return attrs
 

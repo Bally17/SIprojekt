@@ -7,6 +7,7 @@ router = DefaultRouter()
 router.register(r'users', views.UserViewSet)
 router.register(r'student-profiles', views.StudentProfileViewSet)
 router.register(r'garant-profiles', views.GarantProfileViewSet)
+router.register(r'garants', views.GarantAccountViewSet, basename="garants")
 
 urlpatterns = [
     path('', include(router.urls)),
