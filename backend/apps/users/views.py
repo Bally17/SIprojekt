@@ -6,7 +6,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import User, StudentProfil, GarantProfil
-from .serializers import UserSerializer, StudentProfileSerializer, GarantProfileSerializer
+from .serializers import (
+    UserSerializer,
+    StudentProfileSerializer,
+    GarantProfileSerializer,
+    GarantAccountSerializer,
+)
 from apps.internships.permissions import IsGarantUser
 
 
@@ -62,6 +67,40 @@ class GarantProfileViewSet(viewsets.ModelViewSet):
             # Ak máte viac garantov, umožní im vidieť aj ostatných garantov.
             return GarantProfil.objects.all()
         return GarantProfil.objects.none()
+
+
+class GarantAccountViewSet(viewsets.ModelViewSet):
+    """
+    CRUD nad garantmi (kontá). Len prihlásený garant; nemôže zmazať sám seba
+    a vždy musí zostať aspoň jeden garant v systéme.
+    """
+
+    queryset = User.objects.filter(rola=User.ROLE_GARANT)
+    serializer_class = GarantAccountSerializer
+    permission_classes = [IsAuthenticated, IsGarantUser]
+
+    def get_queryset(self):
+        return self.queryset.order_by("-vytvorene_at")
+
+    def destroy(self, request, *args, **kwargs):
+        instance: User = self.get_object()
+
+        if instance.id == request.user.id:
+            return Response(
+                {"detail": "Nemôžeš zmazať vlastné konto garanta."},
+                status=400,
+            )
+
+        # Musí zostať aspoň jeden garant.
+        active_garants = User.objects.filter(rola=User.ROLE_GARANT, aktivny=True)
+        if active_garants.count() <= 1:
+            return Response(
+                {"detail": "V systéme musí zostať aspoň jeden garant."},
+                status=400,
+            )
+
+        self.perform_destroy(instance)
+        return Response(status=204)
 
 
 @api_view(['GET'])
