@@ -127,7 +127,7 @@ export default function StudentDashboardPage() {
         {internships.map((internship) => (
           <div
             key={internship.id}
-            className="rounded-xl border border-cyan-100 bg-white p-5 shadow-sm transition hover:shadow-md"
+            className="rounded-xl border border-primary-200 bg-white p-5 shadow-sm transition hover:shadow-md"
           >
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-primary-600">
@@ -160,7 +160,7 @@ export default function StudentDashboardPage() {
       {/* FORM */}
       <form
         onSubmit={handleCreateInternship}
-        className="space-y-5 rounded-xl border border-cyan-100 bg-white p-6 shadow-sm transition hover:shadow-md"
+        className="space-y-5 rounded-xl border border-primary-100 bg-white p-6 shadow-sm transition hover:shadow-md"
       >
         <div className="flex items-center gap-2">
           <Icon name="calendar-plus" className="text-primary-600" />
@@ -178,7 +178,7 @@ export default function StudentDashboardPage() {
             value={searchQuery}
             onChange={handleCompanySearchChange}
             placeholder={msgs.common.action.company}
-            className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full rounded-lg border border-primary-200 p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           />
 
           {companySearch.isPending && (
@@ -215,7 +215,7 @@ export default function StudentDashboardPage() {
               type="number"
               value={form.rok}
               onChange={(e) => setForm((prev) => ({ ...prev, rok: Number(e.target.value) }))}
-              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full rounded-lg border border-primary-200 p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
 
@@ -242,7 +242,7 @@ export default function StudentDashboardPage() {
               type="date"
               value={form.datum_zaciatku}
               onChange={(e) => setForm((prev) => ({ ...prev, datum_zaciatku: e.target.value }))}
-              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full rounded-lg border border-primary-200 p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
 
@@ -254,7 +254,7 @@ export default function StudentDashboardPage() {
               type="date"
               value={form.datum_konca}
               onChange={(e) => setForm((prev) => ({ ...prev, datum_konca: e.target.value }))}
-              className="w-full rounded-lg border p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full rounded-lg border border-primary-200 p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
         </div>
