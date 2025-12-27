@@ -64,6 +64,17 @@
     "garantPerm4": "Reporty"
   },
 
+  "faqList": {
+    "item1Q": "Ako funguje schvaľovanie praxe?",
+    "item1A": "Študent vytvorí žiadosť o prax, vyplní údaje o firme a odošle ju na schválenie. Firma potvrdí, že študenta prijíma, a garant následne overí súlad praxe s požiadavkami štúdia. O každom kroku systém informuje používateľov notifikáciami.",
+    "item2Q": "Ako systém pracuje s dokumentmi a exportmi?",
+    "item2A": "Po vytvorení praxe systém automaticky vygeneruje potrebné dokumenty (napr. dohodu o praxi vo formáte PDF). Údaje o praxiach je možné exportovať do CSV pre reporty.",
+    "item3Q": "Aké možnosti prihlásenia sú podporované?",
+    "item3A": "Používatelia sa prihlasujú účtom vytvoreným v systéme. Po prihlásení vidia dashboard podľa svojej roly (študent, firma, garant).",
+    "item4Q": "Je systém vhodný aj na používanie v mobile?",
+    "item4A": "Rozhranie je responzívne, takže študenti, firmy aj garanti môžu pracovať v prehliadači na mobile alebo tablete bez inštalácie aplikácie."
+  },
+
   "role": {
     "title": "Role a prístupy",
     "subtitle": "Prepínaj roly a pozri ich oprávnenia a náhľad.",

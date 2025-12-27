@@ -64,6 +64,17 @@
     "garantPerm4": "Reports"
   },
 
+  "faqList": {
+    "item1Q": "How does internship approval work?",
+    "item1A": "The student creates an internship request and fills in company data. The company confirms acceptance, then the supervisor checks compliance. Notifications keep everyone informed at each step.",
+    "item2Q": "How does the system handle documents and exports?",
+    "item2A": "After creating an internship, the system generates required PDFs (for example, the internship agreement). Data can be exported to CSV for reporting.",
+    "item3Q": "What sign-in options are supported?",
+    "item3A": "Users sign in with an account created in the system. Dashboards adapt to the user role (student, company, supervisor).",
+    "item4Q": "Is the system mobile-friendly?",
+    "item4A": "The UI is responsive, so students, companies, and supervisors can work in the browser on mobile or tablet without installing a separate app."
+  },
+
   "role": {
     "title": "Roles & access",
     "subtitle": "Switch roles and see their permissions and preview.",
