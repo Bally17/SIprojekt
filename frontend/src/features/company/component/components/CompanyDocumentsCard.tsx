@@ -210,7 +210,7 @@ export default function CompanyDocumentsCard({ internship, onChange }: Props) {
           <button
             type="button"
             onClick={() => setActionsOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition hover:bg-gray-50"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-primary-600 text-primary-600 transition hover:bg-primary-50"
             aria-haspopup="dialog"
             aria-expanded={actionsOpen}
           >

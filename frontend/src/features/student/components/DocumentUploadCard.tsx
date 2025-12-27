@@ -161,7 +161,7 @@ export default function DocumentUploadCard({
    * ------------------------------ */
   return (
     <>
-      <div className="mt-4 space-y-3 rounded-2xl border border-primary-100 bg-primary-50/80 p-4">
+      <div className="mt-4 space-y-3 rounded-2xl border border-primary-100 bg-primary-50/90 p-4">
         {/* SECTION HEADER */}
         <div className="flex items-center justify-between">
           <div>
@@ -182,7 +182,7 @@ export default function DocumentUploadCard({
         </div>
 
         {/* CONTRACT (only download) */}
-        <div className="rounded-xl border border-primary-100 bg-white/70 p-4 shadow-sm">
+        <div className="rounded-xl border border-primary-100 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
@@ -206,7 +206,7 @@ export default function DocumentUploadCard({
         </div>
 
         {/* AGREEMENT */}
-        <div className="rounded-xl border border-primary-100 bg-white/70 p-4 shadow-sm">
+        <div className="rounded-xl border border-primary-100 bg-white p-4 shadow-sm">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
               <Icon name="badge-check" className="h-4 w-4" />
@@ -223,7 +223,7 @@ export default function DocumentUploadCard({
             )}
 
             <span
-              className={`inline-flex min-w-[150px] rounded-full px-3 py-0.5 text-[11px] font-semibold ${statusInfo.agreement.badge}`}
+              className={`inline-flex items-center justify-center text-center rounded-full px-3 py-0.5 text-[11px] font-semibold ${statusInfo.agreement.badge}`}
             >
               {statusInfo.agreement.label}
             </span>
@@ -231,7 +231,7 @@ export default function DocumentUploadCard({
         </div>
 
         {/* REPORT */}
-        <div className="rounded-xl border border-primary-100 bg-white/70 p-4 shadow-sm">
+        <div className="rounded-xl border border-primary-100 bg-white p-4 shadow-sm">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
               <Icon name="workflow" className="h-4 w-4" />
@@ -241,7 +241,7 @@ export default function DocumentUploadCard({
             <p className="text-xs text-ink-700">{msgs.common.documents.reportDescription}</p>
 
             <span
-              className={`inline-flex min-w-[150px] rounded-full px-3 py-0.5 text-[11px] font-semibold ${statusInfo.report.badge}`}
+              className={`inline-flex items-center justify-center text-center rounded-full px-3 py-0.5 text-[11px] font-semibold ${statusInfo.report.badge}`}
             >
               {statusInfo.report.label}
             </span>

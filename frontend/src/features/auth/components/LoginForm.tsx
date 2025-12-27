@@ -94,7 +94,7 @@ export default function LoginForm() {
   const errorText = "text-sm text-red-600";
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto">
+    <div className="bg-white shadow-md rounded-lg p-6 space-y-4 w-full max-w-md mx-auto">
       <h2 className="text-2xl font-semibold text-ink-900 text-center">{msgs.auth.title}</h2>
 
       {/* Prepínač typu používateľa */}

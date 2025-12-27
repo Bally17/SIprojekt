@@ -207,8 +207,8 @@ export default function OAuthClientsSection() {
             ) : null}
           </div>
           <div className="mt-3 overflow-x-auto rounded-lg border border-primary-200">
-            <table className="min-w-full divide-y divide-gray-100">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-primary-100">
+              <thead className="bg-primary-50 border-b border-primary-200">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
                     {msgs.common.oauth.table.clientId}

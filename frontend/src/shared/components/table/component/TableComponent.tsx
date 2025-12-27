@@ -319,9 +319,9 @@ export const TableComponent = ({
         {showEmpty && data.length === 0 && actionMessage ? (
           <p className="text-green-600">{actionMessage}</p>
         ) : (
-          <table className="min-w-full bg-white border border-gray-100">
-            <thead>
-              <tr className="bg-gray-100 text-left text-sm text-gray-600">
+          <table className="min-w-full bg-white border border-primary-100">
+            <thead className="border-b border-primary-100">
+              <tr className="bg-primary-50 text-left text-sm font-semibold text-ink-900">
                 {columns.map((c) => (
                   <th key={c} scope="col" className="px-4 py-3">
                     {c}
@@ -372,7 +372,7 @@ export const TableComponent = ({
                   return (
                     <div
                       key={doc.id}
-                      className="rounded-xl border border-gray-100 px-4 py-3 shadow-sm"
+                      className="rounded-xl border border-primary-200 px-4 py-3 shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>

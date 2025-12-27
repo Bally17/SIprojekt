@@ -152,8 +152,8 @@ function GarantInternshipsTableSection({
       <p className="text-sm text-ink-500">{msgs.common.guarant.tableSubtitle}</p>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-100">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-primary-200">
+          <thead className="bg-primary-50">
             <tr>
               {[
                 msgs.common.guarant.table.student,
@@ -165,7 +165,7 @@ function GarantInternshipsTableSection({
               ].map((t) => (
                 <th
                   key={t}
-                  className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-500"
+                  className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-900"
                 >
                   {t}
                 </th>
@@ -381,7 +381,7 @@ export default function GarantInternshipsDashboard() {
               name="rok"
               value={filters.rok}
               onChange={handleFilterChange}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -394,7 +394,7 @@ export default function GarantInternshipsDashboard() {
               name="firma"
               value={filters.firma}
               onChange={handleFilterChange}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -407,7 +407,7 @@ export default function GarantInternshipsDashboard() {
               name="student"
               value={filters.student}
               onChange={handleFilterChange}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -420,7 +420,7 @@ export default function GarantInternshipsDashboard() {
               name="odbor"
               value={filters.odbor}
               onChange={handleFilterChange}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -432,7 +432,7 @@ export default function GarantInternshipsDashboard() {
               name="stav"
               value={filters.stav}
               onChange={handleFilterChange}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="">{msgs.common.guarant.filters.statePlaceholder}</option>
               {STAV_OPTIONS.map((o) => (
