@@ -10,7 +10,7 @@ import { useAuth } from "@lib/AuthProvider";
 import { useLogoutMutation } from "src/hook/useLogoutMutation";
 import Image from "next/image";
 import { getErrorMessage } from "@utils/errorActions";
-import { ChangeLanguage } from "./component/ChangeLanguage";
+import ChangeLanguageButton from "./component/ChangeLanguage";
 
 const DashboardNavbar = () => {
   const router = useRouter();
@@ -123,7 +123,7 @@ const DashboardNavbar = () => {
           {/* LANGUAGE + LOGOUT */}
           <div className="flex flex-1 items-center justify-end gap-3">
             {/* LANGUAGE SWITCHER */}
-            <ChangeLanguage />
+            <ChangeLanguageButton />
 
             {/* LOGOUT */}
             {isAuthenticated && (
