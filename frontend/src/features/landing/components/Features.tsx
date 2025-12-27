@@ -5,40 +5,37 @@ import Icon from "@icons/index";
 
 export default function Features() {
   const { msgs } = useLocalization();
-  const features =
-    msgs?.common?.featuresList && !Array.isArray(msgs.common.featuresList)
-      ? [
-          {
-            icon: "file-spreadsheet",
-            title: msgs.common.featuresList.item1Title,
-          },
-          {
-            icon: "workflow",
-            title: msgs.common.featuresList.item2Title,
-          },
-          {
-            icon: "file-text",
-            title: msgs.common.featuresList.item3Title,
-          },
-          {
-            icon: "upload",
-            title: msgs.common.featuresList.item4Title,
-          },
-          {
-            icon: "download",
-            title: msgs.common.featuresList.item5Title,
-          },
-          {
-            icon: "mail-check",
-            title: msgs.common.featuresList.item6Title,
-          },
-          {
-            icon: "key-round",
-            title: msgs.common.featuresList.item7Title,
-          },
-          { icon: "filter", title: msgs.common.featuresList.item8Title },
-        ]
-      : [];
+  const features = [
+    {
+      icon: "file-spreadsheet",
+      title: msgs.common?.featuresList?.item1Title,
+    },
+    {
+      icon: "workflow",
+      title: msgs.common?.featuresList?.item2Title,
+    },
+    {
+      icon: "file-text",
+      title: msgs.common?.featuresList?.item3Title,
+    },
+    {
+      icon: "upload",
+      title: msgs.common?.featuresList?.item4Title,
+    },
+    {
+      icon: "download",
+      title: msgs.common?.featuresList?.item5Title,
+    },
+    {
+      icon: "mail-check",
+      title: msgs.common?.featuresList?.item6Title,
+    },
+    {
+      icon: "key-round",
+      title: msgs.common?.featuresList?.item7Title,
+    },
+    { icon: "filter", title: msgs.common?.featuresList?.item8Title },
+  ].filter((f) => f.title);
 
   return (
     <section id="features" className="section bg-paper">

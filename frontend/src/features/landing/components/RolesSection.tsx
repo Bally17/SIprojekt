@@ -12,38 +12,33 @@ export default function RolesSection() {
   const { msgs } = useLocalization();
   const [tab, setTab] = useState<RoleType>("student");
 
-  const roleMsgs = msgs?.common?.rolesSection;
-
   // vyberáme preklady jednotlivých oprávnení každý kľúč samostatne kvôli i18n
-  const studentPerms = [
-    roleMsgs?.studentPerm1,
-    roleMsgs?.studentPerm2,
-    roleMsgs?.studentPerm3,
-    roleMsgs?.studentPerm4,
-  ].filter(Boolean) as string[];
-  const companyPerms = [
-    roleMsgs?.companyPerm1,
-    roleMsgs?.companyPerm2,
-    roleMsgs?.companyPerm3,
-    roleMsgs?.companyPerm4,
-  ].filter(Boolean) as string[];
-  const garantPerms = [
-    roleMsgs?.garantPerm1,
-    roleMsgs?.garantPerm2,
-    roleMsgs?.garantPerm3,
-    roleMsgs?.garantPerm4,
-  ].filter(Boolean) as string[];
+  const studentPerms: string[] = [
+    msgs.common.rolesSection.studentPerm1,
+    msgs.common.rolesSection.studentPerm2,
+    msgs.common.rolesSection.studentPerm3,
+    msgs.common.rolesSection.studentPerm4,
+  ].filter(Boolean);
+  const companyPerms: string[] = [
+    msgs.common.rolesSection.companyPerm1,
+    msgs.common.rolesSection.companyPerm2,
+    msgs.common.rolesSection.companyPerm3,
+    msgs.common.rolesSection.companyPerm4,
+  ].filter(Boolean);
+  const garantPerms: string[] = [
+    msgs.common.rolesSection.garantPerm1,
+    msgs.common.rolesSection.garantPerm2,
+    msgs.common.rolesSection.garantPerm3,
+    msgs.common.rolesSection.garantPerm4,
+  ].filter(Boolean);
 
   // Tab labely berieme z i18n; ak chýbajú, nechávame prázdne pole
   type TabDef = { key: RoleType; label: string; icon: IconName };
-  const tabs: TabDef[] =
-    roleMsgs && !Array.isArray(roleMsgs)
-      ? [
-          { key: "student", label: roleMsgs.tabStudent, icon: "graduation-cap" },
-          { key: "company", label: roleMsgs.tabCompany, icon: "building-2" },
-          { key: "garant", label: roleMsgs.tabGarant, icon: "shield" },
-        ]
-      : [];
+  const tabs: TabDef[] = [
+    { key: "student", label: msgs.common?.rolesSection?.tabStudent, icon: "graduation-cap" },
+    { key: "company", label: msgs.common?.rolesSection?.tabCompany, icon: "building-2" },
+    { key: "garant", label: msgs.common?.rolesSection?.tabGarant, icon: "shield" },
+  ].filter((t): t is TabDef => Boolean(t.label));
 
   // Map oprávnení podľa aktuálne vybratej roly
   const permissions: Record<RoleType, string[]> = {
