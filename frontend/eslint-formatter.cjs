@@ -1,5 +1,12 @@
 const fs = require("fs");
 const path = require("path");
+function stripAnsi(str) {
+  // štandardný regex na ANSI escape sekvencie
+  return String(str).replace(
+    /[\u001B\u009B][[\]()#;?]*(?:(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><~]|(?:[a-zA-Z\d]*(?:;[a-zA-Z\d]*)*)?\u0007)/g,
+    "",
+  );
+}
 
 const chalkMod = require("chalk");
 
@@ -65,7 +72,7 @@ module.exports = function formatter(results) {
         frame = codeFrameColumns(fileSource, loc, {
           linesAbove: LINES_ABOVE,
           linesBelow: LINES_BELOW,
-          highlightCode: true,
+          highlightCode: false,
           message: `${sevColor.bold(sev)} ${chalk.gray(m.ruleId ?? "")} — ${m.message}`,
         });
       }
@@ -93,5 +100,5 @@ module.exports = function formatter(results) {
     out += `\n${chalk.green("✔ No ESLint issues found!")}\n`;
   }
 
-  return out;
+  return stripAnsi(out);
 };

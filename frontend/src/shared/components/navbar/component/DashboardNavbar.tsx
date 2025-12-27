@@ -10,9 +10,9 @@ import { useAuth } from "@lib/AuthProvider";
 import { useLogoutMutation } from "src/hook/useLogoutMutation";
 import Image from "next/image";
 import { getErrorMessage } from "@utils/errorActions";
+import ChangeLanguageButton from "./component/ChangeLanguage";
 
 const DashboardNavbar = () => {
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const router = useRouter();
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
@@ -123,39 +123,7 @@ const DashboardNavbar = () => {
           {/* LANGUAGE + LOGOUT */}
           <div className="flex flex-1 items-center justify-end gap-3">
             {/* LANGUAGE SWITCHER */}
-            <div className="relative">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setLangMenuOpen((prev) => !prev)}
-                aria-label={msgs.common.language.switcher}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white-50 text-primary-700 hover:bg-primary-100"
-              >
-                <Icon name="globe" className="h-5 w-5" />
-              </Button>
-
-              {langMenuOpen && (
-                <div className="absolute right-0 mt-2 w-28 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="block w-full px-3 py-2 text-left hover:bg-primary-50"
-                    onClick={() => setLangMenuOpen(false)}
-                  >
-                    {msgs.common.language.sk}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="block w-full px-3 py-2 text-left hover:bg-primary-50"
-                    onClick={() => setLangMenuOpen(false)}
-                  >
-                    {msgs.common.language.en}
-                  </Button>
-                </div>
-              )}
-            </div>
+            <ChangeLanguageButton />
 
             {/* LOGOUT */}
             {isAuthenticated && (

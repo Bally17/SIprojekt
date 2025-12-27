@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@components/button";
 import { useLocalization } from "@i18n/client";
+import { ChangeLanguageButton } from "@components/navbar";
 
 //volitelný prop, určuje či sa zobrazia anchor odkazy, na landing je true inak false
 type NavbarProps = {
@@ -45,6 +46,7 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
         )}
 
         <div className="hidden md:flex items-center gap-3 relative">
+          <ChangeLanguageButton />
           <Link
             href="/auth/login"
             className="border border-primary-600 px-4 py-2 rounded-md text-sm text-primary-700 hover:bg-soft"
@@ -101,7 +103,7 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
             </>
           )}
           <Link
-            href="/login"
+            href="/auth/login"
             className="border border-primary-100 mx-auto px-4 py-2 rounded-md w-40 text-ink-700 hover:bg-primary-50"
           >
             {msgs.auth.login}
@@ -109,17 +111,18 @@ export default function Navbar({ showLandingLinks = true }: Readonly<NavbarProps
           <div className="space-y-2">
             <p className="text-ink-500 text-sm">{msgs.auth.register}</p>
             <Link
-              href="/register/student"
+              href="/auth/register/student"
               className="block border border-primary-100 mx-auto px-4 py-2 rounded-md w-40 text-ink-700 hover:bg-primary-50"
             >
               {msgs.auth.likeStudent}
             </Link>
             <Link
-              href="/register/company"
+              href="/auth/register/company"
               className="block bg-primary-900 text-white mx-auto px-4 py-2 rounded-md w-40 hover:bg-primary-800"
             >
               {msgs.auth.likeCompany}
             </Link>
+            <ChangeLanguageButton />
           </div>
         </div>
       )}
