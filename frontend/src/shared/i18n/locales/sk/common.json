@@ -22,6 +22,19 @@
     "mobile": "Mobilná aplikácia"
   },
 
+  "howItWorks": {
+    "step1Title": "Registrácia",
+    "step1Text": "Vytvoríš účet",
+    "step2Title": "Vytvor prax",
+    "step2Text": "Vygeneruješ si PDF",
+    "step3Title": "Potvrdenie firmou",
+    "step3Text": "Firma schváli",
+    "step4Title": "Schválenie garantom",
+    "step4Text": "Kontrola a schválenie",
+    "step5Title": "Výkaz a uzavretie",
+    "step5Text": "Upload + export CSV"
+  },
+
   "role": {
     "title": "Role a prístupy",
     "subtitle": "Prepínaj roly a pozri ich oprávnenia a náhľad.",

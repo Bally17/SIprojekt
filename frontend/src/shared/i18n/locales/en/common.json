@@ -22,6 +22,19 @@
     "mobile": "Mobile application"
   },
 
+  "howItWorks": {
+    "step1Title": "Register",
+    "step1Text": "Create your account",
+    "step2Title": "Create internship",
+    "step2Text": "Generate the agreement PDF",
+    "step3Title": "Company confirmation",
+    "step3Text": "Company approves the internship",
+    "step4Title": "Supervisor approval",
+    "step4Text": "Garant reviews and approves",
+    "step5Title": "Report & finish",
+    "step5Text": "Upload documents, export CSV"
+  },
+
   "role": {
     "title": "Roles & access",
     "subtitle": "Switch roles and see their permissions and preview.",
