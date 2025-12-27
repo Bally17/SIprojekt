@@ -321,7 +321,7 @@ export const TableComponent = ({
         ) : (
           <table className="min-w-full bg-white border border-primary-100">
             <thead className="border-b border-primary-100">
-              <tr className="bg-primary-50 text-left text-sm font-semibold text-ink-800">
+              <tr className="bg-primary-50 text-left text-sm font-semibold text-ink-900">
                 {columns.map((c) => (
                   <th key={c} scope="col" className="px-4 py-3">
                     {c}
