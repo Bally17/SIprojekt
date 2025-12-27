@@ -46,6 +46,24 @@
     "item8Title": "Reports / filters"
   },
 
+  "rolesSection": {
+    "tabStudent": "Student",
+    "tabCompany": "Company",
+    "tabGarant": "Supervisor",
+    "studentPerm1": "Create internship (agreement, company, dates)",
+    "studentPerm2": "Generate PDF „Internship Agreement“",
+    "studentPerm3": "Upload contract (when Approved)",
+    "studentPerm4": "Upload internship report (company confirmation)",
+    "companyPerm1": "Approve internship agreement",
+    "companyPerm2": "Review internship report",
+    "companyPerm3": "Export reports",
+    "companyPerm4": "User accounts",
+    "garantPerm1": "Review and approve",
+    "garantPerm2": "Manage students",
+    "garantPerm3": "Notifications",
+    "garantPerm4": "Reports"
+  },
+
   "role": {
     "title": "Roles & access",
     "subtitle": "Switch roles and see their permissions and preview.",

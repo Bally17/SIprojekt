@@ -46,6 +46,24 @@
     "item8Title": "Reporty / filtre"
   },
 
+  "rolesSection": {
+    "tabStudent": "Študent",
+    "tabCompany": "Firma",
+    "tabGarant": "Garant",
+    "studentPerm1": "Vytvoriť prax (dohodnutie, firma, dátumy)",
+    "studentPerm2": "Generovať PDF „Dohoda o odbornej praxi“",
+    "studentPerm3": "Nahlásiť zmluvu (podmieň. pri stave Schválená)",
+    "studentPerm4": "Nahrať výkaz praxe (potvrdenie firmy)",
+    "companyPerm1": "Schválenie dohody o praxi",
+    "companyPerm2": "Overenie výkazu praxe",
+    "companyPerm3": "Export reportov",
+    "companyPerm4": "Používateľské účty",
+    "garantPerm1": "Kontrola a schvaľovanie",
+    "garantPerm2": "Správa študentov",
+    "garantPerm3": "Notifikácie",
+    "garantPerm4": "Reporty"
+  },
+
   "role": {
     "title": "Role a prístupy",
     "subtitle": "Prepínaj roly a pozri ich oprávnenia a náhľad.",

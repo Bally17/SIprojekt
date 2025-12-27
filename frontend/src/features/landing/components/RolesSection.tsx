@@ -2,14 +2,57 @@
 import Image from "next/image";
 import { useState } from "react";
 import "@utils/idUsing";
-import { roleSectionDatas, rolePreviewImages, tabs } from "@data/roleSectionDatas";
+import { rolePreviewImages } from "@data/roleSectionDatas";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
+import type IconName from "@icons/iconName";
 import { RoleType } from "@shared-types/core/common";
 
 export default function RolesSection() {
   const { msgs } = useLocalization();
   const [tab, setTab] = useState<RoleType>("student");
+
+  const roleMsgs = msgs?.common?.rolesSection;
+
+  // vyberáme preklady jednotlivých oprávnení každý kľúč samostatne kvôli i18n
+  const studentPerms = [
+    roleMsgs?.studentPerm1,
+    roleMsgs?.studentPerm2,
+    roleMsgs?.studentPerm3,
+    roleMsgs?.studentPerm4,
+  ].filter(Boolean) as string[];
+  const companyPerms = [
+    roleMsgs?.companyPerm1,
+    roleMsgs?.companyPerm2,
+    roleMsgs?.companyPerm3,
+    roleMsgs?.companyPerm4,
+  ].filter(Boolean) as string[];
+  const garantPerms = [
+    roleMsgs?.garantPerm1,
+    roleMsgs?.garantPerm2,
+    roleMsgs?.garantPerm3,
+    roleMsgs?.garantPerm4,
+  ].filter(Boolean) as string[];
+
+  // Tab labely berieme z i18n; ak chýbajú, nechávame prázdne pole
+  type TabDef = { key: RoleType; label: string; icon: IconName };
+  const tabs: TabDef[] =
+    roleMsgs && !Array.isArray(roleMsgs)
+      ? [
+          { key: "student", label: roleMsgs.tabStudent, icon: "graduation-cap" },
+          { key: "company", label: roleMsgs.tabCompany, icon: "building-2" },
+          { key: "garant", label: roleMsgs.tabGarant, icon: "shield" },
+        ]
+      : [];
+
+  // Map oprávnení podľa aktuálne vybratej roly
+  const permissions: Record<RoleType, string[]> = {
+    student: studentPerms,
+    company: companyPerms,
+    garant: garantPerms,
+  };
+
+  const currentPerms = Array.isArray(permissions[tab]) ? permissions[tab] : [];
 
   return (
     <section id="roles" className="section bg-paper">
@@ -51,23 +94,24 @@ export default function RolesSection() {
               <div>
                 <div className="text-sm text-slate-500 mb-2">{msgs.common.role.permissions}</div>
                 <ul className="space-y-2">
-                  {roleSectionDatas[tab].map((r) => (
-                    <li key={r.a.idUsing()} className="flex items-start gap-2">
+                  {currentPerms.map((perm, idx) => (
+                    <li key={`${tab}-perm-${idx}`} className="flex items-start gap-2">
                       <Icon name="check-circle-2" className="mt-0.5 h-4 w-4 text-primary-600" />
-                      <span>{r.a}</span>
+                      <span>{perm}</span>
                     </li>
                   ))}
                 </ul>
               </div>
               <div>
                 <div className="text-sm text-slate-500 mb-2">{msgs.common.role.previewTitle}</div>
-                <div className="rounded-xl border bg-white p-4">
+                <div className="rounded-xl border border-primary-200 bg-white p-4">
+                  {/* Náhľad dashboardu podľa vybratej roly cesty sú v roleSectionDatas */}
                   <Image
                     src={rolePreviewImages[tab]}
                     alt={`${tabs.find((t) => t.key === tab)?.label} dashboard preview`}
                     width={960}
                     height={600}
-                    className="w-full rounded-lg border border-slate-100 shadow-soft"
+                    className="w-full rounded-lg border border-primary-200 shadow-soft"
                     priority={tab === "student"}
                   />
                 </div>
