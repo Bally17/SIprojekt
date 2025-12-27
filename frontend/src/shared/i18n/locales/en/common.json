@@ -35,6 +35,17 @@
     "step5Text": "Upload documents, export CSV"
   },
 
+  "featuresList": {
+    "item1Title": "Internship tracking",
+    "item2Title": "Status workflow",
+    "item3Title": "PDF generation",
+    "item4Title": "Document uploads",
+    "item5Title": "CSV export",
+    "item6Title": "Email notifications",
+    "item7Title": "API (OAuth 2.0)",
+    "item8Title": "Reports / filters"
+  },
+
   "role": {
     "title": "Roles & access",
     "subtitle": "Switch roles and see their permissions and preview.",
