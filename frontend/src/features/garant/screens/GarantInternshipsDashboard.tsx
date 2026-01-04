@@ -624,7 +624,6 @@ export default function GarantInternshipsDashboard() {
                 className="mt-1"
                 startLabel={msgs.common.guarant.edit.startDate}
                 endLabel={msgs.common.guarant.edit.endDate}
-                dates={msgs.common.dates}
                 startValue={editForm.datum_zaciatku}
                 endValue={editForm.datum_konca}
                 onChange={(field, value) => setEditForm((p) => ({ ...p, [field]: value }))}

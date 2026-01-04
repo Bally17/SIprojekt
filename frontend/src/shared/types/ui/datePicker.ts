@@ -28,7 +28,6 @@ export type DatesDict = {
 type BaseProps = {
   startLabel: string;
   endLabel: string;
-  dates: DatesDict;
   className?: string;
 };
 

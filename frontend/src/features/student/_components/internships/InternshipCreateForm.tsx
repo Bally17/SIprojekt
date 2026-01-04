@@ -212,7 +212,6 @@ export default function InternshipCreateForm({ onSubmit, creating, onValidationE
         watch={watch}
         startLabel={msgs.common.date.startDate}
         endLabel={msgs.common.date.endDate}
-        dates={msgs.common.dates}
       />
 
       <Button

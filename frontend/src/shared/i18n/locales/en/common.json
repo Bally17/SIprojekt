@@ -8,6 +8,9 @@
   "questionMark": "?",
   "backToLandingPage": "Back to landing page",
   "today": "Today",
+  "back": "Back",
+  "next": "Next",
+  "changeView": "Change view",
 
   "action": {
     "company": "Enter company name..."
@@ -128,7 +131,8 @@
     "year": "Year",
     "semester": "Semester",
     "startDate": "Start date",
-    "endDate": "End date"
+    "endDate": "End date",
+    "dayMonthYear": "dd.mm.yyyy"
   },
   "dates": {
     "mon": "Mon",

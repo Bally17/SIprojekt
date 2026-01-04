@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@icons/index";
 import { useLocalization } from "@i18n/client";
 import type { DatePickerProps, ViewMode } from "@shared-types/ui/datePicker";
+import { useDatePickerLabels } from "@utils/useDatePickerLabels";
 
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 const toISO = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -56,31 +57,9 @@ function isSameDay(a: Date, b: Date) {
 }
 
 export default function DatePicker(props: DatePickerProps) {
-  const { startLabel, endLabel, dates, className = "" } = props;
+  const { startLabel, endLabel, className = "" } = props;
   const { msgs } = useLocalization();
-
-  const WEEKDAYS = useMemo(
-    () => [dates.mon, dates.tues, dates.wed, dates.thur, dates.fri, dates.sat, dates.sun],
-    [dates],
-  );
-
-  const MONTHS = useMemo(
-    () => [
-      dates.january,
-      dates.february,
-      dates.march,
-      dates.april,
-      dates.may,
-      dates.june,
-      dates.july,
-      dates.august,
-      dates.september,
-      dates.october,
-      dates.november,
-      dates.december,
-    ],
-    [dates],
-  );
+  const { weekdays: WEEKDAYS, months: MONTHS } = useDatePickerLabels();
 
   const isControlled = "startValue" in props;
 
@@ -188,7 +167,7 @@ export default function DatePicker(props: DatePickerProps) {
             <input
               readOnly
               value={toDisplay(start)}
-              placeholder="dd.mm.rrrr"
+              placeholder={msgs.common.date.dayMonthYear}
               className="w-full cursor-pointer rounded-lg border border-primary-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
@@ -215,7 +194,7 @@ export default function DatePicker(props: DatePickerProps) {
             <input
               readOnly
               value={toDisplay(end)}
-              placeholder="dd.mm.rrrr"
+              placeholder={msgs.common.date.dayMonthYear}
               className="w-full cursor-pointer rounded-lg border border-primary-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
@@ -235,7 +214,7 @@ export default function DatePicker(props: DatePickerProps) {
               type="button"
               onClick={goPrev}
               className="rounded-md border border-primary-200 px-2 py-1 hover:bg-primary-50"
-              aria-label="Späť"
+              aria-label={msgs.common.back}
             >
               <Icon name="chevron-left" className="h-4 w-4 text-primary-700" />
             </button>
@@ -244,7 +223,7 @@ export default function DatePicker(props: DatePickerProps) {
               type="button"
               onClick={toggleMode}
               className="rounded-md px-2 py-1 text-sm font-semibold text-ink-900 hover:bg-primary-50"
-              aria-label="Zmeniť pohľad"
+              aria-label={msgs.common.changeView}
             >
               {headerLabel}
             </button>
@@ -253,7 +232,7 @@ export default function DatePicker(props: DatePickerProps) {
               type="button"
               onClick={goNext}
               className="rounded-md border border-primary-200 px-2 py-1 hover:bg-primary-50"
-              aria-label="Ďalej"
+              aria-label={msgs.common.next}
             >
               <Icon name="chevron-right" className="h-4 w-4 text-primary-700" />
             </button>
