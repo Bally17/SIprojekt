@@ -22,6 +22,59 @@
     "mobile": "Mobile application"
   },
 
+  "howItWorks": {
+    "step1Title": "Register",
+    "step1Text": "Create your account",
+    "step2Title": "Create internship",
+    "step2Text": "Generate the agreement PDF",
+    "step3Title": "Company confirmation",
+    "step3Text": "Company approves the internship",
+    "step4Title": "Supervisor approval",
+    "step4Text": "Garant reviews and approves",
+    "step5Title": "Report & finish",
+    "step5Text": "Upload documents, export CSV"
+  },
+
+  "featuresList": {
+    "item1Title": "Internship tracking",
+    "item2Title": "Status workflow",
+    "item3Title": "PDF generation",
+    "item4Title": "Document uploads",
+    "item5Title": "CSV export",
+    "item6Title": "Email notifications",
+    "item7Title": "API (OAuth 2.0)",
+    "item8Title": "Reports / filters"
+  },
+
+  "rolesSection": {
+    "tabStudent": "Student",
+    "tabCompany": "Company",
+    "tabGarant": "Supervisor",
+    "studentPerm1": "Create internship (agreement, company, dates)",
+    "studentPerm2": "Generate PDF „Internship Agreement“",
+    "studentPerm3": "Upload contract (when Approved)",
+    "studentPerm4": "Upload internship report (company confirmation)",
+    "companyPerm1": "Approve internship agreement",
+    "companyPerm2": "Review internship report",
+    "companyPerm3": "Export reports",
+    "companyPerm4": "User accounts",
+    "garantPerm1": "Review and approve",
+    "garantPerm2": "Manage students",
+    "garantPerm3": "Notifications",
+    "garantPerm4": "Reports"
+  },
+
+  "faqList": {
+    "item1Q": "How does internship approval work?",
+    "item1A": "The student creates an internship request and fills in company data. The company confirms acceptance, then the supervisor checks compliance. Notifications keep everyone informed at each step.",
+    "item2Q": "How does the system handle documents and exports?",
+    "item2A": "After creating an internship, the system generates required PDFs (for example, the internship agreement). Data can be exported to CSV for reporting.",
+    "item3Q": "What sign-in options are supported?",
+    "item3A": "Users sign in with an account created in the system. Dashboards adapt to the user role (student, company, supervisor).",
+    "item4Q": "Is the system mobile-friendly?",
+    "item4A": "The UI is responsive, so students, companies, and supervisors can work in the browser on mobile or tablet without installing a separate app."
+  },
+
   "role": {
     "title": "Roles & access",
     "subtitle": "Switch roles and see their permissions and preview.",

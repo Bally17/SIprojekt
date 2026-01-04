@@ -22,6 +22,59 @@
     "mobile": "Mobilná aplikácia"
   },
 
+  "howItWorks": {
+    "step1Title": "Registrácia",
+    "step1Text": "Vytvoríš účet",
+    "step2Title": "Vytvor prax",
+    "step2Text": "Vygeneruješ si PDF",
+    "step3Title": "Potvrdenie firmou",
+    "step3Text": "Firma schváli",
+    "step4Title": "Schválenie garantom",
+    "step4Text": "Kontrola a schválenie",
+    "step5Title": "Výkaz a uzavretie",
+    "step5Text": "Upload + export CSV"
+  },
+
+  "featuresList": {
+    "item1Title": "Evidencia praxí",
+    "item2Title": "Workflow stavov",
+    "item3Title": "Generovanie PDF",
+    "item4Title": "Nahrávanie dokumentov",
+    "item5Title": "Export CSV",
+    "item6Title": "Notifikácie emailom",
+    "item7Title": "API (OAuth 2.0)",
+    "item8Title": "Reporty / filtre"
+  },
+
+  "rolesSection": {
+    "tabStudent": "Študent",
+    "tabCompany": "Firma",
+    "tabGarant": "Garant",
+    "studentPerm1": "Vytvoriť prax (dohodnutie, firma, dátumy)",
+    "studentPerm2": "Generovať PDF „Dohoda o odbornej praxi“",
+    "studentPerm3": "Nahlásiť zmluvu (podmieň. pri stave Schválená)",
+    "studentPerm4": "Nahrať výkaz praxe (potvrdenie firmy)",
+    "companyPerm1": "Schválenie dohody o praxi",
+    "companyPerm2": "Overenie výkazu praxe",
+    "companyPerm3": "Export reportov",
+    "companyPerm4": "Používateľské účty",
+    "garantPerm1": "Kontrola a schvaľovanie",
+    "garantPerm2": "Správa študentov",
+    "garantPerm3": "Notifikácie",
+    "garantPerm4": "Reporty"
+  },
+
+  "faqList": {
+    "item1Q": "Ako funguje schvaľovanie praxe?",
+    "item1A": "Študent vytvorí žiadosť o prax, vyplní údaje o firme a odošle ju na schválenie. Firma potvrdí, že študenta prijíma, a garant následne overí súlad praxe s požiadavkami štúdia. O každom kroku systém informuje používateľov notifikáciami.",
+    "item2Q": "Ako systém pracuje s dokumentmi a exportmi?",
+    "item2A": "Po vytvorení praxe systém automaticky vygeneruje potrebné dokumenty (napr. dohodu o praxi vo formáte PDF). Údaje o praxiach je možné exportovať do CSV pre reporty.",
+    "item3Q": "Aké možnosti prihlásenia sú podporované?",
+    "item3A": "Používatelia sa prihlasujú účtom vytvoreným v systéme. Po prihlásení vidia dashboard podľa svojej roly (študent, firma, garant).",
+    "item4Q": "Je systém vhodný aj na používanie v mobile?",
+    "item4A": "Rozhranie je responzívne, takže študenti, firmy aj garanti môžu pracovať v prehliadači na mobile alebo tablete bez inštalácie aplikácie."
+  },
+
   "role": {
     "title": "Role a prístupy",
     "subtitle": "Prepínaj roly a pozri ich oprávnenia a náhľad.",
