@@ -1,3 +1,4 @@
+// frontend\src\features\student\_components\DocumentUploadCard.tsx
 "use client";
 
 import type React from "react";
@@ -9,6 +10,7 @@ import { Internship, InternshipDocument } from "@shared-types/internship";
 import { StatusType } from "@shared-types/core/common";
 import { BASE_URL } from "@constants";
 import { useUploadDocumentMutation } from "../hooks";
+import { getErrorMessage } from "@utils/errorActions";
 
 type InternshipWithDocuments = Internship & {
   documents?: InternshipDocument[];
@@ -134,11 +136,9 @@ export default function DocumentUploadCard({
       onSuccess?.();
       return true;
     } catch (error: any) {
-      const data = error?.response?.data;
       notifyWarning({
         title: msgs.common.documents.errorTitle,
-        description:
-          data?.detail || data?.error || data?.message || msgs.common.documents.uploadError,
+        description: getErrorMessage(error, msgs.common.documents.uploadError),
       });
       return false;
     }

@@ -30,7 +30,7 @@ export interface Internship {
   vytvorene_at?: string;
   zmenene_at?: string;
   student: number;
-  firma: number;
+  firma: Company;
   garant?: IntegerOrNull;
 }
 
