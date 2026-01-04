@@ -26,6 +26,9 @@ type IconName =
   | "lock-keyhole"
   | "arrow-right"
   | "pencil"
-  | "more-horizontal";
+  | "more-horizontal"
+  | "calendar-days"
+  | "chevron-right"
+  | "chevron-left";
 
 export default IconName;

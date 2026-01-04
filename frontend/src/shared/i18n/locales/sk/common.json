@@ -7,6 +7,7 @@
   "tryAgain": "Skúsiť znova",
   "questionMark": "?",
   "backToLandingPage": "Spať na úvodnú stránku",
+  "today": "Dnes",
 
   "action": {
     "company": "Zadaj názov firmy..."
@@ -129,6 +130,28 @@
     "startDate": "Dátum začiatku",
     "endDate": "Dátum konca"
   },
+  "dates": {
+    "mon": "Po",
+    "tues": "Ut",
+    "wed": "St",
+    "thur": "Št",
+    "fri": "Pi",
+    "sat": "So",
+    "sun": "Ne",
+    "january": "Január",
+    "february": "Február",
+    "march": "Marec",
+    "april": "Apríl",
+    "may": "Máj",
+    "june": "Jún",
+    "july": "Júl",
+    "august": "August",
+    "september": "September",
+    "october": "Október",
+    "november": "November",
+    "december": "December"
+  },
+
   "notifications": {
     "toast": {
       "close": "Zavrieť notifikáciu"

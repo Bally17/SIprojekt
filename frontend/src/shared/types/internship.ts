@@ -67,8 +67,8 @@ export type StudentInternshipsResponse =
 
 export type CreateInternshipPayload = {
   rok: number;
-  semester: string;
+  semester: Semester;
   datum_zaciatku?: string;
   datum_konca?: string;
-  firma_id: number;
+  firma_id: string;
 };

@@ -22,6 +22,7 @@ import {
   useCompanySearchQuery,
   useUpdateGarantInternshipMutation,
 } from "../hooks";
+import { DatePicker } from "@components/datePicker";
 
 // ---------------------------------------------
 // FILTERS
@@ -190,7 +191,15 @@ export default function GarantInternshipsDashboard() {
   const { success, warning, info } = useSystemNotifications();
 
   const [editingInternship, setEditingInternship] = useState<Nullable<Internship>>(null);
-  const [editForm, setEditForm] = useState<Nullable<GarantInternshipUpdate>>(null);
+  const [editForm, setEditForm] = useState<GarantInternshipUpdate>({
+    firma_id: "",
+    student_id: "",
+    datum_zaciatku: "",
+    datum_konca: "",
+    stav: "vytvorena",
+    status_note: "",
+  });
+
   const [editError, setEditError] = useState<StringOrNull>(null);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -258,7 +267,14 @@ export default function GarantInternshipsDashboard() {
 
   const closeEditModal = () => {
     setEditingInternship(null);
-    setEditForm(null);
+    setEditForm({
+      firma_id: "",
+      student_id: "",
+      datum_zaciatku: "",
+      datum_konca: "",
+      stav: "vytvorena",
+      status_note: "",
+    });
     setEditError(null);
     setStudentQuery("");
     setCompanyQuery("");
@@ -604,33 +620,15 @@ export default function GarantInternshipsDashboard() {
               </div>
 
               {/* DATES */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold uppercase text-ink-500">
-                    {msgs.common.guarant.edit.startDate}
-                  </label>
-                  <input
-                    type="date"
-                    name="datum_zaciatku"
-                    value={editForm.datum_zaciatku}
-                    onChange={handleEditInput}
-                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold uppercase text-ink-500">
-                    {msgs.common.guarant.edit.endDate}
-                  </label>
-                  <input
-                    type="date"
-                    name="datum_konca"
-                    value={editForm.datum_konca}
-                    onChange={handleEditInput}
-                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-              </div>
+              <DatePicker
+                className="mt-1"
+                startLabel={msgs.common.guarant.edit.startDate}
+                endLabel={msgs.common.guarant.edit.endDate}
+                dates={msgs.common.dates}
+                startValue={editForm.datum_zaciatku}
+                endValue={editForm.datum_konca}
+                onChange={(field, value) => setEditForm((p) => ({ ...p, [field]: value }))}
+              />
 
               {/* STATE */}
               <div>
