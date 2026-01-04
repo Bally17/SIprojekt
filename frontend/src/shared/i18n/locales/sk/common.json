@@ -7,6 +7,10 @@
   "tryAgain": "Skúsiť znova",
   "questionMark": "?",
   "backToLandingPage": "Spať na úvodnú stránku",
+  "today": "Dnes",
+  "back": "Spať",
+  "next": "Ďalej",
+  "changeView": "Zmeniť pohľad",
 
   "action": {
     "company": "Zadaj názov firmy..."
@@ -127,8 +131,31 @@
     "year": "Rok",
     "semester": "Semester",
     "startDate": "Dátum začiatku",
-    "endDate": "Dátum konca"
+    "endDate": "Dátum konca",
+    "dayMonthYear": "dd.mm.rrrr"
   },
+  "dates": {
+    "mon": "Po",
+    "tues": "Ut",
+    "wed": "St",
+    "thur": "Št",
+    "fri": "Pi",
+    "sat": "So",
+    "sun": "Ne",
+    "january": "Január",
+    "february": "Február",
+    "march": "Marec",
+    "april": "Apríl",
+    "may": "Máj",
+    "june": "Jún",
+    "july": "Júl",
+    "august": "August",
+    "september": "September",
+    "october": "Október",
+    "november": "November",
+    "december": "December"
+  },
+
   "notifications": {
     "toast": {
       "close": "Zavrieť notifikáciu"

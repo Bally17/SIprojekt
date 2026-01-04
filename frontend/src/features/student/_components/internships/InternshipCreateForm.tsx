@@ -12,16 +12,10 @@ import { Company } from "@shared-types/company";
 import { Semester, SEMESTER_OPTIONS } from "@shared-types/core/internshipState";
 import { useCompanySearchMutation } from "../../hooks";
 import { getFirstErrorMessage } from "@student/utils/getFirstErrorMessage";
+import type { CreateInternshipPayload } from "@shared-types/index";
+import { DatePicker } from "@components/datePicker";
 
-export type InternshipCreateFormValues = {
-  firma_id: string;
-  rok: number;
-  semester: Semester;
-  datum_zaciatku: string;
-  datum_konca: string;
-};
-
-const DEFAULT_VALUES: InternshipCreateFormValues = {
+const DEFAULT_VALUES: CreateInternshipPayload = {
   firma_id: "",
   rok: new Date().getFullYear(),
   semester: "zimny" as Semester,
@@ -30,7 +24,7 @@ const DEFAULT_VALUES: InternshipCreateFormValues = {
 };
 
 type Props = {
-  onSubmit: (values: InternshipCreateFormValues) => Promise<void>;
+  onSubmit: (values: CreateInternshipPayload) => Promise<void>;
   creating: boolean;
   onValidationError?: (msg: { title?: string; description: string }) => void;
 };
@@ -38,8 +32,8 @@ type Props = {
 export default function InternshipCreateForm({ onSubmit, creating, onValidationError }: Props) {
   const { msgs } = useLocalization();
 
-  const { control, register, handleSubmit, setValue, setError, reset, clearErrors } =
-    useForm<InternshipCreateFormValues>({
+  const { control, register, handleSubmit, setValue, watch, setError, reset, clearErrors } =
+    useForm<CreateInternshipPayload>({
       defaultValues: DEFAULT_VALUES,
       mode: "onSubmit",
       reValidateMode: "onSubmit",
@@ -79,7 +73,7 @@ export default function InternshipCreateForm({ onSubmit, creating, onValidationE
   );
 
   const onValid = useCallback(
-    async (values: InternshipCreateFormValues) => {
+    async (values: CreateInternshipPayload) => {
       const year = new Date().getFullYear();
 
       if (values.rok < year - 1 || values.rok > year + 2) {
@@ -110,7 +104,7 @@ export default function InternshipCreateForm({ onSubmit, creating, onValidationE
   );
 
   const onInvalid = useCallback(
-    (errs: FieldErrors<InternshipCreateFormValues>) => {
+    (errs: FieldErrors<CreateInternshipPayload>) => {
       const description = getFirstErrorMessage(errs, {
         order: ["firma_id", "rok", "semester", "datum_zaciatku", "datum_konca"],
       });
@@ -212,30 +206,13 @@ export default function InternshipCreateForm({ onSubmit, creating, onValidationE
         </div>
       </div>
 
-      {/* Dates */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">
-            {msgs.common.date.startDate}
-          </label>
-          <input
-            type="date"
-            className="w-full rounded-lg border border-primary-200 p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            {...register("datum_zaciatku")}
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">
-            {msgs.common.date.endDate}
-          </label>
-          <input
-            type="date"
-            className="w-full rounded-lg border border-primary-200 p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            {...register("datum_konca")}
-          />
-        </div>
-      </div>
+      <DatePicker
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        startLabel={msgs.common.date.startDate}
+        endLabel={msgs.common.date.endDate}
+      />
 
       <Button
         type="submit"

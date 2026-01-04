@@ -27,6 +27,9 @@ import {
   RefreshCw,
   Pencil,
   MoreHorizontal,
+  CalendarDays,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import IconName from "./iconName";
 import { IconType } from "@shared-types/ui/icons";
@@ -60,6 +63,9 @@ const iconMap = {
   "arrow-right": ArrowRight,
   pencil: Pencil,
   "more-horizontal": MoreHorizontal,
+  "calendar-days": CalendarDays,
+  "chevron-left": ChevronLeft,
+  "chevron-right": ChevronRight,
 };
 
 export const ICON_NAMES = Object.keys(iconMap) as (keyof typeof iconMap)[];

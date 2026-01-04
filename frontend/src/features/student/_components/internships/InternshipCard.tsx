@@ -2,7 +2,7 @@
 
 import { STAV_BADGE_CLASS } from "@shared-types/core/internshipState";
 import type { Internship } from "@shared-types/internship";
-import { DocumentUploadCard } from "../../_components";
+import DocumentUploadCard from "../DocumentUploadCard";
 
 type Props = {
   internship: Internship;

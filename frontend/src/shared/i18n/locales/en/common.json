@@ -7,6 +7,10 @@
   "tryAgain": "Try again",
   "questionMark": "?",
   "backToLandingPage": "Back to landing page",
+  "today": "Today",
+  "back": "Back",
+  "next": "Next",
+  "changeView": "Change view",
 
   "action": {
     "company": "Enter company name..."
@@ -127,8 +131,31 @@
     "year": "Year",
     "semester": "Semester",
     "startDate": "Start date",
-    "endDate": "End date"
+    "endDate": "End date",
+    "dayMonthYear": "dd.mm.yyyy"
   },
+  "dates": {
+    "mon": "Mon",
+    "tues": "Tues",
+    "wed": "Wed",
+    "thur": "Thur",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun",
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
+  },
+
   "notifications": {
     "toast": {
       "close": "Close notification"

@@ -5,11 +5,9 @@ import { useCallback } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { useStudentInternshipsQuery, useCreateInternshipMutation } from "../hooks";
-import InternshipCreateForm, {
-  InternshipCreateFormValues,
-} from "@student/_components/internships/InternshipCreateForm";
-import InternshipsList from "@student/_components/internships/InternshipsList";
 import { getErrorMessage } from "@utils/errorActions";
+import { InternshipCreateForm, InternshipsList } from "@student/_components";
+import type { CreateInternshipPayload } from "@shared-types/index";
 
 export default function StudentDashboardPage() {
   const { msgs } = useLocalization();
@@ -25,11 +23,11 @@ export default function StudentDashboardPage() {
   const creating = createInternshipMutation.isPending;
 
   const onSubmit = useCallback(
-    async (values: InternshipCreateFormValues) => {
+    async (values: CreateInternshipPayload) => {
       try {
         await createInternshipMutation.mutateAsync({
           ...values,
-          firma_id: Number(values.firma_id),
+          firma_id: values.firma_id,
         });
 
         notifySuccess({
