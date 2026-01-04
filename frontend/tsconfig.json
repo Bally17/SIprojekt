@@ -22,19 +22,28 @@
     ],
     "baseUrl": ".",
     "paths": {
+      "@student/*": ["src/features/student/*"],
+      "@student": ["src/features/student/index.ts"],
+      "@company/*": ["src/features/company/*"],
+      "@company": ["src/features/company/index.ts"],
+      "@garant/*": ["src/features/garant/*"],
+      "@garant": ["src/features/garant/index.ts"],
+      "@auth/*": ["src/features/auth/*"],
+
+      "@constants": ["src/constants/index.ts"],
       "@features/*": ["src/features/*"],
+      "@lib/hooks": ["src/lib/hooks/index.ts"],
+      "@lib/api": ["src/lib/api/index.ts"],
       "@lib/*": ["src/lib/*"],
       "@components/*": ["src/shared/components/*"],
       "@data/*": ["src/shared/data/*"],
       "@i18n/*": ["src/shared/i18n/*"],
+      "@icons/*": ["src/shared/icons/*"],
       "@table_config/*": ["src/shared/tableConfig/*"],
       "@shared-types/*": ["src/shared/types/*"],
       "@shared-types/core/*": ["src/shared/types/core/*"],
       "@shared-types/ui/*": ["src/shared/types/ui/*"],
-      "@utils/*": ["src/shared/utils/*"],
-      "@icons/*": ["src/shared/icons/*"],
-      "@constants": ["src/constants/index.ts"],
-      "@hook/*": ["src/hook/*"]
+      "@utils/*": ["src/shared/utils/*"]
     }
   },
   "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],

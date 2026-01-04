@@ -1,10 +1,11 @@
-import { BackButton, LoginForm } from "@features/auth";
-import { Footer, Navbar } from "@features/landing";
+import { BackButton, LoginForm } from "@auth/_components";
+import { Footer } from "@components/footer";
+import { Header } from "@components/header";
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col bg-paper">
-      <Navbar showLandingLinks={false} />
+      <Header showLandingLinks={false} />
       <main className="flex-1 pt-28 pb-16">
         <div className="max-w-7xl mx-auto px-6">
           <BackButton />

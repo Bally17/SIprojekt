@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-import { useActivateAccountQuery } from "src/hook/useActivateAccountQuery";
 import { TokenVerify } from "@shared-types/auth";
+import { useActivateAccountQuery } from "@auth/hooks";
 
 export default function ActivateClient({ token }: Readonly<TokenVerify>) {
   const { msgs } = useLocalization();
