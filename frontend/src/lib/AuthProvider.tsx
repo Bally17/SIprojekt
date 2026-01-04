@@ -4,12 +4,9 @@
 import { createContext, useContext, useMemo, type ReactNode, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-
-import { useLoginMutation } from "src/hook/useLoginMutation";
-import { useLogoutMutation } from "src/hook/useLogoutMutation";
-import { useProfileQuery } from "@hook/useProfileQuery";
 import { clearAuthTokens, getRefreshToken, setAuthTokens } from "./ApiProvider";
 import { Nillable, Nullable, RoleType } from "@shared-types/index";
+import { useLoginMutation, useLogoutMutation, useProfileQuery } from "./hooks";
 
 type AuthUser = {
   rola?: Nullable<RoleType>;

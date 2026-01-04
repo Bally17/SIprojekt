@@ -1,0 +1,12 @@
+// src/hook/useRegisterStudentMutation.ts
+"use client";
+
+import { RegisterStudentPayload } from "@shared-types/student";
+import { useMutation } from "@tanstack/react-query";
+import { registerStudent } from "../api";
+
+export function useRegisterStudentMutation() {
+  return useMutation({
+    mutationFn: (payload: RegisterStudentPayload) => registerStudent(payload),
+  });
+}

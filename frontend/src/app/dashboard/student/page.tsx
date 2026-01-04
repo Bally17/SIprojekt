@@ -1,8 +1,8 @@
 "use client";
 
 import { Card } from "@components/sections";
-import { StudentDashboard } from "@features/student";
 import { useLocalization } from "@i18n/client";
+import { StudentDashboard } from "@student";
 
 export default function CompanyInternshipsPage() {
   const { msgs } = useLocalization();

@@ -1,7 +1,7 @@
 "use client";
 
+import { CompanyDashboard } from "@company";
 import { Card } from "@components/sections";
-import { CompanyDashboard } from "@features/company";
 import { useLocalization } from "@i18n/client";
 
 export default function CompanyInternshipsPage() {

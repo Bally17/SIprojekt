@@ -1,7 +1,8 @@
 "use client";
 
 import { Card } from "@components/sections";
-import { GarantInternshipsDashboard, OAuthClientsSection } from "@features/garant";
+import { GarantInternshipsDashboard } from "@garant";
+import { OAuthClientsSection } from "@garant/_components";
 import { useLocalization } from "@i18n/client";
 
 export default function GarantDashboardPage() {

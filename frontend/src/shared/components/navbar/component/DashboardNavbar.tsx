@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
 import { useAuth } from "@lib/AuthProvider";
-import { useLogoutMutation } from "src/hook/useLogoutMutation";
+import { useLogoutMutation } from "@lib/hooks";
 import Image from "next/image";
 import { getErrorMessage } from "@utils/errorActions";
 import ChangeLanguageButton from "./component/ChangeLanguage";
