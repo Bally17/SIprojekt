@@ -6,7 +6,7 @@ import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
 import { Internship, InternshipDocument } from "@shared-types/internship";
 import { getErrorMessage } from "@utils/errorActions";
-import { StatusType } from "@shared-types/index";
+import { DOCUMENT_STATUS_BADGE_CLASS, isDocumentStatusType, StatusType } from "@shared-types/index";
 import { BASE_URL } from "@constants";
 import {
   useUploadDocumentFileMutation,
@@ -18,15 +18,6 @@ type Props = {
   internship: Internship;
   onChange?: () => void;
 };
-
-const STATUS_BADGE = {
-  nahrany: "bg-yellow-50 text-yellow-700",
-  potvrdeny: "bg-emerald-50 text-emerald-700",
-  zamietnuty: "bg-red-50 text-red-700",
-} satisfies Record<StatusType, string>;
-
-const isStatusType = (v: unknown): v is StatusType =>
-  v === "nahrany" || v === "potvrdeny" || v === "zamietnuty";
 
 const buildMediaUrl = (path: string) => {
   if (/^https?:\/\//.test(path)) return path;
@@ -63,7 +54,7 @@ export default function CompanyDocumentsCard({ internship, onChange }: Props) {
     }
 
     const raw = doc.stav_dokumentu ?? "nahrany";
-    const code: StatusType = isStatusType(raw) ? raw : "nahrany";
+    const code: StatusType = isDocumentStatusType(raw) ? raw : "nahrany";
 
     const label =
       code === "potvrdeny"
@@ -74,7 +65,7 @@ export default function CompanyDocumentsCard({ internship, onChange }: Props) {
 
     return {
       label,
-      badge: STATUS_BADGE[code] || "bg-gray-100 text-gray-500",
+      badge: DOCUMENT_STATUS_BADGE_CLASS[code],
     };
   }
 
