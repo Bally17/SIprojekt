@@ -4,10 +4,9 @@ import { useMemo, useState } from "react";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
-import { Internship, InternshipDocument } from "@shared-types/internship";
+import { Internship } from "@shared-types/internship";
 import { getErrorMessage } from "@utils/errorActions";
-import { DOCUMENT_STATUS_BADGE_CLASS, isDocumentStatusType, StatusType } from "@shared-types/index";
-import { BASE_URL } from "@constants";
+import { buildMediaUrl, getDocumentStatusInfo } from "@utils/documents";
 import {
   useUploadDocumentFileMutation,
   useApproveCompanyDocumentMutation,
@@ -17,12 +16,6 @@ import {
 type Props = {
   internship: Internship;
   onChange?: () => void;
-};
-
-const buildMediaUrl = (path: string) => {
-  if (/^https?:\/\//.test(path)) return path;
-  const backend = BASE_URL.replace(/\/api\/?$/, "");
-  return `${backend}/media/${path.replace(/^\/?/, "")}`;
 };
 
 export default function CompanyDocumentsCard({ internship, onChange }: Props) {
@@ -45,31 +38,22 @@ export default function CompanyDocumentsCard({ internship, onChange }: Props) {
 
   const uploading = uploadMutation.isPending;
 
-  function getDocInfo(doc?: InternshipDocument) {
-    if (!doc?.subor_url) {
-      return {
-        label: msgs.common.documents.statusMissing,
-        badge: "bg-gray-100 text-gray-500",
-      };
-    }
+  const documentStatusLabels = useMemo(
+    () => ({
+      uploaded: msgs.common.documents.statusUploaded,
+      approved: msgs.common.documents.statusApproved,
+      rejected: msgs.common.documents.statusRejected,
+      missing: msgs.common.documents.statusMissing,
+    }),
+    [
+      msgs.common.documents.statusUploaded,
+      msgs.common.documents.statusApproved,
+      msgs.common.documents.statusRejected,
+      msgs.common.documents.statusMissing,
+    ],
+  );
 
-    const raw = doc.stav_dokumentu ?? "nahrany";
-    const code: StatusType = isDocumentStatusType(raw) ? raw : "nahrany";
-
-    const label =
-      code === "potvrdeny"
-        ? msgs.common.documents.statusApproved
-        : code === "zamietnuty"
-          ? msgs.common.documents.statusRejected
-          : msgs.common.documents.statusUploaded;
-
-    return {
-      label,
-      badge: DOCUMENT_STATUS_BADGE_CLASS[code],
-    };
-  }
-
-  const docInfo = getDocInfo(reportDoc);
+  const docInfo = getDocumentStatusInfo(reportDoc, documentStatusLabels);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!reportDoc) {

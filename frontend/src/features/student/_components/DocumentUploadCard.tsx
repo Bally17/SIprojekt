@@ -7,8 +7,7 @@ import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
 import { Internship, InternshipDocument } from "@shared-types/internship";
-import { StatusType } from "@shared-types/core/common";
-import { BASE_URL } from "@constants";
+import { buildMediaUrl, getDocumentStatusInfo } from "@utils/documents";
 import { useUploadDocumentMutation } from "../hooks";
 import { getErrorMessage } from "@utils/errorActions";
 
@@ -20,14 +19,6 @@ type DocumentUploadCardProps = {
   internship: InternshipWithDocuments;
   onSuccess?: () => void;
 };
-
-const STATUS_BADGE: Record<StatusType, string> = {
-  nahrany: "bg-yellow-50 text-yellow-700",
-  potvrdeny: "bg-emerald-50 text-emerald-700",
-  zamietnuty: "bg-red-50 text-red-700",
-};
-
-const baseUrl = BASE_URL?.replace(/\/api$/, "") || "http://localhost:8000";
 
 export default function DocumentUploadCard({
   internship,
@@ -62,43 +53,31 @@ export default function DocumentUploadCard({
   /* -------------------------------
    * Status badge + text
    * ------------------------------ */
-  const statusInfo = useMemo(() => {
-    const labels: Record<string, string> = {
-      nahrany: msgs.common.documents.statusUploaded,
-      potvrdeny: msgs.common.documents.statusApproved,
-      zamietnuty: msgs.common.documents.statusRejected,
-    };
+  const documentStatusLabels = useMemo(
+    () => ({
+      uploaded: msgs.common.documents.statusUploaded,
+      approved: msgs.common.documents.statusApproved,
+      rejected: msgs.common.documents.statusRejected,
+      missing: msgs.common.documents.statusMissing,
+      unknown: msgs.common.documents.statusUnknown,
+    }),
+    [
+      msgs.common.documents.statusUploaded,
+      msgs.common.documents.statusApproved,
+      msgs.common.documents.statusRejected,
+      msgs.common.documents.statusMissing,
+      msgs.common.documents.statusUnknown,
+    ],
+  );
 
-    function getInfo(doc?: InternshipDocument) {
-      if (!doc?.subor_url) {
-        return {
-          label: msgs.common.documents.statusMissing,
-          badge: "bg-gray-50 text-gray-500",
-        };
-      }
-
-      const code = (doc.stav_dokumentu ?? "nahrany") as StatusType;
-      return {
-        label: labels[code] ?? msgs.common.documents.statusUnknown,
-        badge: STATUS_BADGE[code] || "bg-gray-100 text-gray-600",
-      };
-    }
-
-    return {
-      agreement: getInfo(agreementDoc),
-      report: getInfo(reportDoc),
-      contract: getInfo(contractDoc),
-    };
-  }, [
-    agreementDoc,
-    reportDoc,
-    contractDoc,
-    msgs.common.documents.statusMissing,
-    msgs.common.documents.statusUploaded,
-    msgs.common.documents.statusApproved,
-    msgs.common.documents.statusRejected,
-    msgs.common.documents.statusUnknown,
-  ]);
+  const statusInfo = useMemo(
+    () => ({
+      agreement: getDocumentStatusInfo(agreementDoc, documentStatusLabels),
+      report: getDocumentStatusInfo(reportDoc, documentStatusLabels),
+      contract: getDocumentStatusInfo(contractDoc, documentStatusLabels),
+    }),
+    [agreementDoc, reportDoc, contractDoc, documentStatusLabels],
+  );
 
   /* -------------------------------
    * switching upload type on state change
@@ -194,7 +173,7 @@ export default function DocumentUploadCard({
 
             {contractDoc?.subor_url && (
               <a
-                href={`${baseUrl}/media/${contractDoc.subor_url}`}
+                href={buildMediaUrl(contractDoc.subor_url)}
                 download={`Dohoda_prax_${internship.id}.pdf`}
                 className="inline-flex items-center gap-1 rounded-full border border-primary-600 px-3 py-1.5 text-[11px] font-semibold text-primary-600 transition hover:bg-primary-50"
               >

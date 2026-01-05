@@ -18,12 +18,7 @@ import {
   getStavLabel,
 } from "@shared-types/index";
 import { Internship, InternshipDocument } from "@shared-types/internship";
-import { BASE_URL } from "src/constants/Endpoints";
-
-const buildMediaUrl = (path: string) => {
-  const backend = BASE_URL.replace(/\/api\/?$/, "");
-  return `${backend}/media/${path.replace(/^\/?/, "")}`;
-};
+import { buildMediaUrl, getDocumentStatusInfo, getDocumentTypeLabel } from "@utils/documents";
 
 export const TableComponent = ({
   data,
@@ -100,38 +95,18 @@ export const TableComponent = ({
     );
   };
 
-  const documentStatusInfo = (doc?: InternshipDocument) => {
-    if (!doc || !doc.subor_url) {
-      return { label: msgs.common.documents.statusMissing, badge: "bg-gray-100 text-gray-500" };
-    }
-    const code = doc.stav_dokumentu || "nahrany";
-    const badgeMap: Record<string, string> = {
-      nahrany: "bg-yellow-50 text-yellow-700",
-      potvrdeny: "bg-emerald-50 text-emerald-700",
-      zamietnuty: "bg-red-50 text-red-700",
-    };
-
-    const label =
-      code === "potvrdeny"
-        ? msgs.common.documents.statusApproved
-        : code === "zamietnuty"
-          ? msgs.common.documents.statusRejected
-          : msgs.common.documents.statusUploaded;
-
-    return { label, badge: badgeMap[code] || "bg-gray-100 text-gray-600" };
+  const documentStatusLabels = {
+    uploaded: msgs.common.documents.statusUploaded,
+    approved: msgs.common.documents.statusApproved,
+    rejected: msgs.common.documents.statusRejected,
+    missing: msgs.common.documents.statusMissing,
   };
 
-  const documentTypeLabel = (docType?: string) => {
-    switch (docType) {
-      case "dohoda":
-        return msgs.common.documents.contractTitle;
-      case "zmluva":
-        return msgs.common.documents.agreementTitle;
-      case "vykaz":
-        return msgs.common.documents.reportTitle;
-      default:
-        return docType?.toUpperCase() || "N/A";
-    }
+  const documentTypeLabels = {
+    contract: msgs.common.documents.contractTitle,
+    agreement: msgs.common.documents.agreementTitle,
+    report: msgs.common.documents.reportTitle,
+    fallback: (docType?: string) => docType?.toUpperCase() || "N/A",
   };
 
   const closeDocPreview = () => setDocPreview(null);
@@ -368,7 +343,7 @@ export const TableComponent = ({
             <div className="mt-5 space-y-3">
               {docPreview.documents?.length ? (
                 docPreview.documents.map((doc) => {
-                  const status = documentStatusInfo(doc);
+                  const status = getDocumentStatusInfo(doc, documentStatusLabels);
                   return (
                     <div
                       key={doc.id}
@@ -377,7 +352,7 @@ export const TableComponent = ({
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="text-sm font-semibold text-primary-900">
-                            {documentTypeLabel(doc.typ_dokumentu)}
+                            {getDocumentTypeLabel(doc.typ_dokumentu, documentTypeLabels)}
                           </p>
                           <p className="text-xs text-gray-500">#{doc.id}</p>
                         </div>
