@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
@@ -19,7 +19,7 @@ type OAuthClientFormValues = {
   allow_password_grant: boolean;
   allow_private_jwt: boolean;
   public_key: string;
-  service_user_id: string; // input number, držíme ako string (ľahšie pre RHF)
+  service_user_id: string; // keep number input as string for RHF; parse on submit
 };
 
 const initialFormState: OAuthClientFormValues = {
@@ -85,6 +85,7 @@ export default function OAuthClientsSection() {
     register,
     handleSubmit,
     reset,
+    setValue,
     watch,
     formState: { errors },
     setError,
@@ -102,6 +103,14 @@ export default function OAuthClientsSection() {
     () => parseRedirectUris(redirectUrisRaw || ""),
     [redirectUrisRaw],
   );
+
+  // clear public key + related errors when private JWT is switched off
+  useEffect(() => {
+    if (!allowPrivateJwt) {
+      setValue("public_key", "", { shouldDirty: true });
+      clearErrors("public_key");
+    }
+  }, [allowPrivateJwt, clearErrors, setValue]);
 
   // UI state mimo formulára
   const [lastCredentials, setLastCredentials] = useState<{
