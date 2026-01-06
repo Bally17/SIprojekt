@@ -6,15 +6,9 @@ import { useLocalization } from "@i18n/client";
 import { getErrorMessage } from "@utils/errorActions";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { useRegisterCompanyMutation } from "../hooks";
-
-type RegisterCompanyFormState = {
-  companyName: string;
-  companyEmail: string;
-  address: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-};
+import { RHFInput } from "@components/input";
+import { RegisterCompanyFormState } from "@shared-types/index";
+import { input } from "@constants";
 
 export default function RegisterFormCompany() {
   const { msgs } = useLocalization();
@@ -72,9 +66,6 @@ export default function RegisterFormCompany() {
     notifyWarning({ title: msgs.auth.errorTitle, description: firstMessage });
   };
 
-  const input =
-    "w-full rounded border px-3 py-2 transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
-
   return (
     <form
       onSubmit={handleSubmit(onSubmit, onInvalid)}
@@ -84,60 +75,75 @@ export default function RegisterFormCompany() {
         {msgs.auth.registerCompany}
       </h2>
 
-      <input
+      <RHFInput<RegisterCompanyFormState>
+        name="companyName"
         placeholder={msgs.auth.companyName}
         className={input}
-        {...register("companyName", {
+        register={register}
+        errors={errors}
+        rules={{
           required: "Názov firmy je povinný.",
-          validate: (v) => v.trim().length >= 2 || "Názov firmy musí mať aspoň 2 znaky.",
-        })}
+          validate: (v: string) => v.trim().length >= 2 || "Názov firmy musí mať aspoň 2 znaky.",
+        }}
       />
 
-      <input
+      <RHFInput<RegisterCompanyFormState>
+        name="companyEmail"
         type="email"
         placeholder={msgs.auth.companyLoginEmail}
         className={input}
-        {...register("companyEmail", {
-          required: "Email firmy je povinný.",
-        })}
+        register={register}
+        errors={errors}
+        rules={{ required: "Email firmy je povinný." }}
       />
 
-      <input
+      <RHFInput<RegisterCompanyFormState>
+        name="address"
         placeholder={msgs.auth.companyAddress}
         className={input}
-        {...register("address", {
+        register={register}
+        errors={errors}
+        rules={{
           required: "Adresa je povinná.",
-          validate: (v) => v.trim().length >= 5 || "Adresa musí mať aspoň 5 znakov.",
-        })}
+          validate: (v: string) => v.trim().length >= 5 || "Adresa musí mať aspoň 5 znakov.",
+        }}
       />
 
-      <input
+      <RHFInput<RegisterCompanyFormState>
+        name="contactName"
         placeholder={msgs.auth.contactName}
         className={input}
-        {...register("contactName", {
+        register={register}
+        errors={errors}
+        rules={{
           required: "Meno kontaktnej osoby je povinné.",
-          validate: (v) => v.trim().length >= 3 || "Meno kontaktnej osoby musí mať aspoň 3 znaky.",
-        })}
+          validate: (v: string) =>
+            v.trim().length >= 3 || "Meno kontaktnej osoby musí mať aspoň 3 znaky.",
+        }}
       />
 
-      <input
+      <RHFInput<RegisterCompanyFormState>
+        name="contactEmail"
         type="email"
         placeholder={msgs.auth.contactEmail}
         className={input}
-        {...register("contactEmail", {
-          required: "Email kontaktnej osoby je povinný.",
-        })}
+        register={register}
+        errors={errors}
+        rules={{ required: "Email kontaktnej osoby je povinný." }}
       />
 
-      <input
+      <RHFInput<RegisterCompanyFormState>
+        name="contactPhone"
         type="tel"
         placeholder={msgs.auth.contactPhone}
         className={input}
-        {...register("contactPhone", {
+        register={register}
+        errors={errors}
+        rules={{
           required: "Telefón je povinný.",
-          validate: (v) =>
+          validate: (v: string) =>
             v.replaceAll(/\D/g, "").length >= 7 || "Telefón musí mať aspoň 7 číslic.",
-        })}
+        }}
       />
 
       <Button

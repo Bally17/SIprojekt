@@ -38,3 +38,12 @@ export type CompanyProfile = {
   updated_at?: string;
   [key: string]: unknown;
 };
+
+export type RegisterCompanyFormState = {
+  companyName: string;
+  companyEmail: string;
+  address: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+};

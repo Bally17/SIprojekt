@@ -6,23 +6,16 @@ import { useLocalization } from "@i18n/client";
 import { getErrorMessage } from "@utils/errorActions";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { useRegisterStudentMutation } from "../hooks";
-
-type RegisterStudentFormState = {
-  firstName: string;
-  lastName: string;
-  address: string;
-  studentEmail: string;
-  altEmail: string;
-  phone: string;
-  studyField: string;
-};
+import { RHFInput } from "@components/input";
+import { RegisterStudentFormState } from "@shared-types/index";
+import { input } from "@constants";
 
 export default function RegisterFormStudent() {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
   const mutation = useRegisterStudentMutation();
 
-  const allowedStudentDomains: string[] = ["student.ukf.sk", "ukf.sk"];
+  const allowedStudentDomains = ["student.ukf.sk", "ukf.sk"] as const;
 
   const {
     register,
@@ -78,10 +71,6 @@ export default function RegisterFormStudent() {
     notifyWarning({ title: msgs.auth.errorTitle, description: firstMessage });
   };
 
-  const errorText = "text-sm text-red-600";
-  const input =
-    "w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500";
-
   return (
     <form
       onSubmit={handleSubmit(onSubmit, onInvalid)}
@@ -91,96 +80,95 @@ export default function RegisterFormStudent() {
         {msgs.auth.registerStudent}
       </h2>
 
-      <div>
-        <input
-          placeholder={msgs.auth.name}
-          className={input}
-          {...register("firstName", {
-            required: "Meno je povinné.",
-            validate: (v: string) => v.trim().length >= 2 || "Meno musí mať aspoň 2 znaky.",
-          })}
-        />
-        {errors.firstName?.message && <p className={errorText}>{errors.firstName.message}</p>}
-      </div>
+      <RHFInput<RegisterStudentFormState>
+        name="firstName"
+        placeholder={msgs.auth.name}
+        className={input}
+        register={register}
+        errors={errors}
+        rules={{
+          required: "Meno je povinné.",
+          validate: (v: string) => v.trim().length >= 2 || "Meno musí mať aspoň 2 znaky.",
+        }}
+      />
 
-      <div>
-        <input
-          placeholder={msgs.auth.surename}
-          className={input}
-          {...register("lastName", {
-            required: "Priezvisko je povinné.",
-            validate: (v: string) => v.trim().length >= 2 || "Priezvisko musí mať aspoň 2 znaky.",
-          })}
-        />
-        {errors.lastName?.message && <p className={errorText}>{errors.lastName.message}</p>}
-      </div>
+      <RHFInput<RegisterStudentFormState>
+        name="lastName"
+        placeholder={msgs.auth.surename}
+        className={input}
+        register={register}
+        errors={errors}
+        rules={{
+          required: "Priezvisko je povinné.",
+          validate: (v: string) => v.trim().length >= 2 || "Priezvisko musí mať aspoň 2 znaky.",
+        }}
+      />
 
-      <div>
-        <input
-          placeholder={msgs.auth.address}
-          className={input}
-          {...register("address", {
-            required: "Adresa je povinná.",
-            validate: (v: string) => v.trim().length >= 5 || "Adresa musí mať aspoň 5 znakov.",
-          })}
-        />
-        {errors.address?.message && <p className={errorText}>{errors.address.message}</p>}
-      </div>
+      <RHFInput<RegisterStudentFormState>
+        name="address"
+        placeholder={msgs.auth.address}
+        className={input}
+        register={register}
+        errors={errors}
+        rules={{
+          required: "Adresa je povinná.",
+          validate: (v: string) => v.trim().length >= 5 || "Adresa musí mať aspoň 5 znakov.",
+        }}
+      />
 
-      <div>
-        <input
-          type="email"
-          placeholder={msgs.auth.email}
-          className={input}
-          {...register("studentEmail", {
-            required: "Email je povinný.",
-            validate: (v: string) => {
-              const domain = v.split("@")[1]?.toLowerCase() ?? "";
-              return (
-                allowedStudentDomains.includes(domain as any) ||
-                `Email musí byť z domény ${allowedStudentDomains.join(", ")}.`
-              );
-            },
-          })}
-        />
-        {errors.studentEmail?.message && <p className={errorText}>{errors.studentEmail.message}</p>}
-      </div>
+      <RHFInput<RegisterStudentFormState>
+        name="studentEmail"
+        type="email"
+        placeholder={msgs.auth.email}
+        className={input}
+        register={register}
+        errors={errors}
+        rules={{
+          required: "Email je povinný.",
+          validate: (v: string) => {
+            const domain = (v.split("@")[1] ?? "").toLowerCase();
+            const ok = allowedStudentDomains.includes(
+              domain as (typeof allowedStudentDomains)[number],
+            );
+            return ok || `Email musí byť z domény ${allowedStudentDomains.join(", ")}.`;
+          },
+        }}
+      />
 
-      <div>
-        <input
-          type="email"
-          placeholder={msgs.auth.altEmail}
-          className={input}
-          {...register("altEmail")}
-        />
-        {errors.altEmail?.message && <p className={errorText}>{errors.altEmail.message}</p>}
-      </div>
+      <RHFInput<RegisterStudentFormState>
+        name="altEmail"
+        type="email"
+        placeholder={msgs.auth.altEmail}
+        className={input}
+        register={register}
+        errors={errors}
+      />
 
-      <div>
-        <input
-          type="tel"
-          placeholder={msgs.auth.phone}
-          className={input}
-          {...register("phone", {
-            required: "Telefón je povinný.",
-            validate: (v: string) =>
-              v.replaceAll(/\D/g, "").length >= 7 || "Telefón musí mať aspoň 7 číslic.",
-          })}
-        />
-        {errors.phone?.message && <p className={errorText}>{errors.phone.message}</p>}
-      </div>
+      <RHFInput<RegisterStudentFormState>
+        name="phone"
+        type="tel"
+        placeholder={msgs.auth.phone}
+        className={input}
+        register={register}
+        errors={errors}
+        rules={{
+          required: "Telefón je povinný.",
+          validate: (v: string) =>
+            v.replaceAll(/\D/g, "").length >= 7 || "Telefón musí mať aspoň 7 číslic.",
+        }}
+      />
 
-      <div>
-        <input
-          placeholder={msgs.auth.studyField}
-          className={input}
-          {...register("studyField", {
-            required: "Študijný program je povinný.",
-            validate: (v: string) => v.trim().length > 0 || "Študijný program je povinný.",
-          })}
-        />
-        {errors.studyField?.message && <p className={errorText}>{errors.studyField.message}</p>}
-      </div>
+      <RHFInput<RegisterStudentFormState>
+        name="studyField"
+        placeholder={msgs.auth.studyField}
+        className={input}
+        register={register}
+        errors={errors}
+        rules={{
+          required: "Študijný program je povinný.",
+          validate: (v: string) => v.trim().length > 0 || "Študijný program je povinný.",
+        }}
+      />
 
       <Button
         type="submit"

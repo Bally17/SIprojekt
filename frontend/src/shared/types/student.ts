@@ -23,3 +23,13 @@ export type RegisterStudentPayload = {
 };
 
 export type StudentSearchResponse = StudentProfile[] | { results?: StudentProfile[] };
+
+export type RegisterStudentFormState = {
+  firstName: string;
+  lastName: string;
+  address: string;
+  studentEmail: string;
+  altEmail: string;
+  phone: string;
+  studyField: string;
+};
