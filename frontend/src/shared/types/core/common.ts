@@ -1,7 +1,8 @@
 import type IconName from "@icons/iconName";
+import { DocumentStatusType } from "@shared-types/documentStatus";
 
 export type RoleType = "student" | "company" | "garant";
-export type StatusType = "nahrany" | "potvrdeny" | "zamietnuty";
+export type StatusType = DocumentStatusType;
 export type Locale = "sk" | "en";
 export type Action = "confirm" | "reject";
 export type Variant = "light" | "dark";

@@ -11,6 +11,7 @@ export * from "./notification";
 export * from "./oauth";
 export * from "./externalDefense";
 export * from "./garant";
+export * from "./documentStatus";
 
 export * from "./ui/button";
 export * from "./ui/icons";

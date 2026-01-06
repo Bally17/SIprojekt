@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useForm } from "react-hook-form";
 import { useSystemNotifications } from "@components/notifications";
 import { Table } from "@components/table";
 import { useLocalization } from "@i18n/client";
@@ -13,14 +14,15 @@ import { useCompanyInternshipsQuery, extractInternships } from "../hooks";
 export default function CompanyInternshipsDashboard() {
   const { warning: notifyWarning } = useSystemNotifications();
   const { msgs } = useLocalization();
-
   const errorLoadInternships = msgs.common.error.errorLoadInternships;
 
-  const [filters, setFilters] = useState<TableFilters>({
-    rok: "",
-    semester: "",
-    stav: "",
+  const { watch, setValue, reset, handleSubmit } = useForm<TableFilters>({
+    defaultValues: { rok: "", semester: "", stav: "" },
+    mode: "onChange",
   });
+
+  // RHF -> aktuálne hodnoty filtrov
+  const filters = watch();
 
   const apiFilters = useMemo(
     () =>
@@ -42,12 +44,16 @@ export default function CompanyInternshipsDashboard() {
 
   const internships = extractInternships(data);
 
-  const resetFilters = () =>
-    setFilters({
-      rok: "",
-      semester: "",
-      stav: "",
-    });
+  const onApply = handleSubmit(() => {
+    // apiFilters sa prepočíta z watch() a query hook ho použije;
+    // refetch len znovu odpáli request
+    refetch();
+  });
+
+  const onReset = () => {
+    reset({ rok: "", semester: "", stav: "" });
+    refetch();
+  };
 
   return (
     <div className="space-y-10">
@@ -62,9 +68,14 @@ export default function CompanyInternshipsDashboard() {
           document
           showFilters
           filters={filters}
-          onFiltersChange={setFilters}
-          onApplyFilters={() => refetch()}
-          onResetFilters={resetFilters}
+          onFiltersChange={(next) => {
+            // Table ti vráti celý objekt filtrov – RHF nastavíme polia
+            (Object.keys(next) as (keyof TableFilters)[]).forEach((k) => {
+              setValue(k, next[k] ?? "");
+            });
+          }}
+          onApplyFilters={onApply}
+          onResetFilters={onReset}
           semesterOptions={SEMESTER_OPTIONS}
           stavOptions={STAV_OPTIONS}
           isLoading={isLoading}
