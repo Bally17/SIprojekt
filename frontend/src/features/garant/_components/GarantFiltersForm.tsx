@@ -1,4 +1,5 @@
 import { STAV_OPTIONS, STAV_LABEL } from "@shared-types/index";
+import type { UseFormRegister } from "react-hook-form";
 
 type Filters = {
   rok: string;
@@ -10,16 +11,16 @@ type Filters = {
 
 type Props = {
   filters: Filters;
+  register: UseFormRegister<Filters>;
   msgs: any;
-  onChange: (name: keyof Filters, value: string) => void;
   onApply: (event?: React.FormEvent<HTMLFormElement>) => void;
   onReset: () => void;
 };
 
 export default function GarantFiltersForm({
   filters,
+  register,
   msgs,
-  onChange,
   onApply,
   onReset,
 }: Readonly<Props>) {
@@ -38,9 +39,8 @@ export default function GarantFiltersForm({
           </label>
           <input
             type="number"
-            name="rok"
             value={filters.rok}
-            onChange={(e) => onChange("rok", e.target.value)}
+            {...register("rok")}
             className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
@@ -51,9 +51,8 @@ export default function GarantFiltersForm({
           </label>
           <input
             type="text"
-            name="firma"
             value={filters.firma}
-            onChange={(e) => onChange("firma", e.target.value)}
+            {...register("firma")}
             className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
@@ -64,9 +63,8 @@ export default function GarantFiltersForm({
           </label>
           <input
             type="text"
-            name="student"
             value={filters.student}
-            onChange={(e) => onChange("student", e.target.value)}
+            {...register("student")}
             className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
@@ -77,9 +75,8 @@ export default function GarantFiltersForm({
           </label>
           <input
             type="text"
-            name="odbor"
             value={filters.odbor}
-            onChange={(e) => onChange("odbor", e.target.value)}
+            {...register("odbor")}
             className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
@@ -89,9 +86,8 @@ export default function GarantFiltersForm({
             {msgs.common.guarant.filters.state}
           </label>
           <select
-            name="stav"
             value={filters.stav}
-            onChange={(e) => onChange("stav", e.target.value)}
+            {...register("stav")}
             className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">{msgs.common.guarant.filters.statePlaceholder}</option>

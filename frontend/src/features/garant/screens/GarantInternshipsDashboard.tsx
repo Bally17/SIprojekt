@@ -2,18 +2,14 @@
 
 import type React from "react";
 import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { getAccessToken } from "@lib/ApiProvider";
-import { Nullable, StringOrNull, Stav } from "@shared-types/index";
+import { Nullable, StringOrNull } from "@shared-types/index";
 import { Internship, GarantInternshipUpdate } from "@shared-types/internship";
 import { BASE_URL } from "@constants";
-import {
-  useGarantInternshipsQuery,
-  useStudentSearchQuery,
-  useCompanySearchQuery,
-  useUpdateGarantInternshipMutation,
-} from "../hooks";
+import { useGarantInternshipsQuery, useUpdateGarantInternshipMutation } from "../hooks";
 import {
   GarantFiltersForm,
   GarantInternshipsTableSection,
@@ -60,22 +56,14 @@ export default function GarantInternshipsDashboard() {
   const { success, warning, info } = useSystemNotifications();
 
   const [editingInternship, setEditingInternship] = useState<Nullable<Internship>>(null);
-  const [editForm, setEditForm] = useState<GarantInternshipUpdate>({
-    firma_id: "",
-    student_id: "",
-    datum_zaciatku: "",
-    datum_konca: "",
-    stav: "vytvorena",
-    status_note: "",
-  });
-
   const [editError, setEditError] = useState<StringOrNull>(null);
 
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
+  const filtersForm = useForm<Filters>({
+    defaultValues: DEFAULT_FILTERS,
+    mode: "onChange",
+  });
 
-  const [studentQuery, setStudentQuery] = useState("");
-  const [companyQuery, setCompanyQuery] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
 
   const apiFilters = useMemo(
     () =>
@@ -105,64 +93,27 @@ export default function GarantInternshipsDashboard() {
     });
   }, [internships, appliedFilters]);
 
-  // Search
-  const studentSearch = useStudentSearchQuery(studentQuery, {
-    enabled: editingInternship != null && studentQuery.length >= 2,
-  });
-
-  const companySearch = useCompanySearchQuery(companyQuery, {
-    enabled: editingInternship != null && companyQuery.length >= 2,
-  });
-
   // ---------------------------------------------
   // EDIT HANDLING
   // ---------------------------------------------
   const openEditModal = (i: Internship) => {
     setEditingInternship(i);
-
-    setEditForm({
-      datum_zaciatku: i.datum_zaciatku,
-      datum_konca: i.datum_konca,
-      stav: i.stav as Stav,
-      student_id: i.student ? String(i.student) : "",
-      firma_id: i.firma ? String(i.firma) : "",
-      status_note: "",
-    });
-
-    setStudentQuery(i.student_full_name || i.student_email || (i.student ? `#${i.student}` : ""));
-    setCompanyQuery(i.company_name || (typeof i.firma === "number" ? `#${i.firma}` : ""));
     setEditError(null);
   };
 
   const closeEditModal = () => {
     setEditingInternship(null);
-    setEditForm({
-      firma_id: "",
-      student_id: "",
-      datum_zaciatku: "",
-      datum_konca: "",
-      stav: "vytvorena",
-      status_note: "",
-    });
     setEditError(null);
-    setStudentQuery("");
-    setCompanyQuery("");
-  };
-
-  const handleEditInput = (name: keyof GarantInternshipUpdate, value: string | Stav) => {
-    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const updateMutation = useUpdateGarantInternshipMutation();
 
-  const handleSubmitEdit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!editingInternship || !editForm) return;
-
+  const handleSubmitEdit = async (values: GarantInternshipUpdate) => {
+    if (!editingInternship) return;
     try {
       await updateMutation.mutateAsync({
         id: editingInternship.id,
-        payload: editForm,
+        payload: values,
       });
 
       success({
@@ -182,29 +133,15 @@ export default function GarantInternshipsDashboard() {
   // ---------------------------------------------
   // FILTER HANDLER
   // ---------------------------------------------
+  const filters = filtersForm.watch();
 
-  const handleFilterChange = (name: keyof Filters, value: string) => {
-    setFilters((p) => ({ ...p, [name]: value }));
-  };
-
-  const applyFilters = (e?: React.FormEvent<HTMLFormElement>) => {
-    e?.preventDefault();
-    setAppliedFilters(filters);
-  };
+  const applyFilters = filtersForm.handleSubmit((vals) => {
+    setAppliedFilters(vals);
+  });
 
   const resetFilters = () => {
-    setFilters(DEFAULT_FILTERS);
+    filtersForm.reset(DEFAULT_FILTERS);
     setAppliedFilters(DEFAULT_FILTERS);
-  };
-
-  const handleSelectStudent = (id: number, label: string) => {
-    setEditForm((f) => ({ ...f, student_id: String(id) }));
-    setStudentQuery(label);
-  };
-
-  const handleSelectCompany = (id: number, label: string) => {
-    setEditForm((f) => ({ ...f, firma_id: String(id) }));
-    setCompanyQuery(label);
   };
 
   // ---------------------------------------------
@@ -259,8 +196,8 @@ export default function GarantInternshipsDashboard() {
     <div className="space-y-10">
       <GarantFiltersForm
         filters={filters}
+        register={filtersForm.register}
         msgs={msgs}
-        onChange={handleFilterChange}
         onApply={applyFilters}
         onReset={resetFilters}
       />
@@ -279,20 +216,10 @@ export default function GarantInternshipsDashboard() {
 
       <GarantEditModal
         internship={editingInternship}
-        editForm={editForm}
-        editError={editError}
         msgs={msgs}
-        studentQuery={studentQuery}
-        companyQuery={companyQuery}
+        editError={editError}
         onClose={closeEditModal}
         onSubmit={handleSubmitEdit}
-        onEditInput={handleEditInput}
-        onStudentQueryChange={setStudentQuery}
-        onCompanyQueryChange={setCompanyQuery}
-        onSelectStudent={handleSelectStudent}
-        onSelectCompany={handleSelectCompany}
-        studentSearch={{ isFetching: studentSearch.isFetching, data: studentSearch.data }}
-        companySearch={{ isFetching: companySearch.isFetching, data: companySearch.data }}
         isSubmitting={updateMutation.isPending}
       />
     </div>

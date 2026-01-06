@@ -1,56 +1,145 @@
 import type React from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import Icon from "@icons/index";
 import { STAV_OPTIONS, STAV_LABEL, StringOrNull, Stav } from "@shared-types/index";
 import { Internship, GarantInternshipUpdate } from "@shared-types/internship";
 import { DatePicker } from "@components/datePicker";
-
-type SearchResult = {
-  id: number;
-  meno?: string | null;
-  priezvisko?: string | null;
-  email?: string | null;
-  nazov?: string | null;
-  kontakt_email?: string | null;
-};
+import { useCompanySearchQuery, useStudentSearchQuery } from "../hooks";
+import SearchSelect from "./SearchSelect";
 
 type Props = {
   internship: Internship | null;
-  editForm: GarantInternshipUpdate | null;
   editError: StringOrNull;
   msgs: any;
-  studentQuery: string;
-  companyQuery: string;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  onEditInput: (name: keyof GarantInternshipUpdate, value: string | Stav) => void;
-  onStudentQueryChange: (val: string) => void;
-  onCompanyQueryChange: (val: string) => void;
-  onSelectStudent: (id: number, label: string) => void;
-  onSelectCompany: (id: number, label: string) => void;
-  studentSearch: { isFetching: boolean; data?: SearchResult[] };
-  companySearch: { isFetching: boolean; data?: SearchResult[] };
+  onSubmit: (values: GarantInternshipUpdate) => Promise<void> | void;
   isSubmitting: boolean;
+};
+
+const DEFAULT_VALUES: GarantInternshipUpdate = {
+  firma_id: "",
+  student_id: "",
+  datum_zaciatku: "",
+  datum_konca: "",
+  stav: "vytvorena",
+  status_note: "",
 };
 
 export default function GarantEditModal({
   internship,
-  editForm,
   editError,
   msgs,
-  studentQuery,
-  companyQuery,
   onClose,
   onSubmit,
-  onEditInput,
-  onStudentQueryChange,
-  onCompanyQueryChange,
-  onSelectStudent,
-  onSelectCompany,
-  studentSearch,
-  companySearch,
   isSubmitting,
 }: Readonly<Props>) {
-  if (!internship || !editForm) return null;
+  const [studentQuery, setStudentQuery] = useState("");
+  const [companyQuery, setCompanyQuery] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+    setError,
+    clearErrors,
+  } = useForm<GarantInternshipUpdate>({
+    defaultValues: DEFAULT_VALUES,
+    mode: "onSubmit",
+  });
+
+  useEffect(() => {
+    if (!internship) return;
+
+    reset({
+      datum_zaciatku: internship.datum_zaciatku || "",
+      datum_konca: internship.datum_konca || "",
+      stav: internship.stav as Stav,
+      student_id: internship.student ? String(internship.student) : "",
+      firma_id: internship.firma ? String(internship.firma) : "",
+      status_note: "",
+    });
+
+    setStudentQuery(
+      internship.student_full_name ||
+        internship.student_email ||
+        (internship.student ? `#${internship.student}` : ""),
+    );
+    setCompanyQuery(
+      internship.company_name ||
+        (typeof internship.firma === "number" ? `#${internship.firma}` : ""),
+    );
+    clearErrors();
+  }, [internship, reset, clearErrors]);
+
+  const studentSearch = useStudentSearchQuery(studentQuery, {
+    enabled: !!internship && studentQuery.trim().length >= 2,
+  });
+
+  const companySearch = useCompanySearchQuery(companyQuery, {
+    enabled: !!internship && companyQuery.trim().length >= 2,
+  });
+
+  const studentItems = useMemo(
+    () =>
+      (studentSearch.data ?? []).map((s) => ({
+        id: s.id,
+        primary: `${s.meno ?? ""} ${s.priezvisko ?? ""}`.trim() || s.email || `#${s.id}`,
+        secondary: s.email,
+        label: `${s.meno ?? ""} ${s.priezvisko ?? ""}`.trim() || s.email || `#${s.id}`,
+      })),
+    [studentSearch.data],
+  );
+
+  const companyItems = useMemo(
+    () =>
+      (companySearch.data ?? []).map((c) => ({
+        id: c.id,
+        primary: c.nazov || `#${c.id}`,
+        secondary: c.kontakt_email,
+        label: c.nazov || `#${c.id}`,
+      })),
+    [companySearch.data],
+  );
+
+  const handleSelectStudent = (item: { id: number; label: string }) => {
+    setValue("student_id", String(item.id), { shouldDirty: true });
+    setStudentQuery(item.label);
+    clearErrors("student_id");
+  };
+
+  const handleSelectCompany = (item: { id: number; label: string }) => {
+    setValue("firma_id", String(item.id), { shouldDirty: true });
+    setCompanyQuery(item.label);
+    clearErrors("firma_id");
+  };
+
+  const submit = handleSubmit(async (values) => {
+    if (values.datum_zaciatku && values.datum_konca && values.datum_konca < values.datum_zaciatku) {
+      setError("datum_konca", {
+        type: "validate",
+        message: "Datum ukoncenia musi byt po datume zaciatku.",
+      });
+      return;
+    }
+
+    if (!values.student_id) {
+      setError("student_id", { type: "required", message: "Vyberte studenta." });
+      return;
+    }
+
+    if (!values.firma_id) {
+      setError("firma_id", { type: "required", message: "Vyberte firmu." });
+      return;
+    }
+
+    await onSubmit(values);
+  });
+
+  if (!internship) return null;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-4">
@@ -78,80 +167,38 @@ export default function GarantEditModal({
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-6">
+        <form onSubmit={submit} className="mt-6 space-y-6">
           {/* STUDENT SEARCH */}
           <div>
-            <label className="text-xs font-semibold uppercase text-ink-500">
-              {msgs.common.guarant.edit.studentSearch}
-            </label>
-
-            <input
-              type="text"
+            <input type="hidden" {...register("student_id")} />
+            <SearchSelect
+              label={msgs.common.guarant.edit.studentSearch}
               value={studentQuery}
-              onChange={(e) => onStudentQueryChange(e.target.value)}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              onChange={setStudentQuery}
+              onSelect={handleSelectStudent}
+              items={studentItems}
+              isFetching={studentSearch.isFetching}
+              loadingText={msgs.common.loading.loading}
             />
-
-            {studentSearch.isFetching && (
-              <p className="text-xs text-ink-400 mt-1">{msgs.common.loading.loading}</p>
-            )}
-
-            {studentSearch.data?.length ? (
-              <ul className="border mt-2 rounded-md max-h-40 overflow-y-auto divide-y">
-                {studentSearch.data.map((s) => (
-                  <li key={s.id}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const label =
-                          `${s.meno ?? ""} ${s.priezvisko ?? ""}`.trim() || s.email || `#${s.id}`;
-                        onSelectStudent(s.id, label);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-primary-50"
-                    >
-                      <span className="font-medium">
-                        {`${s.meno ?? ""} ${s.priezvisko ?? ""}`.trim()}
-                      </span>
-                      <div className="text-xs text-ink-500">{s.email}</div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            {errors.student_id?.message ? (
+              <p className="text-xs text-red-600 mt-1">{errors.student_id.message}</p>
             ) : null}
           </div>
 
           {/* COMPANY SEARCH */}
           <div>
-            <label className="text-xs font-semibold uppercase text-ink-500">
-              {msgs.common.guarant.edit.companySearch}
-            </label>
-
-            <input
-              type="text"
+            <input type="hidden" {...register("firma_id")} />
+            <SearchSelect
+              label={msgs.common.guarant.edit.companySearch}
               value={companyQuery}
-              onChange={(e) => onCompanyQueryChange(e.target.value)}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              onChange={setCompanyQuery}
+              onSelect={handleSelectCompany}
+              items={companyItems}
+              isFetching={companySearch.isFetching}
+              loadingText={msgs.common.loading.loading}
             />
-
-            {companySearch.isFetching && (
-              <p className="text-xs text-ink-400 mt-1">{msgs.common.loading.loading}</p>
-            )}
-
-            {companySearch.data?.length ? (
-              <ul className="border mt-2 rounded-md max-h-40 overflow-y-auto divide-y">
-                {companySearch.data.map((c) => (
-                  <li key={c.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelectCompany(c.id, c.nazov || `#${c.id}`)}
-                      className="w-full px-3 py-2 text-left hover:bg-primary-50"
-                    >
-                      <span className="font-medium">{c.nazov || `#${c.id}`}</span>
-                      <div className="text-xs text-ink-500">{c.kontakt_email}</div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            {errors.firma_id?.message ? (
+              <p className="text-xs text-red-600 mt-1">{errors.firma_id.message}</p>
             ) : null}
           </div>
 
@@ -160,10 +207,13 @@ export default function GarantEditModal({
             className="mt-1"
             startLabel={msgs.common.guarant.edit.startDate}
             endLabel={msgs.common.guarant.edit.endDate}
-            startValue={editForm.datum_zaciatku}
-            endValue={editForm.datum_konca}
-            onChange={(field, value) => onEditInput(field, value)}
+            register={register as any}
+            setValue={setValue as any}
+            watch={watch as any}
           />
+          {errors.datum_konca?.message ? (
+            <p className="text-xs text-red-600 mt-1">{errors.datum_konca.message}</p>
+          ) : null}
 
           {/* STATE */}
           <div>
@@ -171,9 +221,7 @@ export default function GarantEditModal({
               {msgs.common.guarant.filters.state}
             </label>
             <select
-              name="stav"
-              value={editForm.stav}
-              onChange={(e) => onEditInput("stav", e.target.value as Stav)}
+              {...register("stav")}
               className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               {STAV_OPTIONS.map((o) => (
@@ -190,9 +238,7 @@ export default function GarantEditModal({
               {msgs.common.guarant.edit.statusNote}
             </label>
             <textarea
-              name="status_note"
-              value={editForm.status_note}
-              onChange={(e) => onEditInput("status_note", e.target.value)}
+              {...register("status_note")}
               className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               rows={3}
             />
