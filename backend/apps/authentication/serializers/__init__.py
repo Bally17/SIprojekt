@@ -2,6 +2,7 @@ from .login import LoginSerializer, GoogleAuthSerializer, GitHubAuthSerializer
 from .registration import (
     StudentRegistrationSerializer,
     CompanyRegistrationSerializer,
+    CompanyProfileCompletionSerializer,
     normalize_company_name,
 )
 from .password import (
@@ -16,6 +17,7 @@ __all__ = [
     "GitHubAuthSerializer",
     "StudentRegistrationSerializer",
     "CompanyRegistrationSerializer",
+    "CompanyProfileCompletionSerializer",
     "normalize_company_name",
     "PasswordResetRequestSerializer",
     "PasswordResetConfirmSerializer",

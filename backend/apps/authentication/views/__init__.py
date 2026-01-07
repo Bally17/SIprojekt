@@ -2,8 +2,19 @@ from .helpers import get_tokens_for_user, get_user_data, signer, password_reset_
 from .login import login_view, company_login_view, garant_login_view, profile, profile_missing_fields, logout_view
 from .oauth_server import oauth_authorize, oauth_token, oauth_userinfo, oauth_clients, oauth_client_detail
 from .password import password_reset_request, password_reset_confirm, change_password
-from .registration import StudentRegistrationView, CompanyRegistrationView, activate_account
-from .social import google_auth, github_auth, github_callback
+from .registration import (
+    StudentRegistrationView,
+    CompanyRegistrationView,
+    activate_account,
+    company_profile_complete,
+)
+from .social import (
+    google_auth,
+    github_auth,
+    github_callback,
+    google_company_register,
+    github_company_register,
+)
 
 __all__ = [
     "get_tokens_for_user",
@@ -27,7 +38,10 @@ __all__ = [
     "StudentRegistrationView",
     "CompanyRegistrationView",
     "activate_account",
+    "company_profile_complete",
     "google_auth",
     "github_auth",
     "github_callback",
+    "google_company_register",
+    "github_company_register",
 ]
