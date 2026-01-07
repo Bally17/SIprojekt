@@ -1,24 +1,20 @@
 from .settings import *  # noqa: F401,F403
 
-# Použi in-memory SQLite počas testov, aby nebolo treba docker Postgres.
+# Pouzi PostgreSQL test DB klonovanu zo skutocnej DB.
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "test_db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB", "praxy_db"),
+        "USER": os.getenv("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+        "HOST": os.getenv("POSTGRES_HOST", "db"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "TEST": {
+            "NAME": os.getenv("POSTGRES_TEST_DB", "test_praxy_db"),
+            "MIGRATE": False,
+        },
     }
 }
 
-# Testy nepotrebujú reálne migrácie tretích strán, stačí syncdb zo schémy.
-MIGRATION_MODULES = {
-    "account": None,
-    "socialaccount": None,
-    "users": None,
-    "companies": None,
-    "documents": None,
-    "internships": None,
-    "notifications": None,
-    "authentication": None,
-}
-
-# Neposielať reálne emaily počas testov
+# Neposielat realne emaily pocas testov.
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
