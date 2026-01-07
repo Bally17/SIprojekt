@@ -112,7 +112,7 @@ def _exchange_github_code_for_token(code, code_verifier=None):
             "client_id": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"],
             "client_secret": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["secret"],
             "code": code,
-            "redirect_uri": "http://localhost:8000/api/auth/github/callback/",
+            "redirect_uri": settings.GITHUB_REDIRECT_URI,
         }
 
         if code_verifier:
@@ -247,7 +247,7 @@ def handle_github_code(code, code_verifier=None):
             "client_id": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"],
             "client_secret": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["secret"],
             "code": code,
-            "redirect_uri": "http://localhost:8000/api/auth/github/callback/",
+            "redirect_uri": settings.GITHUB_REDIRECT_URI,
         }
 
         if code_verifier:
@@ -347,7 +347,7 @@ def github_callback(request):
                 "client_id": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"],
                 "client_secret": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["secret"],
                 "code": code,
-                "redirect_uri": "http://localhost:8000/api/auth/github/callback/",
+                "redirect_uri": settings.GITHUB_REDIRECT_URI,
             },
             timeout=10,
         )

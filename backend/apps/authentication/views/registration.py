@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.mail import send_mail
-from django.core.signing import BadSignature
+from django.core.signing import BadSignature, SignatureExpired
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -17,7 +17,7 @@ from ..serializers import (
     StudentRegistrationSerializer,
 )
 from ..utils import generate_random_password, send_activation_email, AllowInactiveJWTAuthentication
-from .helpers import signer, generate_password, get_user_data
+from .helpers import activation_signer, ACTIVATION_TOKEN_MAX_AGE, generate_password, get_user_data
 from apps.companies.models import Firma
 from apps.companies.serializers import CompanySerializer
 
@@ -30,7 +30,7 @@ class StudentRegistrationView(generics.CreateAPIView):
 
     def send_activation_email(self, user, password):
         """Odošle aktivačný email so zahashovaným tokenom"""
-        token = signer.sign(user.email)
+        token = activation_signer.sign(user.email)
         activation_link = f"{settings.FRONTEND_URL}/auth/activate/{token}/"
 
         subject = "Aktivácia účtu – Študentská prax"
@@ -111,12 +111,14 @@ class CompanyRegistrationView(generics.CreateAPIView):
 def activate_account(request, token):
     """Aktivácia účtu cez token"""
     try:
-        email = signer.unsign(token)
+        email = activation_signer.unsign(token, max_age=ACTIVATION_TOKEN_MAX_AGE)
         user = User.objects.get(email=email)
         user.aktivny = True
         user.email_overeny = True
         user.save()
         return Response({"message": "Účet bol úspešne aktivovaný."}, status=200)
+    except SignatureExpired:
+        return Response({"error": "Aktivačný odkaz expiroval."}, status=400)
     except (User.DoesNotExist, BadSignature):
         return Response({"error": "Neplatný alebo expirovaný odkaz."}, status=400)
 
