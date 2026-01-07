@@ -2,6 +2,7 @@ import logging
 import os
 
 from django.conf import settings
+from django.http import FileResponse
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -62,6 +63,20 @@ class DocumentUploadDownloadMixin:
         if resp:
             return resp
 
+        max_size = getattr(settings, "DOCUMENT_MAX_UPLOAD_SIZE", 10 * 1024 * 1024)
+        if file.size and file.size > max_size:
+            return Response(
+                {"detail": "Súbor je príliš veľký."},
+                status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            )
+        content_type = (getattr(file, "content_type", "") or "").lower()
+        filename = (getattr(file, "name", "") or "").lower()
+        if not (filename.endswith(".pdf") or content_type in ("application/pdf", "application/x-pdf")):
+            return Response(
+                {"detail": "Povolené sú iba PDF súbory."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         object_name = upload_file_to_b2(file)
 
         old_doc.subor_url = object_name
@@ -116,13 +131,23 @@ class DocumentUploadDownloadMixin:
         if isinstance(object_name, str) and object_name.startswith(("http://", "https://")):
             return Response({"url": object_name}, status=status.HTTP_200_OK)
 
-        # Lokálny súbor v MEDIA_ROOT (napr. generované PDF) – zostav plnú URL
-        local_path = os.path.join(settings.MEDIA_ROOT, object_name)
-        if os.path.exists(local_path):
-            absolute_url = request.build_absolute_uri(
-                f"{settings.MEDIA_URL.rstrip('/')}/{object_name.lstrip('/')}"
+        # Lokálny súbor v MEDIA_ROOT – vráť cez autentizovaný stream
+        base_dir = os.path.abspath(settings.MEDIA_ROOT)
+        local_path = os.path.abspath(os.path.normpath(os.path.join(base_dir, object_name)))
+        if not local_path.startswith(base_dir + os.sep):
+            return Response(
+                {"detail": "Neplatná cesta k súboru."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            return Response({"url": absolute_url}, status=status.HTTP_200_OK)
+        if os.path.exists(local_path):
+            filename = os.path.basename(local_path)
+            content_type = "application/pdf" if filename.lower().endswith(".pdf") else None
+            return FileResponse(
+                open(local_path, "rb"),
+                as_attachment=True,
+                filename=filename,
+                content_type=content_type,
+            )
 
         # Inak skús B2
         try:

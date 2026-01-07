@@ -20,14 +20,18 @@ class DocumentBaseViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Limit dokumenty na príbuzné praxe podľa roly používateľa."""
         user = getattr(self.request, "user", None)
-        qs = super().get_queryset()
+        qs = super().get_queryset().order_by("-vytvorene_at")
         role = getattr(user, "rola", "") or ""
 
         if role == User.ROLE_GARANT:
             return qs
         if role == User.ROLE_STUDENT:
-            return qs.filter(prax__student_id=user.id)
+            return qs.filter(prax__student_id=user.id).order_by("-vytvorene_at")
         if role == User.ROLE_FIRMA:
             firma_id = getattr(user, "firma_id", None)
-            return qs.filter(prax__firma_id=firma_id) if firma_id else qs.none()
+            return (
+                qs.filter(prax__firma_id=firma_id).order_by("-vytvorene_at")
+                if firma_id
+                else qs.none()
+            )
         return qs.none()
