@@ -211,3 +211,45 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
         user.firma_id = firma.id
         user.save(update_fields=["firma_id"])
         return user
+
+
+class CompanyProfileCompletionSerializer(serializers.Serializer):
+    nazov = serializers.CharField(required=True)
+    kontaktna_osoba_meno = serializers.CharField(required=True)
+    kontaktna_osoba_email = serializers.EmailField(required=True)
+    kontaktna_osoba_telefon = serializers.CharField(required=True)
+    adresa = serializers.CharField(required=True)
+
+    def validate_nazov(self, value):
+        value = (value or "").strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Názov firmy musí mať aspoň 2 znaky.")
+        normalized = normalize_company_name(value)
+        current_firma_id = None
+        user = self.context.get("user")
+        if user:
+            current_firma_id = getattr(user, "firma_id", None)
+
+        for firma_id, nazov in Firma.objects.values_list("id", "nazov"):
+            if firma_id == current_firma_id:
+                continue
+            if normalize_company_name(nazov) == normalized:
+                raise serializers.ValidationError("Firma s týmto názvom už existuje.")
+        return value
+
+    def validate_kontaktna_osoba_telefon(self, value):
+        if value and not re.match(PHONE_REGEX, value):
+            raise serializers.ValidationError("Neplatný formát telefónu.")
+        return value
+
+    def validate_kontaktna_osoba_meno(self, value):
+        value = (value or "").strip()
+        if len(value) < 3:
+            raise serializers.ValidationError("Meno kontaktnej osoby musí mať aspoň 3 znaky.")
+        return value
+
+    def validate_adresa(self, value):
+        value = (value or "").strip()
+        if len(value) < 5:
+            raise serializers.ValidationError("Adresa musí mať aspoň 5 znakov.")
+        return value

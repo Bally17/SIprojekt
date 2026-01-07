@@ -2,16 +2,24 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.core.signing import BadSignature
 from rest_framework import generics, status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from apps.users.models import User
 
-from ..serializers import CompanyRegistrationSerializer, StudentRegistrationSerializer
-from ..utils import generate_random_password, send_activation_email
-from .helpers import signer, generate_password
+from ..serializers import (
+    CompanyProfileCompletionSerializer,
+    CompanyRegistrationSerializer,
+    StudentRegistrationSerializer,
+)
+from ..utils import generate_random_password, send_activation_email, AllowInactiveJWTAuthentication
+from .helpers import signer, generate_password, get_user_data
+from apps.companies.models import Firma
+from apps.companies.serializers import CompanySerializer
 
 
 class StudentRegistrationView(generics.CreateAPIView):
@@ -111,3 +119,100 @@ def activate_account(request, token):
         return Response({"message": "Účet bol úspešne aktivovaný."}, status=200)
     except (User.DoesNotExist, BadSignature):
         return Response({"error": "Neplatný alebo expirovaný odkaz."}, status=400)
+
+
+@swagger_auto_schema(
+    methods=["post"],
+    operation_summary="Complete company profile after social registration",
+    operation_description=(
+        "Fills required company data and activates the company account."
+    ),
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=[
+            "nazov",
+            "kontaktna_osoba_meno",
+            "kontaktna_osoba_email",
+            "kontaktna_osoba_telefon",
+            "adresa",
+        ],
+        properties={
+            "nazov": openapi.Schema(type=openapi.TYPE_STRING),
+            "kontaktna_osoba_meno": openapi.Schema(type=openapi.TYPE_STRING),
+            "kontaktna_osoba_email": openapi.Schema(type=openapi.TYPE_STRING),
+            "kontaktna_osoba_telefon": openapi.Schema(type=openapi.TYPE_STRING),
+            "adresa": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+    ),
+    responses={
+        200: openapi.Response(description="Company profile completed."),
+        400: "Validation error",
+        401: "Unauthorized",
+        403: "Forbidden",
+    },
+)
+@api_view(["POST"])
+@authentication_classes([AllowInactiveJWTAuthentication])
+@permission_classes([IsAuthenticated])
+def company_profile_complete(request):
+    """Complete company profile for social-registered accounts."""
+    user = request.user
+    if user.rola != User.ROLE_FIRMA:
+        return Response({"error": "Only company users can complete company profile."}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = CompanyProfileCompletionSerializer(data=request.data, context={"user": user})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    data = serializer.validated_data
+    meno_parts = data["kontaktna_osoba_meno"].split(" ", 1)
+    meno = meno_parts[0]
+    priezvisko = meno_parts[1] if len(meno_parts) > 1 else ""
+
+    user.meno = meno
+    user.priezvisko = priezvisko
+    user.telefon = data["kontaktna_osoba_telefon"]
+    user.adresa = data["adresa"]
+    user.alternativny_email = data["kontaktna_osoba_email"]
+    user.aktivny = True
+    user.email_overeny = True
+    user.musi_zmenit_heslo = False
+    user.save(
+        update_fields=[
+            "meno",
+            "priezvisko",
+            "telefon",
+            "adresa",
+            "alternativny_email",
+            "aktivny",
+            "email_overeny",
+            "musi_zmenit_heslo",
+        ]
+    )
+
+    firma = None
+    if user.firma_id:
+        firma = Firma.objects.filter(id=user.firma_id).first()
+
+    if firma:
+        firma.nazov = data["nazov"]
+        firma.adresa = data["adresa"]
+        firma.kontakt_meno = data["kontaktna_osoba_meno"]
+        firma.kontakt_email = data["kontaktna_osoba_email"]
+        firma.kontakt_telefon = data["kontaktna_osoba_telefon"]
+        firma.save()
+    else:
+        firma = Firma.objects.create(
+            nazov=data["nazov"],
+            adresa=data["adresa"],
+            kontakt_meno=data["kontaktna_osoba_meno"],
+            kontakt_email=data["kontaktna_osoba_email"],
+            kontakt_telefon=data["kontaktna_osoba_telefon"],
+        )
+        user.firma_id = firma.id
+        user.save(update_fields=["firma_id"])
+
+    return Response(
+        {"status": "success", "user": get_user_data(user), "firma": CompanySerializer(firma).data},
+        status=status.HTTP_200_OK,
+    )
