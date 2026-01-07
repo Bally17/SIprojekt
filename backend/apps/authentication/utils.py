@@ -3,10 +3,10 @@ import secrets
 import string
 from django.core.mail import send_mail
 from django.conf import settings
-from django.core.signing import Signer
+from django.core.signing import TimestampSigner
 
 # ---- tvoje pôvodné utily ----------------------------------------------------
-signer = Signer()
+activation_signer = TimestampSigner()
 
 def generate_random_password(length=10):
     """Vygeneruje náhodné bezpečné heslo (kombinácia písmen, čísiel a symbolov)."""
@@ -30,7 +30,7 @@ def send_password_email(email, password):
 
 def send_activation_email(user, password=None):
     """Odošle firme aktivačný e-mail s odkazom a voliteľným heslom."""
-    token = signer.sign(user.email)
+    token = activation_signer.sign(user.email)
     activation_link = f"{settings.FRONTEND_URL}/auth/activate/{token}/"
     subject = "Aktivácia firemného účtu – Študentská prax"
     message = (

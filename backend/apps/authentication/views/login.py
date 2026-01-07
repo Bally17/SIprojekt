@@ -46,6 +46,9 @@ def login_view(request):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        if not user.is_active:
+            return Response({"error": "inactive_user"}, status=status.HTTP_403_FORBIDDEN)
+
         return Response(_build_login_response(user), status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

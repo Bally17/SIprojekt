@@ -369,7 +369,13 @@ def oauth_clients(request):
     GET: Zoznam aktívnych OAuth klientov.
     POST: Vytvorenie nového klienta (len rola garant).
     """
+    user = request.user
     if request.method == "GET":
+        if getattr(user, "rola", "") != User.ROLE_GARANT:
+            return Response(
+                {"detail": "Prístup je povolený len používateľom s rolou garant."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         clients = OAuthClient.objects.filter(is_active=True)
         data = []
         for client in clients:
@@ -383,7 +389,6 @@ def oauth_clients(request):
             )
         return Response(data)
 
-    user = request.user
     if getattr(user, "rola", "") != User.ROLE_GARANT:
         return Response(
             {"detail": "Prístup je povolený len používateľom s rolou garant."},
