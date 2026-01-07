@@ -25,11 +25,17 @@ AUTH_USER_MODEL = 'users.User'
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-in-production')
 DEBUG = env_bool('DEBUG', DJANGO_ENV != 'production')
+if not DEBUG and SECRET_KEY == 'django-insecure-change-in-production':
+    raise RuntimeError("SECRET_KEY must be set in production.")
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Frontend URL (DEV: localhost:3000)
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+GITHUB_REDIRECT_URI = os.getenv(
+    'GITHUB_REDIRECT_URI',
+    'http://localhost:8000/api/auth/github/callback/',
+)
 
 # -----------------------------------------------------------------------------
 # APLIKÁCIE
@@ -152,6 +158,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+DOCUMENT_MAX_UPLOAD_SIZE = int(os.getenv("DOCUMENT_MAX_UPLOAD_SIZE", 10 * 1024 * 1024))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

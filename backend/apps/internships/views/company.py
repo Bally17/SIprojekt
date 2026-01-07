@@ -37,7 +37,11 @@ def company_my_internships(request):
     if not user.firma_id:
         return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
 
-    internships = Prax.objects.filter(firma_id=user.firma_id).select_related("student", "garant")
+    internships = (
+        Prax.objects.filter(firma_id=user.firma_id)
+        .select_related("student", "garant")
+        .order_by("-vytvorene_at")
+    )
 
     rok = request.query_params.get("rok")
     stav = request.query_params.get("stav")
@@ -80,8 +84,10 @@ def company_pending_internships(request):
     if not user.firma_id:
         return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
 
-    internships = Prax.objects.filter(firma_id=user.firma_id, stav__iexact=Prax.STAV_VYTVORENA).select_related(
-        "student", "garant"
+    internships = (
+        Prax.objects.filter(firma_id=user.firma_id, stav__iexact=Prax.STAV_VYTVORENA)
+        .select_related("student", "garant")
+        .order_by("-vytvorene_at")
     )
 
     paginator = PageNumberPagination()

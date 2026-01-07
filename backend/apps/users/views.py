@@ -109,6 +109,13 @@ def search_students(request):
     """
     Vyhľadá študentov podľa mena, priezviska alebo emailu.
     """
+    user = request.user
+    if getattr(user, "rola", "") != User.ROLE_GARANT:
+        return Response(
+            {"detail": "Prístup je povolený len používateľom s rolou garant."},
+            status=403,
+        )
+
     query = (request.query_params.get('q') or "").strip()
     if len(query) < 2:
         return Response({"results": []})
