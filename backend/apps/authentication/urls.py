@@ -13,6 +13,7 @@ urlpatterns = [
     path('login/company/', views.company_login_view, name='company-login'),
     path('login/garant/', views.garant_login_view, name='garant-login'),
     path('google/', views.google_auth, name='google-auth'),
+    path('register/company/google/', views.google_company_register, name='company-google-registration'),
     path('profile/', views.profile, name='profile'),
     path('profile/missing/', views.profile_missing_fields, name='profile-missing-fields'),
     path('logout/', views.logout_view, name='logout'),
@@ -31,6 +32,8 @@ urlpatterns = [
     # Student and Company registration
     path('register/student/', StudentRegistrationView.as_view(), name='student-registration'),
     path('register/company/', CompanyRegistrationView.as_view(), name='company-registration'),
+    path('register/company/complete/', views.company_profile_complete, name='company-profile-complete'),
+    path('register/company/github/', views.github_company_register, name='company-github-registration'),
 
     # Reset password routes
     path('password/reset/', views.password_reset_request, name='password-reset'),

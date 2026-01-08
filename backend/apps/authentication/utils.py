@@ -3,10 +3,10 @@ import secrets
 import string
 from django.core.mail import send_mail
 from django.conf import settings
-from django.core.signing import Signer
+from django.core.signing import TimestampSigner
 
 # ---- tvoje pôvodné utily ----------------------------------------------------
-signer = Signer()
+activation_signer = TimestampSigner()
 
 def generate_random_password(length=10):
     """Vygeneruje náhodné bezpečné heslo (kombinácia písmen, čísiel a symbolov)."""
@@ -30,7 +30,7 @@ def send_password_email(email, password):
 
 def send_activation_email(user, password=None):
     """Odošle firme aktivačný e-mail s odkazom a voliteľným heslom."""
-    token = signer.sign(user.email)
+    token = activation_signer.sign(user.email)
     activation_link = f"{settings.FRONTEND_URL}/auth/activate/{token}/"
     subject = "Aktivácia firemného účtu – Študentská prax"
     message = (
@@ -63,6 +63,8 @@ def send_password_reset_email(user, reset_link):
 
 # ---- JWT cez HttpOnly cookies (nové) ----------------------------------------
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.settings import api_settings
 
 # Názvy a parametre cookies
 ACCESS_COOKIE_NAME = "access"
@@ -136,3 +138,20 @@ class CookieJWTAuthentication(JWTAuthentication):
             validated_token = self.get_validated_token(raw_token)
             return self.get_user(validated_token), validated_token
         return super().authenticate(request)
+
+
+class AllowInactiveJWTAuthentication(JWTAuthentication):
+    """JWT auth that allows inactive users (used for profile completion)."""
+
+    def get_user(self, validated_token):
+        try:
+            user_id = validated_token[api_settings.USER_ID_CLAIM]
+        except KeyError as exc:
+            raise AuthenticationFailed("Invalid token", code="token_not_valid") from exc
+
+        try:
+            user = self.user_model.objects.get(**{api_settings.USER_ID_FIELD: user_id})
+        except self.user_model.DoesNotExist as exc:
+            raise AuthenticationFailed("User not found", code="user_not_found") from exc
+
+        return user

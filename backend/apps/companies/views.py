@@ -78,7 +78,7 @@ def company_internships_overview(request, company_id):
         return Response({"error": "Prístup povolený len garantom alebo firme ku vlastným praxiam."},
                         status=status.HTTP_403_FORBIDDEN)
 
-    internships = Prax.objects.filter(firma=company).select_related('student')
+    internships = Prax.objects.filter(firma=company).select_related('student').order_by("-vytvorene_at")
 
     # --- Filtrovanie ---
     rok = request.query_params.get('rok')

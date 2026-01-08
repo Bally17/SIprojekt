@@ -11,7 +11,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import User
 
 signer = Signer()
+activation_signer = TimestampSigner()
 password_reset_signer = TimestampSigner()
+ACTIVATION_TOKEN_MAX_AGE = 48 * 3600  # 48 hours
 PASSWORD_RESET_TOKEN_MAX_AGE = 3600  # seconds
 
 

@@ -19,14 +19,16 @@ from .garant import GARANT_LIST_FILTERS, init_csv_response
 
 
 class InternshipViewSet(viewsets.ModelViewSet):
-    queryset = Prax.objects.select_related("student", "student__studentprofil", "firma", "garant").all()
+    queryset = Prax.objects.select_related(
+        "student", "student__studentprofil", "firma", "garant"
+    ).order_by("-vytvorene_at")
     serializer_class = InternshipSerializer
     permission_classes = [IsAuthenticated, IsGarantOrRelatedInternship]
 
     def get_queryset(self):
         """Limit praxe na tie, kde je používateľ účastníkom, alebo garant vidí všetko."""
         user = getattr(self.request, "user", None)
-        qs = super().get_queryset()
+        qs = super().get_queryset().order_by("-vytvorene_at")
         role = getattr(user, "rola", "") or ""
 
         if role == "garant":
@@ -47,7 +49,7 @@ class InternshipHistoryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """História len pre praxe, kde je používateľ účastníkom, alebo garant."""
         user = getattr(self.request, "user", None)
-        qs = super().get_queryset().select_related("prax")
+        qs = super().get_queryset().select_related("prax").order_by("-zmena_at")
         role = getattr(user, "rola", "") or ""
 
         if role == "garant":

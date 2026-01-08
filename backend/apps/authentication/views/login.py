@@ -1,14 +1,18 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from ..serializers import LoginSerializer
+from ..utils import AllowInactiveJWTAuthentication
 from .helpers import get_tokens_for_user, get_user_data
 from apps.users.models import User
+from apps.companies.models import Firma
 
 
 def _build_login_response(user):
@@ -41,6 +45,9 @@ def login_view(request):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        if not user.is_active:
+            return Response({"error": "inactive_user"}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(_build_login_response(user), status=status.HTTP_200_OK)
 
@@ -112,7 +119,31 @@ def profile(request):
     return Response({"user": user_data})
 
 
+@swagger_auto_schema(
+    methods=["get"],
+    operation_summary="Get user profile with missing required fields",
+    operation_description=(
+        "Returns user data plus list of missing required fields. "
+        "For companies, checks company/contact fields; for others, checks basic profile fields."
+    ),
+    responses={
+        200: openapi.Response(
+            description="User data with missing_required_fields list.",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "user": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "missing_required_fields": openapi.Schema(
+                        type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING)
+                    ),
+                },
+            ),
+        ),
+        401: "Unauthorized",
+    },
+)
 @api_view(["GET"])
+@authentication_classes([AllowInactiveJWTAuthentication])
 @permission_classes([IsAuthenticated])
 def profile_missing_fields(request):
     """
@@ -120,6 +151,37 @@ def profile_missing_fields(request):
     Useful after OAuth (GitHub/Google) to prompt user to complete data.
     """
     user = request.user
+    if user.rola == User.ROLE_FIRMA:
+        required_fields = [
+            "nazov",
+            "kontaktna_osoba_meno",
+            "kontaktna_osoba_email",
+            "kontaktna_osoba_telefon",
+            "adresa",
+        ]
+        firma = None
+        if user.firma_id:
+            firma = Firma.objects.filter(id=user.firma_id).first()
+
+        missing = []
+        if not (firma and firma.nazov):
+            missing.append("nazov")
+
+        kontaktne_meno = " ".join(part for part in [user.meno, user.priezvisko] if part).strip()
+        if not kontaktne_meno and not (firma and firma.kontakt_meno):
+            missing.append("kontaktna_osoba_meno")
+
+        if not (user.alternativny_email or (firma and firma.kontakt_email)):
+            missing.append("kontaktna_osoba_email")
+
+        if not (user.telefon or (firma and firma.kontakt_telefon)):
+            missing.append("kontaktna_osoba_telefon")
+
+        if not (user.adresa or (firma and firma.adresa)):
+            missing.append("adresa")
+
+        return Response({"user": get_user_data(user), "missing_required_fields": missing})
+
     required_fields = ["meno", "priezvisko", "telefon", "adresa"]
     missing = [field for field in required_fields if not getattr(user, field)]
     return Response({"user": get_user_data(user), "missing_required_fields": missing})
