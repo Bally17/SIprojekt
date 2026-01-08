@@ -9,6 +9,7 @@ import { useLocalization } from "@i18n/client";
 const STORAGE_KEYS = {
   googleState: "google_oauth_state",
   googleVerifier: "google_code_verifier",
+  googleFlow: "google_oauth_flow",
 } as const;
 
 function base64UrlEncode(buf: ArrayBuffer) {
@@ -44,6 +45,7 @@ const GoogleGithubActionBtns = () => {
 
     sessionStorage.setItem(STORAGE_KEYS.googleState, state);
     sessionStorage.setItem(STORAGE_KEYS.googleVerifier, codeVerifier);
+    sessionStorage.setItem(STORAGE_KEYS.googleFlow, "company");
 
     const params = new URLSearchParams({
       client_id: clientId,

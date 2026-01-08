@@ -61,6 +61,25 @@ export type ChangePasswordResponse = {
   user?: ProfileUser | null;
 };
 
+export type MissingProfileFieldsResponse = {
+  user?: ProfileUser | null;
+  missing_required_fields?: string[];
+};
+
+export type CompanyProfileCompletePayload = {
+  nazov: string;
+  kontaktna_osoba_meno: string;
+  kontaktna_osoba_email: string;
+  kontaktna_osoba_telefon: string;
+  adresa: string;
+};
+
+export type CompanyProfileCompleteResponse = {
+  status?: string;
+  user?: ProfileUser | null;
+  firma?: unknown;
+};
+
 export type ProfileResponse = {
   user?: ProfileUser | null;
 };

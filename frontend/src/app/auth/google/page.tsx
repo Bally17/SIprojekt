@@ -2,20 +2,42 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BASE_URL } from "@constants";
+import { BASE_URL, ENDPOINTS } from "@constants";
 import { setAuthTokens } from "@lib/ApiProvider";
+import { useSystemNotifications } from "@components/notifications";
+import { useLocalization } from "@i18n/client";
 
 type OAuthStatus = "pending" | "success" | "error";
 
 const STORAGE_KEYS = {
   googleState: "google_oauth_state",
   googleVerifier: "google_code_verifier",
+  googleFlow: "google_oauth_flow",
 } as const;
+
+const REDIRECT_AFTER_SUCCESS = "/auth/login";
+const AUTO_REDIRECT_MS = 0; // 0 = nikdy automaticky, len tlacidlo
 
 export default function GoogleCallbackPage() {
   const router = useRouter();
+  const { msgs } = useLocalization();
+  const { success: notifySuccess, info: notifyInfo } = useSystemNotifications();
   const [status, setStatus] = useState<OAuthStatus>("pending");
-  const [message, setMessage] = useState("Dokončujem prihlásenie cez Google...");
+  const [message, setMessage] = useState(msgs.auth.googleProcessing);
+  const [redirectUrl, setRedirectUrl] = useState<string>(REDIRECT_AFTER_SUCCESS);
+
+  const {
+    googleRegisterSuccessTitle,
+    googleRegisterSuccessDescription,
+    googleProfileCompleteTitle,
+    googleProfileCompleteDescription,
+    googleLoginSuccessMessage,
+    googleContinue,
+    goToLogin,
+    googleProcessing,
+    googleLoginFailed,
+    googleInvalidState,
+  } = msgs.auth;
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -25,8 +47,8 @@ export default function GoogleCallbackPage() {
 
     const expectedState = sessionStorage.getItem(STORAGE_KEYS.googleState);
     const codeVerifier = sessionStorage.getItem(STORAGE_KEYS.googleVerifier);
+    const flow = sessionStorage.getItem(STORAGE_KEYS.googleFlow);
 
-    // vyčisti URL (aby si nemal code/state v histórii)
     window.history.replaceState({}, document.title, "/auth/google");
 
     const finishError = (msg: string) => {
@@ -36,17 +58,23 @@ export default function GoogleCallbackPage() {
 
     const exchange = async () => {
       try {
+        setMessage(googleProcessing);
+
         if (error || !code || !returnedState) {
-          finishError("Google prihlásenie zlyhalo. Skúste to znova.");
+          finishError(googleLoginFailed);
           return;
         }
 
         if (!expectedState || returnedState !== expectedState || !codeVerifier) {
-          finishError("Neplatný OAuth stav (state). Skúste to znova.");
+          finishError(googleInvalidState);
           return;
         }
 
-        const res = await fetch(`${BASE_URL}/auth/google/`, {
+        const endpoint =
+          flow === "company"
+            ? `${BASE_URL}${ENDPOINTS.GOOGLE_COMPANY_REGISTER}`
+            : `${BASE_URL}${ENDPOINTS.GOOGLE_LOGIN}`;
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -58,8 +86,14 @@ export default function GoogleCallbackPage() {
 
         const raw = await res.text();
         if (!res.ok) {
-          // ukáž reálny backend error (pomôže debugovať)
-          finishError(raw || `Google login failed (${res.status})`);
+          let backendMessage = "";
+          try {
+            const parsed = raw ? JSON.parse(raw) : null;
+            backendMessage = parsed?.error ?? parsed?.message ?? "";
+          } catch {
+            backendMessage = "";
+          }
+          finishError(backendMessage || googleLoginFailed);
           return;
         }
 
@@ -69,29 +103,70 @@ export default function GoogleCallbackPage() {
         }
 
         setStatus("success");
-        setMessage("Úspešne prihlásený, presmerovávam...");
-        router.replace("/");
+        setMessage(googleLoginSuccessMessage);
+        setRedirectUrl(REDIRECT_AFTER_SUCCESS);
+
+        notifySuccess({
+          title: googleRegisterSuccessTitle,
+          description: googleRegisterSuccessDescription,
+        });
+        notifyInfo({
+          title: googleProfileCompleteTitle,
+          description: googleProfileCompleteDescription,
+        });
+
+        if (AUTO_REDIRECT_MS > 0) {
+          window.setTimeout(() => router.replace(REDIRECT_AFTER_SUCCESS), AUTO_REDIRECT_MS);
+        }
       } catch {
-        finishError("Google prihlásenie zlyhalo. Skúste to znova.");
+        finishError(googleLoginFailed);
       } finally {
         sessionStorage.removeItem(STORAGE_KEYS.googleState);
         sessionStorage.removeItem(STORAGE_KEYS.googleVerifier);
+        sessionStorage.removeItem(STORAGE_KEYS.googleFlow);
       }
     };
 
     void exchange();
-  }, [router]);
+  }, [
+    router,
+    notifySuccess,
+    notifyInfo,
+    googleRegisterSuccessTitle,
+    googleRegisterSuccessDescription,
+    googleProfileCompleteTitle,
+    googleProfileCompleteDescription,
+    googleLoginSuccessMessage,
+    googleContinue,
+    goToLogin,
+    googleProcessing,
+    googleLoginFailed,
+    googleInvalidState,
+  ]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md rounded-lg bg-white p-6 text-center shadow">
         <p className="text-lg font-semibold text-ink-900">{message}</p>
+
+        {status === "success" ? (
+          <div className="mt-4 space-y-2">
+            <button
+              type="button"
+              onClick={() => router.replace(redirectUrl)}
+              className="inline-flex w-full items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+            >
+              {googleContinue}
+            </button>
+          </div>
+        ) : null}
+
         {status === "error" ? (
           <a
             href="/auth/login"
-            className="mt-4 inline-flex items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+            className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
           >
-            Späť na prihlásenie
+            {goToLogin}
           </a>
         ) : null}
       </div>

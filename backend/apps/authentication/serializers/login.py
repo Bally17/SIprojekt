@@ -31,8 +31,9 @@ class LoginSerializer(serializers.Serializer):
 
 
 class GoogleAuthSerializer(serializers.Serializer):
-    access_token = serializers.CharField(required=True)
-    id_token = serializers.CharField(required=False)
+    code = serializers.CharField(required=True)
+    code_verifier = serializers.CharField(required=True)
+    redirect_uri = serializers.CharField(required=True)
 
 
 class GitHubAuthSerializer(serializers.Serializer):

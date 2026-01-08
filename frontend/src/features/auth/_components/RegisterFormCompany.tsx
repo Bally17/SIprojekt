@@ -4,6 +4,7 @@ import { Button } from "@components/button";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 import { getErrorMessage } from "@utils/errorActions";
+import { useRef } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { useRegisterCompanyMutation } from "../hooks";
 import { RHFInput } from "@components/input";
@@ -12,6 +13,7 @@ import { input } from "@constants";
 import GoogleGithubActionBtns from "./GoogleGithubActionBtns";
 
 export default function RegisterFormCompany() {
+  const formRef = useRef<HTMLFormElement | null>(null);
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
   const mutation = useRegisterCompanyMutation();
@@ -69,6 +71,7 @@ export default function RegisterFormCompany() {
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit(onSubmit, onInvalid)}
       className="bg-white shadow-md rounded-lg p-6 space-y-4 max-w-md mx-auto"
     >
