@@ -9,6 +9,7 @@ import { useRegisterCompanyMutation } from "../hooks";
 import { RHFInput } from "@components/input";
 import { RegisterCompanyFormState } from "@shared-types/index";
 import { input } from "@constants";
+import GoogleGithubActionBtns from "./GoogleGithubActionBtns";
 
 export default function RegisterFormCompany() {
   const { msgs } = useLocalization();
@@ -155,6 +156,8 @@ export default function RegisterFormCompany() {
       >
         {mutation.isPending ? msgs.auth.submitting : msgs.auth.registerCompany}
       </Button>
+
+      <GoogleGithubActionBtns />
     </form>
   );
 }
