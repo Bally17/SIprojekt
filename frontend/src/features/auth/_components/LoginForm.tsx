@@ -8,7 +8,7 @@ import { useLocalization } from "@i18n/client";
 import { useAuth } from "@lib/AuthProvider";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { getErrorMessage } from "@utils/errorActions";
-import { input } from "@constants";
+import { BASE_URL, input } from "@constants";
 import AuthDashboard, { useAuthDashboard } from "@auth/screens/AuthDashboard";
 import { RHFInput } from "@components/input";
 
@@ -16,6 +16,31 @@ type LoginFormState = {
   email: string;
   password: string;
 };
+
+const STORAGE_KEYS = {
+  googleState: "google_oauth_state",
+  googleVerifier: "google_code_verifier",
+} as const;
+
+const COMPANY_ROLE = "company" as const;
+
+function base64UrlEncode(buf: ArrayBuffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+async function sha256(text: string) {
+  const data = new TextEncoder().encode(text);
+  return crypto.subtle.digest("SHA-256", data);
+}
+
+function randomString(byteLen = 64) {
+  const bytes = new Uint8Array(byteLen);
+  crypto.getRandomValues(bytes);
+  return base64UrlEncode(bytes.buffer);
+}
 
 function LoginFormInner() {
   const { userType, isCompany } = useAuthDashboard();
@@ -68,12 +93,39 @@ function LoginFormInner() {
     notifyWarning({ title: msgs.auth.errorTitle, description: firstMessage });
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8000/auth/google/login/";
+  const handleGoogleLogin = async () => {
+    if (!isCompany) return;
+
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) return;
+
+    const redirectUri = `${window.location.origin}/auth/google`;
+
+    const state = randomString(32);
+    const codeVerifier = randomString(64);
+    const codeChallenge = base64UrlEncode(await sha256(codeVerifier));
+
+    sessionStorage.setItem("google_oauth_state", state);
+    sessionStorage.setItem("google_code_verifier", codeVerifier);
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "openid profile email",
+      state,
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+      prompt: "consent",
+    });
+
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
   const handleGithubLogin = () => {
-    window.location.href = "http://localhost:8000/auth/github/login/";
+    window.location.href = `${BASE_URL}/auth/github/?next=${encodeURIComponent(
+      window.location.origin + "/auth/login",
+    )}`;
   };
 
   return (
