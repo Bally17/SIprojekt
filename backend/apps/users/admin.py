@@ -34,7 +34,7 @@ class AuditLogAdmin(admin.ModelAdmin):
 class UserAdmin(admin.ModelAdmin):
     list_display = (
         "id", "email", "rola", "meno", "priezvisko",
-        "aktivny", "email_overeny", "musi_zmenit_heslo",
+        "aktivny", "email_overeny", "heslo_bolo_aktualizovane",
         "firma_id", "posledne_prihlasenie", "vytvorene_at",
     )
     list_filter = ("rola", "aktivny", "email_overeny", "musi_zmenit_heslo")
@@ -91,6 +91,10 @@ class UserAdmin(admin.ModelAdmin):
                 other = queryset.exclude(id__in=garant_qs.values("id"))
                 return super().delete_queryset(request, other)
         return super().delete_queryset(request, queryset)
+
+    @admin.display(boolean=True, description="Heslo bolo aktualizované")
+    def heslo_bolo_aktualizovane(self, obj):
+        return not obj.musi_zmenit_heslo
 
     @transaction.atomic
     def save_model(self, request, obj, form, change):
