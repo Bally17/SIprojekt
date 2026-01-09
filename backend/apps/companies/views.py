@@ -6,6 +6,8 @@ from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db.models import Q
+from django.conf import settings
+from django.core.cache import cache
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 from .models import Firma
@@ -14,6 +16,7 @@ from apps.internships.models import Prax
 from apps.users.serializers import StudentProfileSerializer
 from apps.internships.serializers import InternshipSerializer
 from apps.internships.permissions import IsGarantOrReadOnlyCompany
+from apps.cache_utils import build_cache_key
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -78,6 +81,11 @@ def company_internships_overview(request, company_id):
         return Response({"error": "Prístup povolený len garantom alebo firme ku vlastným praxiam."},
                         status=status.HTTP_403_FORBIDDEN)
 
+    cache_key = build_cache_key("firma:overview", request.query_params, user=request.user, extra=company_id)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached, status=status.HTTP_200_OK)
+
     internships = Prax.objects.filter(firma=company).select_related('student').order_by("-vytvorene_at")
 
     # --- Filtrovanie ---
@@ -126,6 +134,7 @@ def company_internships_overview(request, company_id):
 
     }
 
+    cache.set(cache_key, data, getattr(settings, "CACHE_TTL_LIST", 120))
     return Response(data, status=status.HTTP_200_OK)
 
 
@@ -173,9 +182,16 @@ def search_companies(request):
         return Response({"error": "Prístup povolený len prihláseným používateľom (študent/firma/garant)."},
                         status=status.HTTP_403_FORBIDDEN)
 
+    cache_key = build_cache_key("firma:search", request.query_params, user=request.user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     query = request.query_params.get('q', '').strip()
     if not query:
-        return Response({"results": []}, status=status.HTTP_200_OK)
+        payload = {"results": []}
+        cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
+        return Response(payload, status=status.HTTP_200_OK)
 
     firms = Firma.objects.filter(
         Q(nazov__icontains=query) |
@@ -184,4 +200,8 @@ def search_companies(request):
         Q(kontakt_email__icontains=query)
     )[:10]
 
-    return Response({"results": CompanySerializer(firms, many=True).data})
+    payload = {"results": CompanySerializer(firms, many=True).data}
+    cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
+    return Response(payload)
+from django.conf import settings
+from django.core.cache import cache

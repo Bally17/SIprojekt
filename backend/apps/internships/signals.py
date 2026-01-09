@@ -1,7 +1,8 @@
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 from apps.internships.models import Prax, HistoriaStavovPraxe
 from apps.notifications.models import Notifikacie
+from apps.cache_utils import invalidate_prax_cache
 
 STATUS_TEMPLATE_PRACTICE = "prax_zmena_stavu"
 
@@ -85,3 +86,13 @@ def create_notification_on_status_change(sender, instance, created, **kwargs):
         delattr(instance, "_changed_by")
     if hasattr(instance, "_status_change_note"):
         delattr(instance, "_status_change_note")
+
+
+@receiver(post_save, sender=Prax)
+def invalidate_prax_cache_on_save(sender, instance, **kwargs):
+    invalidate_prax_cache(instance.id)
+
+
+@receiver(post_delete, sender=Prax)
+def invalidate_prax_cache_on_delete(sender, instance, **kwargs):
+    invalidate_prax_cache(instance.id)

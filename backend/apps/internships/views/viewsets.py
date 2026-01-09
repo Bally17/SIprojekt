@@ -1,6 +1,8 @@
 import csv
 
 from django.db.models import Q
+from django.conf import settings
+from django.core.cache import cache
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +18,7 @@ from ..serializers import (
     InternshipSerializer,
 )
 from .garant import GARANT_LIST_FILTERS, init_csv_response
+from apps.cache_utils import build_cache_key
 
 
 class InternshipViewSet(viewsets.ModelViewSet):
@@ -89,7 +92,22 @@ class GarantInternshipViewSet(
         },
     )
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        cache_key = build_cache_key("praxe:list:garant", request.query_params, user=request.user)
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+            return response
+
+        serializer = self.get_serializer(queryset, many=True)
+        cache.set(cache_key, serializer.data, getattr(settings, "CACHE_TTL_LIST", 120))
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Garant: Detail praxe",
@@ -99,7 +117,15 @@ class GarantInternshipViewSet(
         },
     )
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        cache_key = f"praxe:detail:{kwargs.get('pk')}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        response = super().retrieve(request, *args, **kwargs)
+        if response.status_code == 200:
+            cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_DETAIL", 300))
+        return response
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -246,3 +272,5 @@ class GarantInternshipViewSet(
             )
 
         return response
+from django.conf import settings
+from django.core.cache import cache

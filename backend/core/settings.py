@@ -110,12 +110,30 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # -----------------------------------------------------------------------------
 # CACHE
 # -----------------------------------------------------------------------------
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+REDIS_URL = os.getenv('REDIS_URL')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': 'si_projekt',
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
+
+CACHE_TTL_DETAIL = int(os.getenv('CACHE_TTL_DETAIL', 300))
+CACHE_TTL_LIST = int(os.getenv('CACHE_TTL_LIST', 120))
+CACHE_TTL_SEARCH = int(os.getenv('CACHE_TTL_SEARCH', 180))
+CACHE_TTL_STATS = int(os.getenv('CACHE_TTL_STATS', 600))
 
 # -----------------------------------------------------------------------------
 # DATABÁZA

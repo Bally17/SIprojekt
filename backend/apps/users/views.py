@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import User, StudentProfil, GarantProfil
+from django.conf import settings
+from django.core.cache import cache
 from .serializers import (
     UserSerializer,
     StudentProfileSerializer,
@@ -13,6 +15,7 @@ from .serializers import (
     GarantAccountSerializer,
 )
 from apps.internships.permissions import IsGarantUser
+from apps.cache_utils import build_cache_key
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -116,9 +119,16 @@ def search_students(request):
             status=403,
         )
 
+    cache_key = build_cache_key("student:search", request.query_params, user=request.user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     query = (request.query_params.get('q') or "").strip()
     if len(query) < 2:
-        return Response({"results": []})
+        payload = {"results": []}
+        cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
+        return Response(payload)
 
     students = (
         StudentProfil.objects.select_related("pouzivatel")
@@ -129,4 +139,6 @@ def search_students(request):
         )[:10]
     )
 
-    return Response({"results": StudentProfileSerializer(students, many=True).data})
+    payload = {"results": StudentProfileSerializer(students, many=True).data}
+    cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
+    return Response(payload)

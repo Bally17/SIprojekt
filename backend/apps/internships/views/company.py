@@ -1,4 +1,6 @@
 from django.db import transaction
+from django.conf import settings
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -9,6 +11,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.users.serializers import UserSerializer
 from apps.users.models import User
+from apps.cache_utils import build_cache_key
 
 from ..models import HistoriaStavovPraxe, Prax
 from ..serializers import InternshipSerializer
@@ -37,6 +40,11 @@ def company_my_internships(request):
     if not user.firma_id:
         return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
 
+    cache_key = build_cache_key("praxe:list:company", request.query_params, user=user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     internships = (
         Prax.objects.filter(firma_id=user.firma_id)
         .select_related("student", "garant")
@@ -63,7 +71,9 @@ def company_my_internships(request):
         "internships": InternshipSerializer(result_page, many=True).data,
     }
 
-    return paginator.get_paginated_response(data)
+    response = paginator.get_paginated_response(data)
+    cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+    return response
 
 
 @swagger_auto_schema(
@@ -84,6 +94,11 @@ def company_pending_internships(request):
     if not user.firma_id:
         return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
 
+    cache_key = build_cache_key("praxe:list:company:pending", request.query_params, user=user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     internships = (
         Prax.objects.filter(firma_id=user.firma_id, stav__iexact=Prax.STAV_VYTVORENA)
         .select_related("student", "garant")
@@ -99,7 +114,9 @@ def company_pending_internships(request):
         "internships": InternshipSerializer(result_page, many=True).data,
     }
 
-    return paginator.get_paginated_response(data)
+    response = paginator.get_paginated_response(data)
+    cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+    return response
 
 
 @swagger_auto_schema(
@@ -192,3 +209,5 @@ def company_reject_internship(request, prax_id):
         )
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
+from django.conf import settings
+from django.core.cache import cache
