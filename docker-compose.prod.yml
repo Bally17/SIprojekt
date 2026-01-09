@@ -18,6 +18,7 @@ services:
       - DOCKER_CONTAINER=True
     depends_on:
       - db
+      - redis
     expose:
       - "8000"
     restart: always
@@ -35,6 +36,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
+    restart: always
+    networks:
+      - moja-network
+
+  redis:
+    image: redis:7-alpine
     restart: always
     networks:
       - moja-network

@@ -14,6 +14,7 @@ services:
       - DOCKER_CONTAINER=True
     depends_on:
       - db
+      - redis
     volumes:
       - ./backend:/app # len raz!
     entrypoint: ["sh", "/app/entrypoint.sh"]
@@ -31,6 +32,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
+    networks:
+      - moja-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
     networks:
       - moja-network
 
