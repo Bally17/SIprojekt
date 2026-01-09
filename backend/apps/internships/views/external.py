@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.db.models import Q
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -13,6 +14,7 @@ from django.conf import settings
 from ..models import Prax
 from ..serializers import ExternalDefenseSerializer, InternshipSerializer
 from apps.users.models import User
+from apps.cache_utils import build_cache_key
 
 
 @swagger_auto_schema(
@@ -97,6 +99,11 @@ def external_list_internships(request):
     if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
         return Response({"error": "Prístup povolený len pre externých integrátorov."}, status=status.HTTP_403_FORBIDDEN)
 
+    cache_key = build_cache_key("praxe:list:external", request.query_params, user=user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     qs = (
         Prax.objects.select_related("student", "student__studentprofil", "firma", "garant")
         .all()
@@ -131,4 +138,7 @@ def external_list_internships(request):
     paginator.page_size = getattr(settings, "REST_FRAMEWORK", {}).get("PAGE_SIZE", 20)
     page = paginator.paginate_queryset(qs, request)
     serializer = InternshipSerializer(page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+    response = paginator.get_paginated_response(serializer.data)
+    cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+    return response
+from django.core.cache import cache

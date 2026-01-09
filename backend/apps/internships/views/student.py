@@ -1,4 +1,6 @@
 from django.db import IntegrityError, transaction
+from django.conf import settings
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -14,6 +16,7 @@ from ..serializers import InternshipSerializer, StudentCreateInternshipSerialize
 from apps.companies.models import Firma
 from .garant import _pick_garant
 from apps.users.models import User
+from apps.cache_utils import build_cache_key
 
 
 @swagger_auto_schema(
@@ -61,10 +64,17 @@ def me_internships(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
+    cache_key = build_cache_key("praxe:list:student", request.query_params, user=user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     praxe = Prax.objects.filter(student=user).select_related("firma", "garant").order_by("-vytvorene_at")
 
     if not praxe.exists():
-        return Response({"message": "Študent zatiaľ nemá žiadne praxe."}, status=200)
+        payload = {"message": "Študent zatiaľ nemá žiadne praxe."}
+        cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_LIST", 120))
+        return Response(payload, status=200)
 
     paginator = PageNumberPagination()
     paginator.page_size = 10
@@ -125,7 +135,9 @@ def me_internships(request):
         "internships": result,
     }
 
-    return paginator.get_paginated_response(response_data)
+    response = paginator.get_paginated_response(response_data)
+    cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+    return response
 
 
 @swagger_auto_schema(
@@ -262,3 +274,5 @@ def create_internship(request):
         )
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_201_CREATED)
+from django.conf import settings
+from django.core.cache import cache
