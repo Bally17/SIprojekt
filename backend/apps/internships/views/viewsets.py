@@ -6,6 +6,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -145,16 +146,38 @@ class GarantInternshipViewSet(
         firma_text = params.get("firma")
         study_program = params.get("odbor") or params.get("study_program")
 
+        # Zakladna validacia filtrov z query parametrov (ochrana proti neplatnym hodnotam)
+        allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
+        allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
+
         if rok:
-            queryset = queryset.filter(rok=rok)
+            try:
+                rok_value = int(rok)
+            except (TypeError, ValueError):
+                raise ValidationError({"rok": "Neplatný rok."})
+            queryset = queryset.filter(rok=rok_value)
         if semester:
-            queryset = queryset.filter(semester__iexact=semester)
+            semester_value = str(semester).lower()
+            if semester_value not in allowed_semester:
+                raise ValidationError({"semester": "Neplatný semester."})
+            queryset = queryset.filter(semester__iexact=semester_value)
         if stav:
-            queryset = queryset.filter(stav__iexact=stav)
+            stav_value = str(stav).lower()
+            if stav_value not in allowed_stav:
+                raise ValidationError({"stav": "Neplatný stav."})
+            queryset = queryset.filter(stav__iexact=stav_value)
         if student_id:
-            queryset = queryset.filter(student_id=student_id)
+            try:
+                student_id_value = int(student_id)
+            except (TypeError, ValueError):
+                raise ValidationError({"student_id": "Neplatné ID študenta."})
+            queryset = queryset.filter(student_id=student_id_value)
         if firma_id:
-            queryset = queryset.filter(firma_id=firma_id)
+            try:
+                firma_id_value = int(firma_id)
+            except (TypeError, ValueError):
+                raise ValidationError({"firma_id": "Neplatné ID firmy."})
+            queryset = queryset.filter(firma_id=firma_id_value)
         if student_text:
             queryset = queryset.filter(
                 Q(student__email__icontains=student_text)

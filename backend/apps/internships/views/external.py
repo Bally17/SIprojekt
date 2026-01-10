@@ -111,8 +111,14 @@ def external_list_internships(request):
     )
 
     stav = request.query_params.get("stav")
+    # Zakladna validacia filtrov z query parametrov
+    allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
+    allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
     if stav:
-        qs = qs.filter(stav__iexact=stav)
+        stav_value = str(stav).lower()
+        if stav_value not in allowed_stav:
+            return Response({"error": "Neplatný stav."}, status=status.HTTP_400_BAD_REQUEST)
+        qs = qs.filter(stav__iexact=stav_value)
 
     rok = request.query_params.get("rok")
     if rok:
@@ -123,7 +129,10 @@ def external_list_internships(request):
 
     semester = request.query_params.get("semester")
     if semester:
-        qs = qs.filter(semester__iexact=semester)
+        semester_value = str(semester).lower()
+        if semester_value not in allowed_semester:
+            return Response({"error": "Neplatný semester."}, status=status.HTTP_400_BAD_REQUEST)
+        qs = qs.filter(semester__iexact=semester_value)
 
     search = request.query_params.get("search")
     if search:
