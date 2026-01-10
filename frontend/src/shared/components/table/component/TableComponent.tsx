@@ -40,8 +40,8 @@ export const TableComponent = ({
   renderRow,
   columnCountOverride,
 }: TableProps) => {
-  const { subTitle, title, columns } = useLoadTableData(name);
-  const { msgs } = useLocalization();
+  const { msgs, locale } = useLocalization();
+  const { subTitle, title, columns } = useLoadTableData(name, locale);
   const [busy, setBusy] = useState<Record<number, Action | undefined>>({});
   const [docPreview, setDocPreview] = useState<Nullable<Internship>>(null);
 

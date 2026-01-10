@@ -17,9 +17,9 @@ const ChangeLanguage = () => {
         disabled={isLoading}
         onClick={() => setLangMenuOpen((prev) => !prev)}
         aria-label={msgs.common.language.switcher}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-white-50 hover:bg-primary-100"
+        className="flex h-10 w-10 items-center justify-center rounded-full border-primary-600 hover:border-primary-700 hover:bg-soft"
       >
-        <Icon name="globe" className="h-5 w-5" />
+        <Icon name="globe" className="h-5 w-5 text-primary-600" />
       </Button>
 
       {langMenuOpen && (
