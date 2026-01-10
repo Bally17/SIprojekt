@@ -1,14 +1,14 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes  # 🔥 musí byť tu hore
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from django.db.models import Q
+"""Company endpoints for CRUD, search, and internship overview."""
 from django.conf import settings
 from django.core.cache import cache
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.db.models import Q
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from .models import Firma
 from .serializers import CompanySerializer
@@ -20,14 +20,13 @@ from apps.cache_utils import build_cache_key
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
+    """CRUD for company records with role-aware access control."""
     queryset = Firma.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated, IsGarantOrReadOnlyCompany]
 
     def get_queryset(self):
-        """
-        Garant vidí všetky firmy, firemný používateľ len svoju firmu.
-        """
+        """Filter companies based on user role."""
         user = getattr(self.request, "user", None)
         if not user or not user.is_authenticated:
             return Firma.objects.none()
@@ -64,6 +63,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def company_internships_overview(request, company_id):
+    """Return company detail with filtered internships and pagination."""
     try:
         company = Firma.objects.get(id=company_id)
     except Firma.DoesNotExist:
@@ -118,20 +118,21 @@ def company_internships_overview(request, company_id):
         "next": paginator.get_next_link(),
         "previous": paginator.get_previous_link(),
         "results": [
-    {
-        "student": StudentProfileSerializer(getattr(i.student, "studentprofil", None)).data
-        if hasattr(i.student, "studentprofil")
-        else {
-            "id": i.student.id,
-            "meno": i.student.meno,
-            "priezvisko": i.student.priezvisko,
-            "email": i.student.email,
-        },
-        "internship": InternshipSerializer(i).data,
-    }
-    for i in result_page
-],
-
+            {
+                "student": (
+                    StudentProfileSerializer(getattr(i.student, "studentprofil", None)).data
+                    if hasattr(i.student, "studentprofil")
+                    else {
+                        "id": i.student.id,
+                        "meno": i.student.meno,
+                        "priezvisko": i.student.priezvisko,
+                        "email": i.student.email,
+                    }
+                ),
+                "internship": InternshipSerializer(i).data,
+            }
+            for i in result_page
+        ],
     }
 
     cache.set(cache_key, data, getattr(settings, "CACHE_TTL_LIST", 120))
@@ -172,9 +173,7 @@ def company_internships_overview(request, company_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search_companies(request):
-    """
-    🔍 Vyhľadávanie firiem (čiastočné aj úplné, vhodné pre autocomplete).
-    """
+    """Search companies by name or contact fields for autocomplete."""
     user = request.user
     role = getattr(user, "rola", "") or ""
     # Vyhľadávanie firiem potrebujú aj študenti pri zakladaní praxe
@@ -203,5 +202,3 @@ def search_companies(request):
     payload = {"results": CompanySerializer(firms, many=True).data}
     cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
     return Response(payload)
-from django.conf import settings
-from django.core.cache import cache

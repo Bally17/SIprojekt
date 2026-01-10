@@ -1,4 +1,4 @@
-# apps/users/admin.py
+"""Admin configuration for user models and audit logs."""
 from django.contrib import admin, messages
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction

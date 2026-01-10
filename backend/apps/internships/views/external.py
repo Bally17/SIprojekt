@@ -1,20 +1,20 @@
+"""External system endpoints for internship status updates and listing."""
+from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q
-from django.core.cache import cache
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 
-from django.conf import settings
-
+from apps.cache_utils import build_cache_key
+from apps.users.models import User
 from ..models import Prax
 from ..serializers import ExternalDefenseSerializer, InternshipSerializer
-from apps.users.models import User
-from apps.cache_utils import build_cache_key
 
 
 @swagger_auto_schema(
@@ -35,7 +35,7 @@ from apps.cache_utils import build_cache_key
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def external_mark_defended(request):
-    """Externý systém prepne prax zo stavu schvalena do stavu obhajena."""
+    """Mark an internship as defended for external integrations."""
     user = request.user
 
     if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
@@ -94,7 +94,7 @@ def external_mark_defended(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def external_list_internships(request):
-    """Externý integrátor alebo garant získa prehľad praxí."""
+    """List internships for external integrators or garants."""
     user = request.user
     if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
         return Response({"error": "Prístup povolený len pre externých integrátorov."}, status=status.HTTP_403_FORBIDDEN)
@@ -141,4 +141,3 @@ def external_list_internships(request):
     response = paginator.get_paginated_response(serializer.data)
     cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
     return response
-from django.core.cache import cache

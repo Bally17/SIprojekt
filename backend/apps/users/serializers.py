@@ -1,10 +1,11 @@
-# apps/users/serializers.py
+"""Serializers for user and profile data."""
 from rest_framework import serializers
 from .models import User, StudentProfil, GarantProfil
 from django.db import transaction
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Serialize core user fields for API responses."""
     class Meta:
         model = User
         fields = [
@@ -20,6 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
+    """Serialize student profile with user fields."""
     # Získame údaje z prepojeného používateľa
     id = serializers.IntegerField(source='pouzivatel.id', read_only=True)
     meno = serializers.CharField(source='pouzivatel.meno', read_only=True)
@@ -32,6 +34,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 
 
 class GarantProfileSerializer(serializers.ModelSerializer):
+    """Serialize garant profile with user fields."""
     id = serializers.IntegerField(source='pouzivatel.id', read_only=True)
     meno = serializers.CharField(source='pouzivatel.meno', read_only=True)
     priezvisko = serializers.CharField(source='pouzivatel.priezvisko', read_only=True)
@@ -43,10 +46,7 @@ class GarantProfileSerializer(serializers.ModelSerializer):
 
 
 class GarantAccountSerializer(serializers.ModelSerializer):
-    """
-    Používa sa na vytvorenie nového garanta (cred) a zobrazenie existujúcich.
-    Heslo je write-only a uloží sa do heslo_hash.
-    """
+    """Create and serialize garant accounts with password handling."""
 
     password = serializers.CharField(write_only=True, min_length=8)
     pracovisko = serializers.CharField(required=False, allow_blank=True, write_only=True)

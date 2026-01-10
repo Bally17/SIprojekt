@@ -1,3 +1,4 @@
+"""Garant-specific helpers and endpoint implementations."""
 import csv
 from typing import Optional
 
@@ -44,10 +45,7 @@ GARANT_LIST_FILTERS = [
 
 
 def _pick_garant():
-    """
-    Ak existuje aspoň jeden garant, uprednostníme ne-defaultného.
-    Inak použijeme defaultného garanta podľa ENV, ak existuje.
-    """
+    """Return a non-default garant if available, otherwise any garant."""
     default_email = getattr(settings, "DEFAULT_GARANT_EMAIL", None)
     garants = User.objects.filter(rola=User.ROLE_GARANT, aktivny=True)
     if not garants.exists():
@@ -64,6 +62,7 @@ def _pick_garant():
 
 
 def init_csv_response(filename_prefix: str) -> HttpResponse:
+    """Return an HttpResponse configured for CSV download."""
     timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{filename_prefix}_{timestamp}.csv"
     response = HttpResponse(content_type="text/csv")

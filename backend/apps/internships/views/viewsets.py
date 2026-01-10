@@ -1,14 +1,15 @@
-import csv
-
-from django.db.models import Q
+"""Viewsets for internship records, history, and garant workflows."""
 from django.conf import settings
 from django.core.cache import cache
+from django.db.models import Q
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+
+import csv
 
 from ..models import HistoriaStavovPraxe, Prax
 from ..permissions import IsGarantOrRelatedInternship, IsGarantUser
@@ -22,6 +23,7 @@ from apps.cache_utils import build_cache_key
 
 
 class InternshipViewSet(viewsets.ModelViewSet):
+    """CRUD access for internships scoped by user role."""
     queryset = Prax.objects.select_related(
         "student", "student__studentprofil", "firma", "garant"
     ).order_by("-vytvorene_at")
@@ -45,6 +47,7 @@ class InternshipViewSet(viewsets.ModelViewSet):
 
 
 class InternshipHistoryViewSet(viewsets.ModelViewSet):
+    """Read-only access to internship status history by role."""
     queryset = HistoriaStavovPraxe.objects.all()
     serializer_class = InternshipHistorySerializer
     permission_classes = [IsAuthenticated, IsGarantOrRelatedInternship]
@@ -71,6 +74,7 @@ class GarantInternshipViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
+    """Garant-only endpoints for listing, updating, and exporting internships."""
     queryset = (
         Prax.objects.select_related("student", "student__studentprofil", "firma", "garant").all().order_by("-vytvorene_at")
     )
@@ -272,5 +276,3 @@ class GarantInternshipViewSet(
             )
 
         return response
-from django.conf import settings
-from django.core.cache import cache

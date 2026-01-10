@@ -1,3 +1,4 @@
+"""Garant review actions for document approval and rejection."""
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
@@ -14,10 +15,11 @@ from .helpers import _assert, _user_is_garant
 
 
 class GarantReviewMixin:
+    """Provide garant-specific review actions for documents."""
     # --------------------  GARANT APPROVE/REJECT  --------------------
     @action(detail=True, methods=["post"], url_path="approve-garant")
     def approve_garant(self, request, pk=None):
-        """Garant schváli (stav sa nemení, zapisuje audit)."""
+        """Approve a document as garant without changing its state."""
         document = self.get_object()
         user = request.user
 
@@ -42,7 +44,7 @@ class GarantReviewMixin:
 
     @action(detail=True, methods=["post"], url_path="reject-garant-soft")
     def reject_garant_soft(self, request, pk=None):
-        """Garant SOFT zamietne → stav sa nemení, reason povinný."""
+        """Soft-reject a document as garant without changing state."""
         document = self.get_object()
         user = request.user
 
@@ -72,7 +74,7 @@ class GarantReviewMixin:
 
     @action(detail=True, methods=["post"], url_path="reject-garant-hard")
     def reject_garant_hard(self, request, pk=None):
-        """Garant HARD zamietne → stav 'zamietnuty', reason povinný."""
+        """Hard-reject a document as garant and mark it rejected."""
         document = self.get_object()
         user = request.user
 

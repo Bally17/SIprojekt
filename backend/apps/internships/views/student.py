@@ -1,22 +1,23 @@
-from django.db import IntegrityError, transaction
+"""Student-facing internship endpoints."""
 from django.conf import settings
 from django.core.cache import cache
+from django.db import IntegrityError, transaction
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 
+from apps.cache_utils import build_cache_key
+from apps.companies.models import Firma
 from apps.documents.models import Dokument
 from apps.documents.serializers import DocumentSerializer
+from apps.users.models import User
+from .garant import _pick_garant
 from ..models import HistoriaStavovPraxe, Prax
 from ..serializers import InternshipSerializer, StudentCreateInternshipSerializer
-from apps.companies.models import Firma
-from .garant import _pick_garant
-from apps.users.models import User
-from apps.cache_utils import build_cache_key
 
 
 @swagger_auto_schema(
@@ -55,7 +56,7 @@ from apps.cache_utils import build_cache_key
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def me_internships(request):
-    """🧑‍🎓 Vráti všetky praxe prihláseného študenta s detailnými informáciami a stránkovaním."""
+    """Return internships for the authenticated student with pagination."""
     user = request.user
 
     if user.rola != User.ROLE_STUDENT:
@@ -168,6 +169,7 @@ def me_internships(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_internship(request):
+    """Create a new internship for the authenticated student."""
     user = request.user
 
     if user.rola != User.ROLE_STUDENT:
@@ -274,5 +276,3 @@ def create_internship(request):
         )
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_201_CREATED)
-from django.conf import settings
-from django.core.cache import cache

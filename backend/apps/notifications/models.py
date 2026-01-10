@@ -1,6 +1,9 @@
+"""Notification models for email and in-app events."""
 from django.db import models
 
+
 class Notifikacie(models.Model):
+    """Notification record used for email delivery and tracking."""
     STAV_NOVE = "nove"
     STAV_ODOSLANE = "odoslane"
     STAV_ZLYHALO = "zlyhalo"

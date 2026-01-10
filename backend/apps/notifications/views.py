@@ -1,3 +1,4 @@
+"""Notification endpoints for authenticated users."""
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -11,13 +12,13 @@ from .serializers import NotificationSerializer
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
-    """📨 CRUD + filtrovanie notifikácií podľa prihláseného používateľa"""
+    """CRUD and filtering for user notifications."""
     queryset = Notifikacie.objects.all()
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """🔒 Vráti len notifikácie prihláseného používateľa"""
+        """Return notifications for the authenticated user only."""
         # ⚙️ Swagger volá view ako AnonymousUser → vrátime prázdny queryset
         if getattr(self, 'swagger_fake_view', False):
             return Notifikacie.objects.none()
@@ -50,7 +51,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=["get"], url_path="me")
     def my_notifications(self, request):
-        """🔔 Zoznam notifikácií prihláseného používateľa"""
+        """Return a paginated list of user notifications."""
         notifications = self.get_queryset()
 
         paginator = PageNumberPagination()

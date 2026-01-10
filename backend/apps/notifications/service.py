@@ -1,3 +1,4 @@
+"""Notification service helpers for building and sending messages."""
 import logging
 from typing import Optional
 
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------
 
 def _name_of_user(u: Optional[User]) -> str:
+    """Return display name for the user if available."""
     if not u:
         return ""
     meno = getattr(u, "meno", "") or ""
@@ -22,11 +24,13 @@ def _name_of_user(u: Optional[User]) -> str:
     return f"{meno} {priezvisko}".strip()
 
 def _greeting_for_person(name: str) -> str:
+    """Return a polite greeting line for the given name."""
     return f"Dobrý deň{(' ' + name) if name else ''},"
 
 def _ensure_email(email: Optional[str], context: str) -> bool:
+    """Return True if an email is present, otherwise log and skip."""
     if not email:
-        logger.warning("🔕 Email notifikácia preskočená – chýba email (%s).", context)
+        logger.warning("Email notifikácia preskočená – chýba email (%s).", context)
         return False
     return True
 
@@ -37,9 +41,7 @@ def _create_notification(
     subject: str,
     body_text: str,
 ) -> Optional[Notifikacie]:
-    """
-    Vytvorí záznam do Notifikacie. Email odošle post_save signal.
-    """
+    """Create a notification record; delivery is handled by signals."""
     if not _ensure_email(prijemca_email, subject):
         return None
 
@@ -53,7 +55,7 @@ def _create_notification(
         stav="nove",
         odoslane_at=None,
     )
-    logger.info("📧 Notifikácia %s → %s | %s", notif.id, prijemca_email, subject)
+    logger.info("Notifikácia %s → %s | %s", notif.id, prijemca_email, subject)
     return notif
 
 # ---------------------------------------------------------------------
@@ -61,9 +63,7 @@ def _create_notification(
 # ---------------------------------------------------------------------
 
 def notify_document_uploaded(document: Dokument):
-    """
-    Upload dokumentu študentom → posiela sa firme + garantovi.
-    """
+    """Notify company and garant that a document was uploaded."""
     prax = document.prax
     student = prax.student
     firma = prax.firma
@@ -104,11 +104,7 @@ def notify_document_uploaded(document: Dokument):
 
 
 def notify_document_reviewed(document: Dokument, *, approved: bool, reason: Optional[str] = None):
-    """
-    Firma schválila / HARD zamietla dokument.
-    approved=True  → študent + garant
-    approved=False → len študent
-    """
+    """Notify users about company review outcome for a document."""
     prax = document.prax
     student = prax.student
     garant = prax.garant
@@ -147,9 +143,7 @@ def notify_document_reviewed(document: Dokument, *, approved: bool, reason: Opti
 
 
 def notify_document_soft_rejected_by_company(document: Dokument, *, reason: str):
-    """
-    Firma soft reject → stav sa NEMENÍ → len študent.
-    """
+    """Notify a student about a soft rejection by the company."""
     prax = document.prax
     student = prax.student
     student_name = _name_of_user(student)
@@ -166,9 +160,7 @@ def notify_document_soft_rejected_by_company(document: Dokument, *, reason: str)
 
 
 def notify_document_reviewed_by_garant(document: Dokument):
-    """
-    Garant schválil → študent + firma.
-    """
+    """Notify student and company about garant approval."""
     prax = document.prax
     student = prax.student
     garant = prax.garant
@@ -199,9 +191,7 @@ def notify_document_reviewed_by_garant(document: Dokument):
 
 
 def notify_document_soft_rejected_by_garant(document: Dokument, *, reason: str):
-    """
-    Garant soft reject → len študent.
-    """
+    """Notify a student about a soft rejection by the garant."""
     prax = document.prax
     student = prax.student
     student_name = _name_of_user(student)
@@ -218,9 +208,7 @@ def notify_document_soft_rejected_by_garant(document: Dokument, *, reason: str):
 
 
 def notify_document_hard_rejected_by_garant(document: Dokument, *, reason: str):
-    """
-    Garant hard reject → študent + firma.
-    """
+    """Notify student and company about a hard rejection by the garant."""
     prax = document.prax
     student = prax.student
     garant = prax.garant

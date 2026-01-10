@@ -1,17 +1,18 @@
-from django.db import transaction
+"""Company-facing internship endpoints."""
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 
+from apps.cache_utils import build_cache_key
 from apps.users.serializers import UserSerializer
 from apps.users.models import User
-from apps.cache_utils import build_cache_key
 
 from ..models import HistoriaStavovPraxe, Prax
 from ..serializers import InternshipSerializer
@@ -31,7 +32,7 @@ from ..serializers import InternshipSerializer
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def company_my_internships(request):
-    """🔹 Firma získa prehľad o všetkých svojich praxiach."""
+    """Return all internships for the authenticated company."""
     user = request.user
 
     if user.rola != User.ROLE_FIRMA:
@@ -85,7 +86,7 @@ def company_my_internships(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def company_pending_internships(request):
-    """🔹 Firma získa praxe, ktoré čakajú na potvrdenie (stav = 'vytvorena')."""
+    """Return company internships pending confirmation."""
     user = request.user
 
     if user.rola != User.ROLE_FIRMA:
@@ -133,7 +134,7 @@ def company_pending_internships(request):
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
 def company_confirm_internship(request, prax_id):
-    """✅ Firma potvrdí prax (stav -> potvrdena)."""
+    """Confirm an internship as a company (status to potvrdena)."""
     user = request.user
 
     if user.rola != User.ROLE_FIRMA:
@@ -179,7 +180,7 @@ def company_confirm_internship(request, prax_id):
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
 def company_reject_internship(request, prax_id):
-    """❌ Firma zamietne prax (stav -> zamietnuta)."""
+    """Reject an internship as a company (status to zamietnuta)."""
     user = request.user
 
     if user.rola != User.ROLE_FIRMA:
@@ -209,5 +210,3 @@ def company_reject_internship(request, prax_id):
         )
 
     return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
-from django.conf import settings
-from django.core.cache import cache

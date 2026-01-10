@@ -1,3 +1,4 @@
+"""Helper utilities for notification templates and creation."""
 from apps.notifications.models import Notifikacie
 
 
@@ -7,9 +8,7 @@ from apps.notifications.models import Notifikacie
 # ============================================
 
 def create_notification(prax, prijemca, predmet, sablona_kluc, payload=None):
-    """
-    Vytvorí Notifikáciu – signál post_save sa postará o odoslanie emailu.
-    """
+    """Create a notification record; email delivery is handled by signals."""
     return Notifikacie.objects.create(
         prax=prax,
         prijemca=prijemca,
@@ -27,9 +26,7 @@ def create_notification(prax, prijemca, predmet, sablona_kluc, payload=None):
 # ============================================
 
 def get_notification_template(stav, prax):
-    """
-    Na základe stavu praxe vráti (predmet, šablona_kluc, text_emailu).
-    """
+    """Return (subject, template_key, text) for a given internship state."""
 
     firma_nazov = getattr(prax.firma, "nazov", "firma")
     student_meno = getattr(prax.student, "meno", "študent")

@@ -1,3 +1,4 @@
+"""Company review actions for document approval and rejection."""
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
@@ -10,10 +11,11 @@ from .helpers import _assert, _user_is_firma
 
 
 class CompanyReviewMixin:
+    """Provide company-specific review actions for documents."""
     # -------------------  COMPANY APPROVE/REJECT  -------------------
     @action(detail=True, methods=["post"], url_path="approve-company")
     def approve_company(self, request, pk=None):
-        """Firma schváli dokument (stav 'potvrdeny', audit)."""
+        """Approve a document as a company and mark it confirmed."""
         document = self.get_object()
         user = request.user
         prax = document.prax
@@ -49,7 +51,7 @@ class CompanyReviewMixin:
 
     @action(detail=True, methods=["post"], url_path="reject-company")
     def reject_company(self, request, pk=None):
-        """Firma HARD zamietne → stav 'zamietnuty', reason povinný."""
+        """Hard-reject a document as a company and mark it rejected."""
         document = self.get_object()
         user = request.user
         prax = document.prax
@@ -90,7 +92,7 @@ class CompanyReviewMixin:
 
     @action(detail=True, methods=["post"], url_path="reject-company-soft")
     def reject_company_soft(self, request, pk=None):
-        """Firma SOFT zamietne → stav sa nemení, reason povinný."""
+        """Soft-reject a document as a company without changing state."""
         document = self.get_object()
         user = request.user
         prax = document.prax
