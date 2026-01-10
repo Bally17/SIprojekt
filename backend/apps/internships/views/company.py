@@ -56,12 +56,26 @@ def company_my_internships(request):
     stav = request.query_params.get("stav")
     semester = request.query_params.get("semester")
 
+    # Zakladna validacia filtrov z query parametrov
+    allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
+    allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
+
     if rok:
-        internships = internships.filter(rok=rok)
+        try:
+            rok_value = int(rok)
+        except (TypeError, ValueError):
+            return Response({"error": "Neplatný rok."}, status=status.HTTP_400_BAD_REQUEST)
+        internships = internships.filter(rok=rok_value)
     if stav:
-        internships = internships.filter(stav__iexact=stav)
+        stav_value = str(stav).lower()
+        if stav_value not in allowed_stav:
+            return Response({"error": "Neplatný stav."}, status=status.HTTP_400_BAD_REQUEST)
+        internships = internships.filter(stav__iexact=stav_value)
     if semester:
-        internships = internships.filter(semester__iexact=semester)
+        semester_value = str(semester).lower()
+        if semester_value not in allowed_semester:
+            return Response({"error": "Neplatný semester."}, status=status.HTTP_400_BAD_REQUEST)
+        internships = internships.filter(semester__iexact=semester_value)
 
     paginator = PageNumberPagination()
     paginator.page_size = 10
