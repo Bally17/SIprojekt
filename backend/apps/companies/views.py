@@ -94,15 +94,36 @@ def company_internships_overview(request, company_id):
     search = request.query_params.get('search')
     ordering = request.query_params.get('ordering')
 
+    # Zakladna validacia query parametrov (ochrana proti neplatnym hodnotam a order_by)
     if rok:
-        internships = internships.filter(rok=rok)
+        try:
+            rok_value = int(rok)
+        except (TypeError, ValueError):
+            return Response({"error": "Neplatný rok."}, status=status.HTTP_400_BAD_REQUEST)
+        internships = internships.filter(rok=rok_value)
     if stav:
+        allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
+        if stav not in allowed_stav:
+            return Response({"error": "Neplatný stav."}, status=status.HTTP_400_BAD_REQUEST)
         internships = internships.filter(stav=stav)
     if search:
         internships = internships.filter(
             Q(student__meno__icontains=search) | Q(student__priezvisko__icontains=search)
         )
     if ordering:
+        allowed_ordering = {
+            "vytvorene_at",
+            "rok",
+            "semester",
+            "datum_zaciatku",
+            "datum_konca",
+            "stav",
+            "student__meno",
+            "student__priezvisko",
+        }
+        normalized = ordering.lstrip("-")
+        if normalized not in allowed_ordering:
+            return Response({"error": "Neplatné triedenie."}, status=status.HTTP_400_BAD_REQUEST)
         internships = internships.order_by(ordering)
 
     # --- Stránkovanie ---
