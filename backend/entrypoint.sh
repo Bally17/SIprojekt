@@ -8,9 +8,18 @@ set -e
 : "${SEEDING_ENABLED:=0}"
 : "${SEED_EXTERNAL_CLIENT:=0}"
 : "${CREATE_DEFAULT_GARANT:=0}"
+: "${DB_HOST:=db}"
+: "${DB_PORT:=5432}"
+: "${DB_WAIT_TIMEOUT:=60}"
 
 echo "DB: waiting..."
-until nc -z db 5432; do
+start_ts=$(date +%s)
+while ! nc -z "$DB_HOST" "$DB_PORT"; do
+  now_ts=$(date +%s)
+  if [ $((now_ts - start_ts)) -ge "$DB_WAIT_TIMEOUT" ]; then
+    echo "DB: timeout after ${DB_WAIT_TIMEOUT}s"
+    exit 1
+  fi
   sleep 1
 done
 echo "DB: ready"
