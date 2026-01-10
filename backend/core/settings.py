@@ -140,12 +140,12 @@ CACHE_TTL_STATS = int(os.getenv('CACHE_TTL_STATS', 600))
 # -----------------------------------------------------------------------------
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'praxy_db',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'db',  # názov služby v docker-compose
-        'PORT': '5432',
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', 'praxy_db'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+        'HOST': os.getenv('DB_HOST', 'db'),  # názov služby v docker-compose
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -364,18 +364,6 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     SESSION_COOKIE_SAMESITE = "Lax"
-
-# -----------------------------------------------------------------------------
-# OAuth Config DEBUG PRINT
-# -----------------------------------------------------------------------------
-GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID')
-GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET')
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-
-print(f"🔧 OAuth Config Loaded:")
-print(f"   GitHub Client ID: {'✅' if GITHUB_CLIENT_ID else '❌'}")
-print(f"   Google Client ID: {'✅' if GOOGLE_CLIENT_ID else '❌'}")
 
 # -----------------------------------------------------------------------------
 # DEFAULT GARANT (ENV)
