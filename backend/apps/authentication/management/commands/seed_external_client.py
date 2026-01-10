@@ -41,9 +41,9 @@ class Command(BaseCommand):
             email=service_email, defaults={"rola": User.ROLE_EXTERNY}
         )
         if created_user:
-            self.stdout.write(self.style.SUCCESS(f"Vytvorený service user {service_email} (externy)"))
+            self.stdout.write(self.style.SUCCESS(f"Service user created: {service_email}"))
         else:
-            self.stdout.write(self.style.WARNING(f"Service user {service_email} už existuje"))
+            self.stdout.write(self.style.WARNING(f"Service user exists: {service_email}"))
 
         defaults = {
             "client_secret": client_secret,
@@ -59,8 +59,8 @@ class Command(BaseCommand):
             client_id=client_id, defaults=defaults
         )
         if created_client:
-            msg = f"Vytvorený OAuth klient {client_id}"
+            msg = f"OAuth client created: {client_id}"
         else:
-            msg = f"Aktualizovaný OAuth klient {client_id}"
+            msg = f"OAuth client updated: {client_id}"
         self.stdout.write(self.style.SUCCESS(msg))
-        self.stdout.write(self.style.SUCCESS(f"client_id={client.client_id} client_secret={client.client_secret}"))
+        self.stdout.write(self.style.SUCCESS(f"OAuth client ready: {client.client_id}"))

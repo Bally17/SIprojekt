@@ -12,6 +12,7 @@ LEGAL_FORMS_COMPACT = {"sro", "as", "vos", "ks", "spolsro"}
 
 
 def normalize_company_name(name: str) -> str:
+    """Normalize company name for duplicate detection."""
     base = re.sub(r"[^a-z0-9]", "", (name or "").lower())
     for form in LEGAL_FORMS_COMPACT:
         if base.endswith(form):
@@ -21,6 +22,7 @@ def normalize_company_name(name: str) -> str:
 
 
 class StudentRegistrationSerializer(serializers.ModelSerializer):
+    """Validate and create student user accounts."""
     password = serializers.CharField(write_only=True, required=False)
     password_confirm = serializers.CharField(write_only=True, required=False)
     studijny_program = serializers.CharField(write_only=True, required=True)
@@ -109,6 +111,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
 
 
 class CompanyRegistrationSerializer(serializers.ModelSerializer):
+    """Validate and create company user accounts."""
     password = serializers.CharField(write_only=True, required=False)
     nazov = serializers.CharField(write_only=True, required=True)
     kontaktna_osoba_meno = serializers.CharField(write_only=True, required=True)
@@ -214,6 +217,7 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
 
 
 class CompanyProfileCompletionSerializer(serializers.Serializer):
+    """Validate required company profile fields after social registration."""
     nazov = serializers.CharField(required=True)
     kontaktna_osoba_meno = serializers.CharField(required=True)
     kontaktna_osoba_email = serializers.EmailField(required=True)
@@ -253,3 +257,4 @@ class CompanyProfileCompletionSerializer(serializers.Serializer):
         if len(value) < 5:
             raise serializers.ValidationError("Adresa musí mať aspoň 5 znakov.")
         return value
+"""Serializers for student and company registration flows."""

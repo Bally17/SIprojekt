@@ -1,13 +1,12 @@
+import json
+import secrets
+
+from django.contrib.auth import get_user_model
 from django.db import models
 
-# Create your models here
-# apps/authentication/models.py
-from django.db import models
-from django.contrib.auth import get_user_model
-import secrets
-import json
 
 User = get_user_model()
+
 
 class OAuthClient(models.Model):
     client_id = models.CharField(max_length=100, unique=True)
@@ -32,12 +31,13 @@ class OAuthClient(models.Model):
         help_text="Allow client_assertion (private_key_jwt) in token endpoint.",
     )
     public_key = models.TextField(blank=True, null=True, help_text="PEM encoded public key for verifying client_assertion.")
-    
+
     def get_redirect_uris_list(self):
         return json.loads(self.redirect_uris)
-    
+
     def __str__(self):
         return self.name
+
 
 class AuthorizationCode(models.Model):
     code = models.CharField(max_length=100, unique=True)

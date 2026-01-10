@@ -5,6 +5,7 @@ from apps.users.models import User
 
 
 class LoginSerializer(serializers.Serializer):
+    """Validate username/password input and resolve a user."""
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
@@ -31,9 +32,12 @@ class LoginSerializer(serializers.Serializer):
 
 
 class GoogleAuthSerializer(serializers.Serializer):
+    """Validate Google OAuth access/id tokens."""
     access_token = serializers.CharField(required=True)
     id_token = serializers.CharField(required=False)
 
 
 class GitHubAuthSerializer(serializers.Serializer):
+    """Validate GitHub OAuth code exchange payloads."""
     code = serializers.CharField(required=True)
+"""Serializers for login and OAuth token exchange payloads."""

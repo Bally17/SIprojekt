@@ -1,11 +1,13 @@
-# backend/apps/authentication/oauth_serializers.py
-from rest_framework import serializers
-from django.core.validators import URLValidator
+"""Serializers and validators for OAuth 2.0 endpoints."""
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
+from rest_framework import serializers
+
 from apps.authentication.models import OAuthClient
 from apps.users.models import User
 
 class OAuthAuthorizeSerializer(serializers.Serializer):
+    """Validate parameters for the authorization code endpoint."""
     client_id = serializers.CharField(required=True, max_length=100)
     redirect_uri = serializers.CharField(required=True, max_length=300)
     response_type = serializers.CharField(required=True, max_length=20)
@@ -47,6 +49,7 @@ class OAuthAuthorizeSerializer(serializers.Serializer):
 
 
 class OAuthTokenSerializer(serializers.Serializer):
+    """Validate parameters for the token endpoint across grant types."""
     grant_type = serializers.CharField(required=True, max_length=50)
     client_id = serializers.CharField(required=True, max_length=100)
     client_secret = serializers.CharField(required=False, max_length=100, allow_blank=True)
@@ -93,8 +96,11 @@ class OAuthTokenSerializer(serializers.Serializer):
 
 
 class OAuthClientCreateSerializer(serializers.Serializer):
+    """Validate payload for creating OAuth clients via the API."""
     name = serializers.CharField(required=True, max_length=200)
-    redirect_uris = serializers.ListField(child=serializers.URLField(), allow_empty=False)
+    redirect_uris = serializers.ListField(
+        child=serializers.URLField(), allow_empty=True, required=False, default=list
+    )
     scope = serializers.CharField(required=False, max_length=200, default='read write')
     client_id = serializers.CharField(required=False, allow_blank=True, max_length=100)
     client_secret = serializers.CharField(required=False, allow_blank=True, max_length=100)
@@ -126,6 +132,11 @@ class OAuthClientCreateSerializer(serializers.Serializer):
         public_key = attrs.get('public_key')
         if allow_private_jwt and not public_key:
             raise serializers.ValidationError({'public_key': 'Pre private_key_jwt musí byť zadaný public key.'})
+
+        redirect_uris = attrs.get('redirect_uris') or []
+        service_user = attrs.get('service_user_id')
+        if not redirect_uris and not service_user:
+            raise serializers.ValidationError({'redirect_uris': 'redirect_uris sú povinné pre ne-M2M klientov.'})
 
         # map validated service_user instance
         attrs['service_user'] = attrs.pop('service_user_id', None)

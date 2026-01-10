@@ -29,7 +29,7 @@ class StudentRegistrationView(generics.CreateAPIView):
     throttle_classes = [ScopedRateThrottle]
 
     def send_activation_email(self, user, password):
-        """Odošle aktivačný email so zahashovaným tokenom"""
+        """Send an activation email with a signed token and initial password."""
         token = activation_signer.sign(user.email)
         activation_link = f"{settings.FRONTEND_URL}/auth/activate/{token}/"
 
@@ -54,6 +54,7 @@ Tím Študentskej praxe
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
     def create(self, request, *args, **kwargs):
+        """Create a student account and email activation instructions."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -85,6 +86,7 @@ class CompanyRegistrationView(generics.CreateAPIView):
     throttle_classes = [ScopedRateThrottle]
 
     def create(self, request, *args, **kwargs):
+        """Create a company account and send activation credentials."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -109,7 +111,7 @@ class CompanyRegistrationView(generics.CreateAPIView):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def activate_account(request, token):
-    """Aktivácia účtu cez token"""
+    """Activate an account from a signed token."""
     try:
         email = activation_signer.unsign(token, max_age=ACTIVATION_TOKEN_MAX_AGE)
         user = User.objects.get(email=email)
@@ -157,7 +159,7 @@ def activate_account(request, token):
 @authentication_classes([AllowInactiveJWTAuthentication])
 @permission_classes([IsAuthenticated])
 def company_profile_complete(request):
-    """Complete company profile for social-registered accounts."""
+    """Complete company profile data for social-registered accounts."""
     user = request.user
     if user.rola != User.ROLE_FIRMA:
         return Response({"error": "Only company users can complete company profile."}, status=status.HTTP_403_FORBIDDEN)
@@ -218,3 +220,4 @@ def company_profile_complete(request):
         {"status": "success", "user": get_user_data(user), "firma": CompanySerializer(firma).data},
         status=status.HTTP_200_OK,
     )
+"""Registration and activation flows for students and companies."""

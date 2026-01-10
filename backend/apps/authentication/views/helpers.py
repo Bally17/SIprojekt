@@ -1,4 +1,4 @@
-"""Shared helpers for authentication views."""
+"""Shared helpers for authentication views and OAuth flows."""
 import secrets
 import string
 import base64
@@ -18,7 +18,7 @@ PASSWORD_RESET_TOKEN_MAX_AGE = 3600  # seconds
 
 
 def get_tokens_for_user(user):
-    """Generate JWT tokens for user"""
+    """Return refresh/access JWT tokens for the given user."""
     refresh = RefreshToken.for_user(user)
     return {
         "refresh": str(refresh),
@@ -27,7 +27,7 @@ def get_tokens_for_user(user):
 
 
 def get_user_data(user):
-    """Serialize common user fields"""
+    """Return a normalized user payload for auth responses."""
     return {
         "id": user.id,
         "email": user.email,
@@ -44,12 +44,13 @@ def get_user_data(user):
 
 
 def generate_password(length=10):
-    """Generate a random password with letters, digits and symbols"""
+    """Generate a random password with letters, digits, and symbols."""
     chars = string.ascii_letters + string.digits + "!@#$%^&*()"
     return "".join(secrets.choice(chars) for _ in range(length))
 
 
 def _generate_pkce_hash(verifier: str, method: str) -> str:
+    """Compute PKCE code_challenge from the verifier and method."""
     if method == "S256":
         digest = hashlib.sha256(verifier.encode("ascii")).digest()
         return base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
@@ -57,6 +58,7 @@ def _generate_pkce_hash(verifier: str, method: str) -> str:
 
 
 def verify_pkce(code_verifier: str, code_challenge: str, method: str = "plain") -> bool:
+    """Verify PKCE code_verifier matches the stored code_challenge."""
     if not code_challenge:
         return True
     if not code_verifier:
