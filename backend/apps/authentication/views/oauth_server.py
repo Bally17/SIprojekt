@@ -33,10 +33,7 @@ def _generate_unique_client_id():
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def oauth_authorize(request):
-    """
-    OAuth 2.0 Authorization Endpoint
-    GET /oauth/authorize?client_id=xxx&redirect_uri=xxx&response_type=code&state=xxx
-    """
+    """Handle OAuth 2.0 authorization requests and issue auth codes."""
     if oauth_rate_limit_check(request, "authorize"):
         return Response(
             {
@@ -101,11 +98,7 @@ def oauth_authorize(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def oauth_token(request):
-    """
-    OAuth 2.0 Token Endpoint
-    POST /oauth/token
-    - grant_type: authorization_code | refresh_token | password
-    """
+    """Issue access/refresh tokens for supported OAuth grant types."""
     if oauth_rate_limit_check(request, "token"):
         return Response(
             {
@@ -357,7 +350,7 @@ def oauth_token(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def oauth_userinfo(request):
-    """OAuth 2.0 UserInfo Endpoint"""
+    """Return user profile data for the authenticated access token."""
     user_data = get_user_data(request.user)
     return Response(user_data)
 
@@ -365,10 +358,7 @@ def oauth_userinfo(request):
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def oauth_clients(request):
-    """
-    GET: Zoznam aktívnych OAuth klientov.
-    POST: Vytvorenie nového klienta (len rola garant).
-    """
+    """List or create OAuth clients (garant-only for write)."""
     user = request.user
     if request.method == "GET":
         if getattr(user, "rola", "") != User.ROLE_GARANT:
@@ -448,9 +438,7 @@ def oauth_clients(request):
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
 def oauth_client_detail(request, client_id: str):
-    """
-    Deaktivuje OAuth klienta (len rola garant).
-    """
+    """Deactivate an OAuth client by client_id (garant-only)."""
     user = request.user
     if getattr(user, "rola", "") != User.ROLE_GARANT:
         return Response(
@@ -466,3 +454,4 @@ def oauth_client_detail(request, client_id: str):
     client.is_active = False
     client.save(update_fields=["is_active"])
     return Response(status=status.HTTP_204_NO_CONTENT)
+"""OAuth 2.0 server endpoints for authorization, token, and client management."""

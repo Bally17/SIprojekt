@@ -1,13 +1,15 @@
+"""Django settings for the core project."""
+from datetime import timedelta
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
-from datetime import timedelta
 
 load_dotenv()
 
 
 def env_bool(name: str, default: bool = False) -> bool:
-    """Helper for consistent boolean env parsing."""
+    """Parse boolean environment variables consistently."""
     value = os.getenv(name)
     if value is None:
         return default
@@ -87,8 +89,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'core.urls'
 
-import drf_yasg  # noqa
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -148,7 +148,6 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-print("✅ Using Docker PostgreSQL")
 
 # -----------------------------------------------------------------------------
 # HESLÁ

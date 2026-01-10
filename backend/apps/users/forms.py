@@ -1,4 +1,4 @@
-# apps/users/forms.py
+"""Admin forms for user creation and login."""
 from django import forms
 from .models import User, GarantProfil
 from django import forms

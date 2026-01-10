@@ -1,6 +1,7 @@
+import logging
 import os
 import uuid
-from dotenv import load_dotenv
+
 from django.conf import settings
 
 try:
@@ -10,11 +11,8 @@ except ImportError:  # pragma: no cover - optional dependency in some environmen
     boto3 = None
     ClientError = Exception
 
-# Load environment variables from .env in backend root
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(BASE_DIR, ".env"))
+logger = logging.getLogger(__name__)
 
-# Read env variables
 B2_BUCKET_NAME = os.getenv("B2_BUCKET_NAME")
 B2_ENDPOINT_URL = os.getenv("B2_ENDPOINT_URL")
 B2_PRESIGNED_EXPIRES = int(os.getenv("B2_PRESIGNED_EXPIRES", 120))
@@ -87,8 +85,8 @@ def upload_file_to_b2(file_obj, filename: str = None, prefix: str = "uploads/") 
                 Key=object_name,
                 ExtraArgs={"ACL": "private"},  # bucket should be private
             )
-    except Exception as e:  # pragma: no cover - infra závislosť
-        print(f"⚠️ B2 upload skipped/failure, using local file: {e}")
+    except Exception as exc:  # pragma: no cover - infra závislosť
+        logger.warning("B2 upload skipped/failure, using local file: %s", exc)
 
     return object_name
 
@@ -110,6 +108,6 @@ def generate_presigned_url(object_name: str, expires_in: int = None) -> str:
             ExpiresIn=int(expires_in),
         )
         return url
-    except ClientError as e:
-        print(f"❌ B2 Generate presigned URL failed: {e}")
-        raise e
+    except ClientError as exc:
+        logger.error("B2 Generate presigned URL failed: %s", exc)
+        raise

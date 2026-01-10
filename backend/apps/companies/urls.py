@@ -1,19 +1,16 @@
-# apps/companies/urls.py
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from . import views  # musí byť
+from . import views
 
-# router pre CRUD firmy
 router = DefaultRouter()
-router.register(r'companies', views.CompanyViewSet, basename='company')
+router.register(r"companies", views.CompanyViewSet, basename="company")
 
 urlpatterns = [
-    # CRUD firmy
-    path('', include(router.urls)),
-
-    # 🔍 Fulltext vyhľadávanie
-    path('search/', views.search_companies, name='search_companies'),
-
-    # 🔹 Detail firmy + praxe
-    path('<int:company_id>/internships/', views.company_internships_overview, name='company_internships_overview'),
+    path("", include(router.urls)),
+    path("search/", views.search_companies, name="search_companies"),
+    path(
+        "<int:company_id>/internships/",
+        views.company_internships_overview,
+        name="company_internships_overview",
+    ),
 ]

@@ -1,3 +1,4 @@
+"""Signals for internship status history, notifications, and cache invalidation."""
 from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 from apps.internships.models import Prax, HistoriaStavovPraxe
@@ -8,7 +9,7 @@ STATUS_TEMPLATE_PRACTICE = "prax_zmena_stavu"
 
 @receiver(pre_save, sender=Prax)
 def cache_old_state(sender, instance, **kwargs):
-    """Pred uložením si zapamätáme starý stav, aby sme ho vedeli porovnať"""
+    """Cache old status before saving to detect changes."""
     if instance.pk:
         try:
             old_instance = Prax.objects.get(pk=instance.pk)
@@ -19,7 +20,7 @@ def cache_old_state(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Prax)
 def create_notification_on_status_change(sender, instance, created, **kwargs):
-    """Po uložení praxe vytvoríme históriu + notifikácie pri zmene stavu"""
+    """Create history and notifications when internship status changes."""
     if created:
         return  # pri vytvorení nič neposielame
 
@@ -90,9 +91,11 @@ def create_notification_on_status_change(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Prax)
 def invalidate_prax_cache_on_save(sender, instance, **kwargs):
+    """Invalidate cached internship data after save."""
     invalidate_prax_cache(instance.id)
 
 
 @receiver(post_delete, sender=Prax)
 def invalidate_prax_cache_on_delete(sender, instance, **kwargs):
+    """Invalidate cached internship data after delete."""
     invalidate_prax_cache(instance.id)

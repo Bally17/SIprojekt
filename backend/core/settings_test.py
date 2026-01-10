@@ -1,3 +1,4 @@
+"""Test settings overrides for Django."""
 from .settings import *  # noqa: F401,F403
 
 # Pouzi PostgreSQL test DB klonovanu zo skutocnej DB.

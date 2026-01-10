@@ -14,7 +14,7 @@ from .helpers import get_tokens_for_user, get_user_data
 
 
 def create_or_update_oauth_user(email, first_name, last_name, avatar, provider):
-    """Create or update user from OAuth provider"""
+    """Create or update a user record from social provider data."""
     try:
         user = User.objects.get(email=email)
         if first_name and not user.meno:
@@ -38,6 +38,7 @@ def create_or_update_oauth_user(email, first_name, last_name, avatar, provider):
 
 
 def _fetch_google_user_data(access_token):
+    """Fetch user profile data from Google using an access token."""
     try:
         google_response = requests.get(
             "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -64,6 +65,7 @@ def _fetch_google_user_data(access_token):
 
 
 def _fetch_github_user_data(access_token):
+    """Fetch user profile data from GitHub using an access token."""
     try:
         user_response = requests.get(
             "https://api.github.com/user", headers={"Authorization": f"Bearer {access_token}"}, timeout=10
@@ -107,6 +109,7 @@ def _fetch_github_user_data(access_token):
 
 
 def _exchange_github_code_for_token(code, code_verifier=None):
+    """Exchange GitHub OAuth code for an access token (PKCE optional)."""
     try:
         token_data = {
             "client_id": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"],
@@ -142,6 +145,7 @@ def _exchange_github_code_for_token(code, code_verifier=None):
 
 
 def _register_company_from_oauth(request, email, first_name, last_name):
+    """Create or reuse a company user based on OAuth identity data."""
     requested_email = request.data.get("email")
     if requested_email and requested_email.lower() != email.lower():
         return Response({"error": "Email from provider does not match request."}, status=status.HTTP_400_BAD_REQUEST)
@@ -191,7 +195,7 @@ def _register_company_from_oauth(request, email, first_name, last_name):
 
 
 def handle_github_access_token(access_token):
-    """Process GitHub access token"""
+    """Resolve a GitHub access token to a user session."""
     try:
         user_response = requests.get(
             "https://api.github.com/user", headers={"Authorization": f"Bearer {access_token}"}, timeout=10
@@ -241,7 +245,7 @@ def handle_github_access_token(access_token):
 
 
 def handle_github_code(code, code_verifier=None):
-    """Exchange GitHub code for access token (PKCE flow)"""
+    """Exchange GitHub code for an access token and return a session."""
     try:
         token_data = {
             "client_id": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"],
@@ -281,7 +285,7 @@ def handle_github_code(code, code_verifier=None):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def google_auth(request):
-    """Google OAuth authentication"""
+    """Authenticate a user via Google OAuth access token."""
     serializer = GoogleAuthSerializer(data=request.data)
 
     if not serializer.is_valid():
@@ -317,7 +321,7 @@ def google_auth(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def github_auth(request):
-    """GitHub OAuth authentication - podpora pre PKCE a access_token"""
+    """Authenticate a user via GitHub OAuth (PKCE or access token)."""
     if "access_token" in request.data:
         access_token = request.data["access_token"]
         return handle_github_access_token(access_token)
@@ -333,7 +337,7 @@ def github_auth(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def github_callback(request):
-    """GitHub OAuth callback handler"""
+    """Handle GitHub OAuth callback and return a user session."""
     code = request.GET.get("code")
 
     if not code:
@@ -494,3 +498,4 @@ def github_company_register(request):
         github_data.get("first_name", ""),
         github_data.get("last_name", ""),
     )
+"""OAuth social login and company registration endpoints."""

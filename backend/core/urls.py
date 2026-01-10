@@ -1,14 +1,13 @@
-from django.contrib import admin
-from django.urls import path, include
+"""Root URL configuration for the Django project."""
 from django.http import JsonResponse
-from rest_framework_simplejwt.views import TokenVerifyView, TokenRefreshView
-from rest_framework import permissions
+from django.urls import include, path
+from django.contrib import admin
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from django.conf import settings    
+from rest_framework import permissions
+from django.conf import settings
 from django.conf.urls.static import static
 
-# Swagger schema configuration
 schema_view = get_schema_view(
     openapi.Info(
         title="SI Projekt API",
@@ -24,8 +23,8 @@ schema_view = get_schema_view(
 )
 
 
-# ✅ Health check endpoint
 def health_check(request):
+    """Return a simple health check payload for monitoring."""
     return JsonResponse({
         'status': 'success',
         'message': 'Django OAuth API is running!',
@@ -47,29 +46,21 @@ def health_check(request):
 
 
 urlpatterns = [
-    # ✅ Health check
     path('', health_check, name='health_check'),
 
-    # ✅ Admin + OAuth routes
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
 
-    # ✅ Auth & JWT
     path('api/auth/', include('apps.authentication.urls')),
-    #path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    #path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
-    # ✅ Core APIs
     path('api/users/', include('apps.users.urls')),
     path('api/companies/', include('apps.companies.urls')),
-    path('api/internships/', include('apps.internships.urls')),  # 🔥 všetko tu je
+    path('api/internships/', include('apps.internships.urls')),
     path('api/documents/', include('apps.documents.urls')),
     path('api/notifications/', include('apps.notifications.urls')),
 
-    # ✅ Swagger / Redoc
     path('api/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('api/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-
 
 ]
 if settings.DEBUG:

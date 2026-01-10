@@ -1,6 +1,8 @@
+"""Internship models mapped to existing database tables."""
 from django.db import models
 
 class Prax(models.Model):
+    """Internship record mapped to 'praxe'."""
     SEMESTER_ZIMNY = "zimny"
     SEMESTER_LETNY = "letny"
     SEMESTER_CHOICES = [(SEMESTER_ZIMNY, 'Zimný'), (SEMESTER_LETNY, 'Letný')]
@@ -41,6 +43,7 @@ class Prax(models.Model):
         db_table = 'praxe'
 
 class HistoriaStavovPraxe(models.Model):
+    """History of internship status transitions."""
     STAV_CHOICES = Prax.STAV_CHOICES
     
     prax = models.ForeignKey(Prax, on_delete=models.CASCADE, db_column='prax_id')

@@ -1,3 +1,4 @@
+"""Serializers for internship data and update flows."""
 from django.db import IntegrityError
 from django.utils import timezone
 from rest_framework import serializers
@@ -11,6 +12,7 @@ from .models import Prax, HistoriaStavovPraxe
 
 
 class InternshipSerializer(serializers.ModelSerializer):
+    """Serialize internships with derived fields and document list."""
     documents = serializers.SerializerMethodField()
     student_full_name = serializers.SerializerMethodField()
     student_email = serializers.SerializerMethodField()
@@ -47,11 +49,13 @@ class InternshipSerializer(serializers.ModelSerializer):
 
 
 class InternshipHistorySerializer(serializers.ModelSerializer):
+    """Serialize internship status history."""
     class Meta:
         model = HistoriaStavovPraxe
         fields = '__all__'
 
 class ExternalDefenseSerializer(serializers.Serializer):
+    """Validate payload for external defense status updates."""
     prax_id = serializers.IntegerField()
     external_reference = serializers.CharField(required=False, allow_blank=True, max_length=100)
     note = serializers.CharField(required=False, allow_blank=True, max_length=500)
@@ -63,6 +67,7 @@ class ExternalDefenseSerializer(serializers.Serializer):
 
 
 class GarantInternshipIdentitySerializer(serializers.ModelSerializer):
+    """Serialize editable identity fields for garant review."""
     student_id = serializers.IntegerField(source="student.id", read_only=True)
     student_email = serializers.EmailField(source="student.email", read_only=True)
     student_first_name = serializers.CharField(
@@ -148,6 +153,7 @@ class GarantInternshipIdentitySerializer(serializers.ModelSerializer):
 
 
 class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
+    """Validate and apply garant updates to an internship."""
     firma_id = serializers.PrimaryKeyRelatedField(
         source="firma", queryset=Firma.objects.all(), required=False
     )
@@ -220,6 +226,7 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 class StudentCreateInternshipSerializer(serializers.Serializer):
+    """Validate student requests to create a new internship."""
     firma_id = serializers.IntegerField()
     rok = serializers.IntegerField()
     semester = serializers.CharField()

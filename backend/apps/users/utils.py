@@ -1,18 +1,19 @@
-# apps/users/utils.py
+"""Utility helpers for user creation and email delivery."""
+from django.conf import settings
+from django.core.mail import send_mail
+
 import secrets
 import string
-from django.core.mail import send_mail
-from django.conf import settings
+
 
 def generate_strong_password(length: int = 12) -> str:
+    """Generate a strong random password."""
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
 
 def send_garant_credentials_email(user, password: str):
-    """
-    Pošle prihlasovacie údaje novému garantovi.
-    Vyžaduje nastavené EMAIL_* a DEFAULT_FROM_EMAIL v settings.
-    """
+    """Email login credentials to a newly created garant user."""
     subject = "Váš prístup do systému – rola Garant"
     login_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
     body = (

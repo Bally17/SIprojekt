@@ -3,10 +3,12 @@ from rest_framework import serializers
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
+    """Validate password reset request payload."""
     email = serializers.EmailField()
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Validate reset token and new password payload."""
     token = serializers.CharField()
     new_password = serializers.CharField(write_only=True)
     new_password_confirm = serializers.CharField(write_only=True)
@@ -23,6 +25,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
+    """Validate change password payload for authenticated users."""
     current_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True)
     new_password_confirm = serializers.CharField(write_only=True)
@@ -36,3 +39,4 @@ class ChangePasswordSerializer(serializers.Serializer):
 
         validate_password(new_password)
         return data
+"""Serializers for password reset and change flows."""

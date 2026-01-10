@@ -25,7 +25,7 @@ from .helpers import (
 @permission_classes([AllowAny])
 @throttle_classes([ScopedRateThrottle])
 def password_reset_request(request):
-    """Prijme email a odošle reset link, ak používateľ existuje."""
+    """Send a password reset link if the user exists."""
     serializer = PasswordResetRequestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
@@ -48,7 +48,7 @@ password_reset_request.throttle_scope = "password_reset"
 @permission_classes([AllowAny])
 @throttle_classes([ScopedRateThrottle])
 def password_reset_confirm(request):
-    """Overí token a nastaví nové heslo."""
+    """Validate reset token and set a new password."""
     serializer = PasswordResetConfirmSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
@@ -78,7 +78,7 @@ password_reset_confirm.throttle_scope = "password_reset"
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def change_password(request):
-    """Zmena hesla prihláseného používateľa"""
+    """Change password for the authenticated user."""
     serializer = ChangePasswordSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
@@ -96,3 +96,4 @@ def change_password(request):
         {"message": "Heslo bolo úspešne zmenené.", "user": user_data},
         status=status.HTTP_200_OK,
     )
+"""Password reset and change endpoints."""
