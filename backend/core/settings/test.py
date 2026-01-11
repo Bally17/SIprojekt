@@ -1,5 +1,12 @@
 """Test settings overrides for Django."""
-from .settings import *  # noqa: F401,F403
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+os.environ.setdefault('DJANGO_ENV', 'test')
+
+from .base import *  # noqa: F401,F403
 
 # Pouzi PostgreSQL test DB klonovanu zo skutocnej DB.
 DATABASES = {
