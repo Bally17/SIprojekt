@@ -76,6 +76,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',      # CORS najvyššie
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.security_headers.SecurityHeadersMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # serve static files (e.g., swagger assets) in prod
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -364,6 +365,11 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     SESSION_COOKIE_SAMESITE = "Lax"
+
+# CSP: enforce by default outside dev; override with CSP_ENFORCE=true/false.
+CSP_ENFORCE = env_bool("CSP_ENFORCE", not DEBUG)
+CSP_REPORT_ONLY = not CSP_ENFORCE
+X_FRAME_OPTIONS = "DENY"
 
 # -----------------------------------------------------------------------------
 # DEFAULT GARANT (ENV)
