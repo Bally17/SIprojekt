@@ -18,7 +18,7 @@ type Props = {
   onChange?: () => void;
 };
 
-export default function CompanyDocumentsCard({ internship, onChange }: Props) {
+export default function CompanyDocumentsCard({ internship, onChange }: Readonly<Props>) {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
 
@@ -111,7 +111,7 @@ export default function CompanyDocumentsCard({ internship, onChange }: Props) {
   const handleReject = async () => {
     if (!reportDoc?.subor_url) return;
 
-    const reason = window.prompt(msgs.common.companyDocs.rejectPrompt);
+    const reason = globalThis.prompt(msgs.common.companyDocs.rejectPrompt);
     if (!reason) return;
 
     try {

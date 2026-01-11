@@ -59,7 +59,7 @@ export default function GarantEditModal({
       datum_konca: internship.datum_konca || "",
       stav: internship.stav as Stav,
       student_id: internship.student ? String(internship.student) : "",
-      firma_id: internship.firma ? String(internship.firma) : "",
+      firma_id: internship.firma?.id ? String(internship.firma.id) : "",
       status_note: "",
     });
 
@@ -69,8 +69,7 @@ export default function GarantEditModal({
         (internship.student ? `#${internship.student}` : ""),
     );
     setCompanyQuery(
-      internship.company_name ||
-        (typeof internship.firma === "number" ? `#${internship.firma}` : ""),
+      internship.company_name || (internship.firma?.id ? `#${internship.firma.id}` : ""),
     );
     clearErrors();
   }, [internship, reset, clearErrors]);
@@ -156,6 +155,7 @@ export default function GarantEditModal({
             type="button"
             onClick={onClose}
             className="rounded-full border p-2 hover:bg-gray-50"
+            aria-label={msgs.common.close}
           >
             <Icon name="x" className="h-4 w-4" />
           </button>

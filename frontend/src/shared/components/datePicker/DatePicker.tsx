@@ -30,7 +30,10 @@ function monthGrid(view: Date) {
     cells.push({ d: new Date(y, m, day), inMonth: true });
   }
   while (cells.length % 7 !== 0) {
-    const last = cells[cells.length - 1].d;
+    const lastCell = cells.at(-1);
+    if (!lastCell) throw new Error("cells is empty");
+    const last = lastCell.d;
+
     cells.push({
       d: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1),
       inMonth: false,
@@ -98,7 +101,13 @@ export default function DatePicker(props: DatePickerProps) {
   const cells = useMemo(() => monthGrid(view), [view]);
 
   const selectedDate = useMemo(() => {
-    const iso = open === "start" ? start : open === "end" ? end : "";
+    let iso = "";
+
+    if (open === "start") {
+      iso = start;
+    } else if (open === "end") {
+      iso = end;
+    }
     if (!iso) return null;
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? null : d;
@@ -143,7 +152,12 @@ export default function DatePicker(props: DatePickerProps) {
     return `${s} – ${s + 9}`;
   }, [mode, view, MONTHS]);
 
-  const toggleMode = () => setMode((m) => (m === "day" ? "month" : m === "month" ? "year" : "day"));
+  const toggleMode = () =>
+    setMode((m) => {
+      if (m === "day") return "month";
+      if (m === "month") return "year";
+      return "day";
+    });
 
   return (
     <div ref={wrapRef} className={`relative grid grid-cols-2 gap-4 ${className}`}>
@@ -164,12 +178,12 @@ export default function DatePicker(props: DatePickerProps) {
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <Icon name="calendar-days" className="h-4 w-4 text-gray-500" />
             </div>
-            <input
-              readOnly
-              value={toDisplay(start)}
-              placeholder={msgs.common.date.dayMonthYear}
-              className="w-full cursor-pointer rounded-lg border border-primary-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            />
+
+            <div className="w-full cursor-pointer rounded-lg border border-primary-200 bg-white py-2.5 pl-9 pr-3 text-left text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+              {toDisplay(start) || (
+                <span className="text-gray-500">{msgs.common.date.dayMonthYear}</span>
+              )}
+            </div>
           </div>
         </button>
       </div>
@@ -191,12 +205,11 @@ export default function DatePicker(props: DatePickerProps) {
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <Icon name="calendar-days" className="h-4 w-4 text-gray-500" />
             </div>
-            <input
-              readOnly
-              value={toDisplay(end)}
-              placeholder={msgs.common.date.dayMonthYear}
-              className="w-full cursor-pointer rounded-lg border border-primary-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            />
+            <div className="w-full cursor-pointer rounded-lg border border-primary-200 bg-white py-2.5 pl-9 pr-3 text-left text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+              {toDisplay(end) || (
+                <span className="text-gray-500">{msgs.common.date.dayMonthYear}</span>
+              )}
+            </div>
           </div>
         </button>
       </div>
@@ -250,15 +263,17 @@ export default function DatePicker(props: DatePickerProps) {
               </div>
 
               <div className="mt-1 grid grid-cols-7 gap-1">
-                {cells.map(({ d, inMonth }, i) => {
+                {cells.map(({ d, inMonth }) => {
                   const selected = selectedDate ? isSameDay(selectedDate, d) : false;
                   const today = isSameDay(new Date(), d);
 
+                  const iso = toISO(d);
+
                   return (
                     <button
-                      key={i}
+                      key={iso}
                       type="button"
-                      onClick={() => select(toISO(d))}
+                      onClick={() => select(iso)}
                       className={[
                         "h-9 rounded-lg text-sm transition",
                         inMonth

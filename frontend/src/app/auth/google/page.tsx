@@ -6,8 +6,7 @@ import { BASE_URL, ENDPOINTS } from "@constants";
 import { setAuthTokens } from "@lib/ApiProvider";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
-
-type OAuthStatus = "pending" | "success" | "error" | "existing";
+import { OAuthStatus } from "@shared-types/index";
 
 const STORAGE_KEYS = {
   googleState: "google_oauth_state",
@@ -17,6 +16,41 @@ const STORAGE_KEYS = {
 
 const REDIRECT_AFTER_SUCCESS = "/auth/login";
 const AUTO_REDIRECT_MS = 0; // 0 = nikdy automaticky, len tlacidlo
+
+const EMAIL_EXISTS_SIGNALS = [
+  "email_already_registered",
+  "email_already_exists",
+  "email_exists",
+  "email_in_use",
+] as const;
+
+const getRegisterUrl = (flow: string | null) =>
+  flow === "company" ? "/auth/register/company" : "/auth/register";
+
+const parseBackendError = (raw: string) => {
+  try {
+    const parsed = raw ? JSON.parse(raw) : null;
+    return {
+      message: parsed?.error ?? parsed?.message ?? "",
+      code: parsed?.code ?? parsed?.error_code ?? parsed?.errorCode ?? "",
+    };
+  } catch {
+    return { message: "", code: "" };
+  }
+};
+
+const looksLikeEmailExists = (errorCode: string, backendMessage: string) => {
+  const normalized = `${errorCode} ${backendMessage}`.toLowerCase();
+  if (EMAIL_EXISTS_SIGNALS.some((signal) => normalized.includes(signal))) {
+    return true;
+  }
+  return (
+    normalized.includes("email") &&
+    (normalized.includes("exist") ||
+      normalized.includes("registered") ||
+      normalized.includes("taken"))
+  );
+};
 
 export default function GoogleCallbackPage() {
   const router = useRouter();
@@ -44,7 +78,7 @@ export default function GoogleCallbackPage() {
   } = msgs.auth;
 
   useEffect(() => {
-    const url = new URL(window.location.href);
+    const url = new URL(globalThis.location.href);
     const code = url.searchParams.get("code");
     const returnedState = url.searchParams.get("state");
     const error = url.searchParams.get("error");
@@ -53,11 +87,18 @@ export default function GoogleCallbackPage() {
     const codeVerifier = sessionStorage.getItem(STORAGE_KEYS.googleVerifier);
     const flow = sessionStorage.getItem(STORAGE_KEYS.googleFlow);
 
-    window.history.replaceState({}, document.title, "/auth/google");
+    globalThis.history.replaceState({}, document.title, "/auth/google");
 
     const finishError = (msg: string) => {
       setStatus("error");
       setMessage(msg);
+    };
+
+    const setExisting = () => {
+      setStatus("existing");
+      setMessage(googleEmailExistsMessage);
+      setRedirectUrl("/auth/login");
+      setRegisterUrl(getRegisterUrl(flow));
     };
 
     const exchange = async () => {
@@ -84,53 +125,24 @@ export default function GoogleCallbackPage() {
           body: JSON.stringify({
             code,
             code_verifier: codeVerifier,
-            redirect_uri: `${window.location.origin}/auth/google`,
+            redirect_uri: `${globalThis.location.origin}/auth/google`,
           }),
         });
 
         const raw = await res.text();
         if (!res.ok) {
-          let backendMessage = "";
-          let errorCode = "";
-          try {
-            const parsed = raw ? JSON.parse(raw) : null;
-            backendMessage = parsed?.error ?? parsed?.message ?? "";
-            errorCode = parsed?.code ?? parsed?.error_code ?? parsed?.errorCode ?? "";
-          } catch {
-            backendMessage = "";
-          }
-          const normalized = `${errorCode} ${backendMessage}`.toLowerCase();
-          const emailExistsSignals = [
-            "email_already_registered",
-            "email_already_exists",
-            "email_exists",
-            "email_in_use",
-          ];
-          const looksLikeEmailExists =
-            emailExistsSignals.some((signal) => normalized.includes(signal)) ||
-            (normalized.includes("email") &&
-              (normalized.includes("exist") ||
-                normalized.includes("registered") ||
-                normalized.includes("taken")));
-
-          if (looksLikeEmailExists) {
-            setStatus("existing");
-            setMessage(googleEmailExistsMessage);
-            setRedirectUrl("/auth/login");
-            setRegisterUrl(flow === "company" ? "/auth/register/company" : "/auth/register");
+          const { message: backendMessage, code: errorCode } = parseBackendError(raw);
+          if (looksLikeEmailExists(errorCode, backendMessage)) {
+            setExisting();
             return;
           }
-
           finishError(backendMessage || googleLoginFailed);
           return;
         }
 
         const data = JSON.parse(raw);
         if (data?.created === false) {
-          setStatus("existing");
-          setMessage(googleEmailExistsMessage);
-          setRedirectUrl("/auth/login");
-          setRegisterUrl(flow === "company" ? "/auth/register/company" : "/auth/register");
+          setExisting();
           return;
         }
 
@@ -152,7 +164,7 @@ export default function GoogleCallbackPage() {
         });
 
         if (AUTO_REDIRECT_MS > 0) {
-          window.setTimeout(() => router.replace(REDIRECT_AFTER_SUCCESS), AUTO_REDIRECT_MS);
+          globalThis.setTimeout(() => router.replace(REDIRECT_AFTER_SUCCESS), AUTO_REDIRECT_MS);
         }
       } catch {
         finishError(googleLoginFailed);
