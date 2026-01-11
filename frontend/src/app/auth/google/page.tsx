@@ -7,7 +7,7 @@ import { setAuthTokens } from "@lib/ApiProvider";
 import { useSystemNotifications } from "@components/notifications";
 import { useLocalization } from "@i18n/client";
 
-type OAuthStatus = "pending" | "success" | "error";
+type OAuthStatus = "pending" | "success" | "error" | "existing";
 
 const STORAGE_KEYS = {
   googleState: "google_oauth_state",
@@ -25,6 +25,7 @@ export default function GoogleCallbackPage() {
   const [status, setStatus] = useState<OAuthStatus>("pending");
   const [message, setMessage] = useState(msgs.auth.googleProcessing);
   const [redirectUrl, setRedirectUrl] = useState<string>(REDIRECT_AFTER_SUCCESS);
+  const [registerUrl, setRegisterUrl] = useState<string>("/auth/register/company");
 
   const {
     googleRegisterSuccessTitle,
@@ -37,6 +38,9 @@ export default function GoogleCallbackPage() {
     googleProcessing,
     googleLoginFailed,
     googleInvalidState,
+    googleEmailExistsMessage,
+    googleBackToRegister,
+    googleContinueToLogin,
   } = msgs.auth;
 
   useEffect(() => {
@@ -87,17 +91,49 @@ export default function GoogleCallbackPage() {
         const raw = await res.text();
         if (!res.ok) {
           let backendMessage = "";
+          let errorCode = "";
           try {
             const parsed = raw ? JSON.parse(raw) : null;
             backendMessage = parsed?.error ?? parsed?.message ?? "";
+            errorCode = parsed?.code ?? parsed?.error_code ?? parsed?.errorCode ?? "";
           } catch {
             backendMessage = "";
           }
+          const normalized = `${errorCode} ${backendMessage}`.toLowerCase();
+          const emailExistsSignals = [
+            "email_already_registered",
+            "email_already_exists",
+            "email_exists",
+            "email_in_use",
+          ];
+          const looksLikeEmailExists =
+            emailExistsSignals.some((signal) => normalized.includes(signal)) ||
+            (normalized.includes("email") &&
+              (normalized.includes("exist") ||
+                normalized.includes("registered") ||
+                normalized.includes("taken")));
+
+          if (looksLikeEmailExists) {
+            setStatus("existing");
+            setMessage(googleEmailExistsMessage);
+            setRedirectUrl("/auth/login");
+            setRegisterUrl(flow === "company" ? "/auth/register/company" : "/auth/register");
+            return;
+          }
+
           finishError(backendMessage || googleLoginFailed);
           return;
         }
 
         const data = JSON.parse(raw);
+        if (data?.created === false) {
+          setStatus("existing");
+          setMessage(googleEmailExistsMessage);
+          setRedirectUrl("/auth/login");
+          setRegisterUrl(flow === "company" ? "/auth/register/company" : "/auth/register");
+          return;
+        }
+
         if (data?.tokens?.access) {
           setAuthTokens({ access: data.tokens.access, refresh: data.tokens.refresh });
         }
@@ -142,6 +178,7 @@ export default function GoogleCallbackPage() {
     googleProcessing,
     googleLoginFailed,
     googleInvalidState,
+    googleEmailExistsMessage,
   ]);
 
   return (
@@ -157,6 +194,25 @@ export default function GoogleCallbackPage() {
               className="inline-flex w-full items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
             >
               {googleContinue}
+            </button>
+          </div>
+        ) : null}
+
+        {status === "existing" ? (
+          <div className="mt-4 space-y-2">
+            <button
+              type="button"
+              onClick={() => router.replace(redirectUrl)}
+              className="inline-flex w-full items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+            >
+              {googleContinueToLogin}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.replace(registerUrl)}
+              className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-ink-900 hover:bg-gray-50"
+            >
+              {googleBackToRegister}
             </button>
           </div>
         ) : null}
