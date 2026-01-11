@@ -8,6 +8,8 @@ type Props = {
 };
 
 const RELOAD_GUARD_KEY = "chunk-error-reload-once";
+const ERROR_TITLE = "Something went wrong."; // i18n-ignore
+const ERROR_RETRY = "Try again"; // i18n-ignore
 
 function isChunkLoadError(err: unknown): boolean {
   if (!err) return false;
@@ -51,11 +53,11 @@ export default function GlobalError({ error, reset }: Readonly<Props>) {
   }, [error]);
 
   return (
-    <html>
+    <html lang="sk">
       <body>
-        <h2>Something went wrong.</h2>
+        <h2>{ERROR_TITLE}</h2>
         <button type="button" onClick={() => reset()}>
-          Try again
+          {ERROR_RETRY}
         </button>
       </body>
     </html>
