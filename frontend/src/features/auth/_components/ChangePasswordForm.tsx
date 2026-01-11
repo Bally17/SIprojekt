@@ -48,12 +48,15 @@ export default function ChangePasswordForm() {
       const effectiveUser = (res as any)?.user ?? user;
       const roleKey = String(effectiveUser?.rola || effectiveUser?.role || "").toLowerCase();
 
-      let redirect =
-        roleKey === "firma"
-          ? "/dashboard/company"
-          : roleKey === "student"
-            ? "/dashboard/student"
-            : "/dashboard";
+      let redirect: string;
+
+      if (roleKey === "firma") {
+        redirect = "/dashboard/company";
+      } else if (roleKey === "student") {
+        redirect = "/dashboard/student";
+      } else {
+        redirect = "/dashboard";
+      }
 
       if (roleKey === "firma") {
         try {

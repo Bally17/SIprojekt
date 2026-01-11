@@ -44,14 +44,17 @@ export const getDocumentStatusInfo = (
   const normalized: DocumentStatusType | null = isDocumentStatusType(raw) ? raw : null;
   const code: DocumentStatusType = normalized ?? "nahrany";
 
-  const label =
-    code === "potvrdeny"
-      ? labels.approved
-      : code === "zamietnuty"
-        ? labels.rejected
-        : normalized
-          ? labels.uploaded
-          : (labels.unknown ?? labels.uploaded);
+  let label: string;
+
+  if (code === "potvrdeny") {
+    label = labels.approved;
+  } else if (code === "zamietnuty") {
+    label = labels.rejected;
+  } else if (normalized) {
+    label = labels.uploaded;
+  } else {
+    label = labels.unknown ?? labels.uploaded;
+  }
 
   return {
     label,

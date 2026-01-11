@@ -179,7 +179,7 @@ export default function OAuthClientsSection() {
   });
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm(msgs.common.oauth.deleteConfirm)) return;
+    if (!globalThis.confirm(msgs.common.oauth.deleteConfirm)) return;
 
     try {
       await deleteMutation.mutateAsync(id);

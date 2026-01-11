@@ -28,5 +28,9 @@
   "prettier.prettierPath": "node_modules/prettier", // ← POZOR: root node_modules!
 
   "editor.codeActionsOnSave": {},
-  "editor.formatOnSaveTimeout": 5000
+  "editor.formatOnSaveTimeout": 5000,
+
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore"
 }

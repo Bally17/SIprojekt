@@ -10,7 +10,7 @@ type Props = {
   onRefresh: () => void;
 };
 
-export default function InternshipsList({ internships, loading, onRefresh }: Props) {
+export default function InternshipsList({ internships, loading, onRefresh }: Readonly<Props>) {
   const { msgs } = useLocalization();
 
   if (loading) {

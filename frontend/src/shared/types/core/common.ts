@@ -7,6 +7,7 @@ export type Locale = "sk" | "en";
 export type Action = "confirm" | "reject";
 export type Variant = "light" | "dark";
 export type SystemNotificationVariant = "success" | "info" | "warning";
+export type OAuthStatus = "pending" | "success" | "error" | "existing";
 
 export interface Localized {
   byLocale: Record<Locale, string>;

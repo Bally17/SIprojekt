@@ -35,7 +35,7 @@ export function GarantInternshipsTableSection({
         </td>
       </tr>
     );
-  } else if (!internships.length) {
+  } else if (internships.length === 0) {
     body = (
       <tr>
         <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink-400">
@@ -81,6 +81,7 @@ export function GarantInternshipsTableSection({
                 type="button"
                 onClick={() => onEdit(i)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary-600 bg-white text-primary-600 hover:bg-primary-50"
+                aria-label={msgs.common.guarant.edit.title}
               >
                 <Icon name="pencil" className="h-4 w-4" />
               </button>

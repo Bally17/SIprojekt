@@ -26,12 +26,13 @@ const DashboardNavbar = () => {
   const logoutMutation = useLogoutMutation();
 
   const handleLogout = useCallback(async () => {
-    const refresh = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
+    const refresh =
+      typeof localStorage === "undefined" ? null : localStorage.getItem("refresh_token");
 
     try {
       await logoutMutation.mutateAsync(refresh);
 
-      if (typeof window !== "undefined") {
+      if (typeof globalThis !== "undefined") {
         localStorage.removeItem("refresh_token");
       }
 

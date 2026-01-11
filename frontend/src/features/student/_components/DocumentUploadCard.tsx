@@ -263,18 +263,22 @@ export default function DocumentUploadCard({
                   const disabled = type === "zmluva" && isAgreementLocked;
                   const active = selectedType === type;
 
+                  const baseClasses = "rounded-full px-3 py-1";
+
+                  let stateClasses = "text-primary-200 hover:bg-primary-50";
+                  if (active) {
+                    stateClasses = "bg-primary-600 text-white";
+                  } else if (disabled) {
+                    stateClasses = "cursor-not-allowed text-primary-300";
+                  }
+
                   return (
                     <button
                       key={type}
+                      type="button"
                       disabled={disabled}
-                      onClick={() => !disabled && setSelectedType(type)}
-                      className={`rounded-full px-3 py-1 ${
-                        active
-                          ? "bg-primary-600 text-white"
-                          : disabled
-                            ? "cursor-not-allowed text-primary-300"
-                            : "text-primary-200 hover:bg-primary-50"
-                      }`}
+                      onClick={() => setSelectedType(type)}
+                      className={`${baseClasses} ${stateClasses}`}
                     >
                       {type === "zmluva"
                         ? msgs.common.documents.typeAgreement
