@@ -1,6 +1,6 @@
 """Serializers for user and profile data."""
 from rest_framework import serializers
-from .models import User, StudentProfil, GarantProfil
+from ..models import User, StudentProfil, GarantProfil
 from django.db import transaction
 
 

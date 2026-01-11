@@ -1,20 +1,17 @@
 """External system endpoints for internship status updates and listing."""
 from django.conf import settings
 from django.core.cache import cache
-from django.db import transaction
-from django.db.models import Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.cache_utils import build_cache_key
-from apps.users.models import User
-from ..models import Prax
-from ..serializers import ExternalDefenseSerializer, InternshipSerializer
+from common.cache import build_cache_key
+from apps.internships.serializers import ExternalDefenseSerializer, InternshipSerializer
+from services.internships.access import get_external_internships
+from services.internships.workflow import external_mark_defended as external_mark_defended_service
 
 
 @swagger_auto_schema(
@@ -36,43 +33,14 @@ from ..serializers import ExternalDefenseSerializer, InternshipSerializer
 @permission_classes([IsAuthenticated])
 def external_mark_defended(request):
     """Mark an internship as defended for external integrations."""
-    user = request.user
-
-    if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
-        return Response(
-            {"error": "Prístup povolený len pre externých integrátorov."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
-
     serializer = ExternalDefenseSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    prax_id = serializer.validated_data["prax_id"]
-    reference = serializer.validated_data.get("external_reference")
-    note = serializer.validated_data.get("note")
 
-    try:
-        with transaction.atomic():
-            prax = Prax.objects.select_for_update().get(id=prax_id)
+    result = external_mark_defended_service(request.user, serializer.validated_data)
+    if not result["ok"]:
+        return Response(result["data"], status=result["status"])
 
-            if (prax.stav or "").lower() != Prax.STAV_SCHVALENA:
-                return Response(
-                    {"error": "Prax je možné obhájiť len zo stavu 'schvalena'."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            custom_note = note or "Externý systém označil prax ako obhájenú."
-            if reference:
-                custom_note = f"{custom_note} Referencia: {reference}"
-
-            prax._changed_by = user
-            prax._status_change_note = custom_note
-            prax.stav = Prax.STAV_OBHAJENA
-            prax.save()
-
-    except Prax.DoesNotExist:
-        return Response({"error": "Prax so zadaným ID neexistuje."}, status=status.HTTP_404_NOT_FOUND)
-
-    return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
+    return Response(InternshipSerializer(result["prax"]).data, status=result["status"])
 
 
 @swagger_auto_schema(
@@ -95,54 +63,16 @@ def external_mark_defended(request):
 @permission_classes([IsAuthenticated])
 def external_list_internships(request):
     """List internships for external integrators or garants."""
-    user = request.user
-    if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
-        return Response({"error": "Prístup povolený len pre externých integrátorov."}, status=status.HTTP_403_FORBIDDEN)
+    result = get_external_internships(request.user, request.query_params)
+    if not result["ok"]:
+        return Response(result["data"], status=result["status"])
 
-    cache_key = build_cache_key("praxe:list:external", request.query_params, user=user)
+    cache_key = build_cache_key("praxe:list:external", request.query_params, user=request.user)
     cached = cache.get(cache_key)
     if cached is not None:
         return Response(cached)
 
-    qs = (
-        Prax.objects.select_related("student", "student__studentprofil", "firma", "garant")
-        .all()
-        .order_by("-vytvorene_at")
-    )
-
-    stav = request.query_params.get("stav")
-    # Zakladna validacia filtrov z query parametrov
-    allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
-    allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
-    if stav:
-        stav_value = str(stav).lower()
-        if stav_value not in allowed_stav:
-            return Response({"error": "Neplatný stav."}, status=status.HTTP_400_BAD_REQUEST)
-        qs = qs.filter(stav__iexact=stav_value)
-
-    rok = request.query_params.get("rok")
-    if rok:
-        try:
-            qs = qs.filter(rok=int(rok))
-        except (TypeError, ValueError):
-            return Response({"error": "rok musí byť číslo"}, status=status.HTTP_400_BAD_REQUEST)
-
-    semester = request.query_params.get("semester")
-    if semester:
-        semester_value = str(semester).lower()
-        if semester_value not in allowed_semester:
-            return Response({"error": "Neplatný semester."}, status=status.HTTP_400_BAD_REQUEST)
-        qs = qs.filter(semester__iexact=semester_value)
-
-    search = request.query_params.get("search")
-    if search:
-        qs = qs.filter(
-            Q(firma__nazov__icontains=search)
-            | Q(student__email__icontains=search)
-            | Q(student__meno__icontains=search)
-            | Q(student__priezvisko__icontains=search)
-        )
-
+    qs = result["queryset"]
     paginator = PageNumberPagination()
     paginator.page_size = getattr(settings, "REST_FRAMEWORK", {}).get("PAGE_SIZE", 20)
     page = paginator.paginate_queryset(qs, request)
@@ -150,3 +80,6 @@ def external_list_internships(request):
     response = paginator.get_paginated_response(serializer.data)
     cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
     return response
+
+
+__all__ = ["external_mark_defended", "external_list_internships"]

@@ -10,13 +10,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Firma
-from .serializers import CompanySerializer
+from apps.companies.models import Firma
+from apps.companies.serializers import CompanySerializer
 from apps.internships.models import Prax
-from apps.users.serializers import StudentProfileSerializer
 from apps.internships.serializers import InternshipSerializer
-from apps.internships.permissions import IsGarantOrReadOnlyCompany
-from apps.cache_utils import build_cache_key
+from apps.users.serializers import StudentProfileSerializer
+from common.cache import build_cache_key
+from common.permissions.ownership import IsGarantOrReadOnlyCompany
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -40,7 +40,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 
 @swagger_auto_schema(
-    method='get',
+    method="get",
     operation_summary="Získaj firmu so študentmi a ich praxami",
     operation_description=(
         "Vráti detail firmy vrátane zoznamu študentov, ktorí u nej vykonávajú prax. "
@@ -53,14 +53,14 @@ class CompanyViewSet(viewsets.ModelViewSet):
         "- `page` (int): číslo stránky pre stránkovanie"
     ),
     manual_parameters=[
-        openapi.Parameter('rok', openapi.IN_QUERY, description="Filter podľa roka", type=openapi.TYPE_INTEGER),
-        openapi.Parameter('stav', openapi.IN_QUERY, description="Filter podľa stavu praxe", type=openapi.TYPE_STRING),
-        openapi.Parameter('search', openapi.IN_QUERY, description="Vyhľadávanie podľa mena/priezviska študenta", type=openapi.TYPE_STRING),
-        openapi.Parameter('ordering', openapi.IN_QUERY, description="Triedenie (napr. '-datum_zaciatku')", type=openapi.TYPE_STRING),
-        openapi.Parameter('page', openapi.IN_QUERY, description="Číslo stránky", type=openapi.TYPE_INTEGER),
+        openapi.Parameter("rok", openapi.IN_QUERY, description="Filter podľa roka", type=openapi.TYPE_INTEGER),
+        openapi.Parameter("stav", openapi.IN_QUERY, description="Filter podľa stavu praxe", type=openapi.TYPE_STRING),
+        openapi.Parameter("search", openapi.IN_QUERY, description="Vyhľadávanie podľa mena/priezviska študenta", type=openapi.TYPE_STRING),
+        openapi.Parameter("ordering", openapi.IN_QUERY, description="Triedenie (napr. '-datum_zaciatku')", type=openapi.TYPE_STRING),
+        openapi.Parameter("page", openapi.IN_QUERY, description="Číslo stránky", type=openapi.TYPE_INTEGER),
     ],
 )
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def company_internships_overview(request, company_id):
     """Return company detail with filtered internships and pagination."""
@@ -78,23 +78,23 @@ def company_internships_overview(request, company_id):
     else:
         allowed = False
     if not allowed:
-        return Response({"error": "Prístup povolený len garantom alebo firme ku vlastným praxiam."},
-                        status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            {"error": "Prístup povolený len garantom alebo firme ku vlastným praxiam."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     cache_key = build_cache_key("firma:overview", request.query_params, user=request.user, extra=company_id)
     cached = cache.get(cache_key)
     if cached is not None:
         return Response(cached, status=status.HTTP_200_OK)
 
-    internships = Prax.objects.filter(firma=company).select_related('student').order_by("-vytvorene_at")
+    internships = Prax.objects.filter(firma=company).select_related("student").order_by("-vytvorene_at")
 
-    # --- Filtrovanie ---
-    rok = request.query_params.get('rok')
-    stav = request.query_params.get('stav')
-    search = request.query_params.get('search')
-    ordering = request.query_params.get('ordering')
+    rok = request.query_params.get("rok")
+    stav = request.query_params.get("stav")
+    search = request.query_params.get("search")
+    ordering = request.query_params.get("ordering")
 
-    # Zakladna validacia query parametrov (ochrana proti neplatnym hodnotam a order_by)
     if rok:
         try:
             rok_value = int(rok)
@@ -126,9 +126,8 @@ def company_internships_overview(request, company_id):
             return Response({"error": "Neplatné triedenie."}, status=status.HTTP_400_BAD_REQUEST)
         internships = internships.order_by(ordering)
 
-    # --- Stránkovanie ---
     paginator = PageNumberPagination()
-    paginator.page_size = 5  # môžeš zmeniť podľa potreby
+    paginator.page_size = 5
     result_page = paginator.paginate_queryset(internships, request)
 
     data = {
@@ -160,9 +159,8 @@ def company_internships_overview(request, company_id):
     return Response(data, status=status.HTTP_200_OK)
 
 
-
 @swagger_auto_schema(
-    method='get',
+    method="get",
     operation_summary="Fulltextové vyhľadávanie firiem",
     operation_description="""
     Vyhľadáva firmy podľa názvu, adresy alebo kontaktných údajov pomocou PostgreSQL fulltext search.
@@ -173,7 +171,7 @@ def company_internships_overview(request, company_id):
     ```
     """,
     manual_parameters=[
-        openapi.Parameter('q', openapi.IN_QUERY, description="Hľadaný text (napr. 'TechCorp')", type=openapi.TYPE_STRING),
+        openapi.Parameter("q", openapi.IN_QUERY, description="Hľadaný text (napr. 'TechCorp')", type=openapi.TYPE_STRING),
     ],
     responses={
         200: openapi.Response(
@@ -182,44 +180,52 @@ def company_internships_overview(request, company_id):
                 "application/json": {
                     "results": [
                         {"id": 1, "nazov": "TechCorp", "adresa": "Bratislava", "kontakt_meno": "Peter Novak"},
-                        {"id": 2, "nazov": "TechWorld", "adresa": "Nitra", "kontakt_meno": "Eva Hricová"}
+                        {"id": 2, "nazov": "TechWorld", "adresa": "Nitra", "kontakt_meno": "Eva Hricová"},
                     ]
                 }
-            }
+            },
         ),
         400: "Chýba parameter ?q",
-        401: "Neautorizovaný prístup"
-    }
+        401: "Neautorizovaný prístup",
+    },
 )
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def search_companies(request):
     """Search companies by name or contact fields for autocomplete."""
     user = request.user
     role = getattr(user, "rola", "") or ""
-    # Vyhľadávanie firiem potrebujú aj študenti pri zakladaní praxe
     if role not in ("garant", "firma", "student"):
-        return Response({"error": "Prístup povolený len prihláseným používateľom (študent/firma/garant)."},
-                        status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            {"error": "Prístup povolený len prihláseným používateľom (študent/firma/garant)."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     cache_key = build_cache_key("firma:search", request.query_params, user=request.user)
     cached = cache.get(cache_key)
     if cached is not None:
         return Response(cached)
 
-    query = request.query_params.get('q', '').strip()
+    query = request.query_params.get("q", "").strip()
     if not query:
         payload = {"results": []}
         cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
         return Response(payload, status=status.HTTP_200_OK)
 
     firms = Firma.objects.filter(
-        Q(nazov__icontains=query) |
-        Q(adresa__icontains=query) |
-        Q(kontakt_meno__icontains=query) |
-        Q(kontakt_email__icontains=query)
-    )[:10]
+        Q(nazov__icontains=query)
+        | Q(adresa__icontains=query)
+        | Q(kontakt_meno__icontains=query)
+        | Q(kontakt_email__icontains=query)
+    ).order_by("nazov")[:20]
 
     payload = {"results": CompanySerializer(firms, many=True).data}
     cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
-    return Response(payload)
+    return Response(payload, status=status.HTTP_200_OK)
+
+
+__all__ = [
+    "CompanyViewSet",
+    "company_internships_overview",
+    "search_companies",
+]

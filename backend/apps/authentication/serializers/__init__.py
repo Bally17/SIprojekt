@@ -1,4 +1,9 @@
-from .login import LoginSerializer, GoogleAuthSerializer, GitHubAuthSerializer
+from .login import (
+    LoginSerializer,
+    GoogleAuthSerializer,
+    GitHubAuthSerializer,
+    GitHubCompanySerializer,
+)
 from .registration import (
     StudentRegistrationSerializer,
     CompanyRegistrationSerializer,
@@ -10,11 +15,17 @@ from .password import (
     PasswordResetConfirmSerializer,
     ChangePasswordSerializer,
 )
+from .oauth import (
+    OAuthAuthorizeSerializer,
+    OAuthTokenSerializer,
+    OAuthClientCreateSerializer,
+)
 
 __all__ = [
     "LoginSerializer",
     "GoogleAuthSerializer",
     "GitHubAuthSerializer",
+    "GitHubCompanySerializer",
     "StudentRegistrationSerializer",
     "CompanyRegistrationSerializer",
     "CompanyProfileCompletionSerializer",
@@ -22,4 +33,7 @@ __all__ = [
     "PasswordResetRequestSerializer",
     "PasswordResetConfirmSerializer",
     "ChangePasswordSerializer",
+    "OAuthAuthorizeSerializer",
+    "OAuthTokenSerializer",
+    "OAuthClientCreateSerializer",
 ]

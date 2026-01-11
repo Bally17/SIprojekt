@@ -1,7 +1,10 @@
 """Viewsets for internship records, history, and garant workflows."""
+import csv
+
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Q
+from django.http import HttpResponse
+from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, viewsets
@@ -10,17 +13,52 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-import csv
-
-from ..models import HistoriaStavovPraxe, Prax
-from ..permissions import IsGarantOrRelatedInternship, IsGarantUser
-from ..serializers import (
+from common.cache import build_cache_key
+from apps.internships.models import HistoriaStavovPraxe, Prax
+from apps.internships.serializers import (
     GarantInternshipUpdateSerializer,
     InternshipHistorySerializer,
     InternshipSerializer,
 )
-from .garant import GARANT_LIST_FILTERS, init_csv_response
-from apps.cache_utils import build_cache_key
+from common.permissions.internships import IsGarantOrRelatedInternship
+from common.permissions.rbac import IsGarantUser
+from services.internships.access import (
+    apply_garant_filters,
+    build_garant_export_rows,
+    filter_history_for_user,
+    filter_internships_for_user,
+)
+
+
+GARANT_LIST_FILTERS = [
+    openapi.Parameter("rok", openapi.IN_QUERY, description="Filtruj podľa roku", type=openapi.TYPE_INTEGER),
+    openapi.Parameter(
+        "semester", openapi.IN_QUERY, description="Filtruj podľa semestra (zimny/letny)", type=openapi.TYPE_STRING
+    ),
+    openapi.Parameter("stav", openapi.IN_QUERY, description="Filtruj podľa stavu praxe", type=openapi.TYPE_STRING),
+    openapi.Parameter("student_id", openapi.IN_QUERY, description="ID študenta", type=openapi.TYPE_INTEGER),
+    openapi.Parameter("firma_id", openapi.IN_QUERY, description="ID firmy", type=openapi.TYPE_INTEGER),
+    openapi.Parameter(
+        "search", openapi.IN_QUERY, description="Fulltext v mene študenta alebo názve firmy", type=openapi.TYPE_STRING
+    ),
+    openapi.Parameter(
+        "student", openapi.IN_QUERY, description="Textový filter mena alebo emailu študenta", type=openapi.TYPE_STRING
+    ),
+    openapi.Parameter(
+        "firma", openapi.IN_QUERY, description="Textový filter názvu firmy", type=openapi.TYPE_STRING
+    ),
+    openapi.Parameter(
+        "odbor", openapi.IN_QUERY, description="Filter podľa študijného programu", type=openapi.TYPE_STRING
+    ),
+]
+
+
+def _init_csv_response(filename_prefix: str):
+    timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{filename_prefix}_{timestamp}.csv"
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 class InternshipViewSet(viewsets.ModelViewSet):
@@ -35,16 +73,7 @@ class InternshipViewSet(viewsets.ModelViewSet):
         """Limit praxe na tie, kde je používateľ účastníkom, alebo garant vidí všetko."""
         user = getattr(self.request, "user", None)
         qs = super().get_queryset().order_by("-vytvorene_at")
-        role = getattr(user, "rola", "") or ""
-
-        if role == "garant":
-            return qs
-        if role == "student":
-            return qs.filter(student_id=user.id)
-        if role == "firma":
-            firma_id = getattr(user, "firma_id", None)
-            return qs.filter(firma_id=firma_id) if firma_id else qs.none()
-        return qs.none()
+        return filter_internships_for_user(user, qs)
 
 
 class InternshipHistoryViewSet(viewsets.ModelViewSet):
@@ -57,16 +86,7 @@ class InternshipHistoryViewSet(viewsets.ModelViewSet):
         """História len pre praxe, kde je používateľ účastníkom, alebo garant."""
         user = getattr(self.request, "user", None)
         qs = super().get_queryset().select_related("prax").order_by("-zmena_at")
-        role = getattr(user, "rola", "") or ""
-
-        if role == "garant":
-            return qs
-        if role == "student":
-            return qs.filter(prax__student_id=user.id)
-        if role == "firma":
-            firma_id = getattr(user, "firma_id", None)
-            return qs.filter(prax__firma_id=firma_id) if firma_id else qs.none()
-        return qs.none()
+        return filter_history_for_user(user, qs)
 
 
 class GarantInternshipViewSet(
@@ -134,69 +154,10 @@ class GarantInternshipViewSet(
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        params = self.request.query_params
-
-        rok = params.get("rok")
-        semester = params.get("semester")
-        stav = params.get("stav")
-        student_id = params.get("student_id")
-        firma_id = params.get("firma_id")
-        search = params.get("search")
-        student_text = params.get("student")
-        firma_text = params.get("firma")
-        study_program = params.get("odbor") or params.get("study_program")
-
-        # Zakladna validacia filtrov z query parametrov (ochrana proti neplatnym hodnotam)
-        allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
-        allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
-
-        if rok:
-            try:
-                rok_value = int(rok)
-            except (TypeError, ValueError):
-                raise ValidationError({"rok": "Neplatný rok."})
-            queryset = queryset.filter(rok=rok_value)
-        if semester:
-            semester_value = str(semester).lower()
-            if semester_value not in allowed_semester:
-                raise ValidationError({"semester": "Neplatný semester."})
-            queryset = queryset.filter(semester__iexact=semester_value)
-        if stav:
-            stav_value = str(stav).lower()
-            if stav_value not in allowed_stav:
-                raise ValidationError({"stav": "Neplatný stav."})
-            queryset = queryset.filter(stav__iexact=stav_value)
-        if student_id:
-            try:
-                student_id_value = int(student_id)
-            except (TypeError, ValueError):
-                raise ValidationError({"student_id": "Neplatné ID študenta."})
-            queryset = queryset.filter(student_id=student_id_value)
-        if firma_id:
-            try:
-                firma_id_value = int(firma_id)
-            except (TypeError, ValueError):
-                raise ValidationError({"firma_id": "Neplatné ID firmy."})
-            queryset = queryset.filter(firma_id=firma_id_value)
-        if student_text:
-            queryset = queryset.filter(
-                Q(student__email__icontains=student_text)
-                | Q(student__meno__icontains=student_text)
-                | Q(student__priezvisko__icontains=student_text)
-            )
-        if firma_text:
-            queryset = queryset.filter(firma__nazov__icontains=firma_text)
-        if study_program:
-            queryset = queryset.filter(student__studentprofil__studijny_program__icontains=study_program)
-        if search:
-            queryset = queryset.filter(
-                Q(student__email__icontains=search)
-                | Q(student__meno__icontains=search)
-                | Q(student__priezvisko__icontains=search)
-                | Q(firma__nazov__icontains=search)
-            )
-
-        return queryset
+        result = apply_garant_filters(queryset, self.request.query_params)
+        if not result["ok"]:
+            raise ValidationError(result["errors"])
+        return result["queryset"]
 
     @swagger_auto_schema(
         operation_summary="Garant: Aktualizácia praxe",
@@ -246,7 +207,7 @@ class GarantInternshipViewSet(
     def export(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        response = init_csv_response("internships_export")
+        response = _init_csv_response("internships_export")
         writer = csv.writer(response)
         writer.writerow(
             [
@@ -266,36 +227,15 @@ class GarantInternshipViewSet(
             ]
         )
 
-        for prax in queryset:
-            student = getattr(prax, "student", None)
-            firma = getattr(prax, "firma", None)
-            garant = getattr(prax, "garant", None)
-            study_program = ""
-            if student and hasattr(student, "studentprofil"):
-                study_program = student.studentprofil.studijny_program or ""
-
-            full_name = ""
-            if student:
-                full_name = f"{student.meno or ''} {student.priezvisko or ''}".strip()
-                if not full_name:
-                    full_name = student.email or ""
-
-            writer.writerow(
-                [
-                    prax.id,
-                    prax.rok,
-                    prax.semester,
-                    prax.stav,
-                    full_name,
-                    getattr(student, "email", "") or "",
-                    study_program,
-                    getattr(firma, "nazov", "") or "",
-                    getattr(garant, "email", "") or "",
-                    getattr(prax, "datum_zaciatku", "") or "",
-                    getattr(prax, "datum_konca", "") or "",
-                    getattr(prax, "vytvorene_at", "") or "",
-                    getattr(prax, "zmenene_at", "") or "",
-                ]
-            )
+        for row in build_garant_export_rows(queryset):
+            writer.writerow(row)
 
         return response
+
+
+__all__ = [
+    "GARANT_LIST_FILTERS",
+    "InternshipViewSet",
+    "InternshipHistoryViewSet",
+    "GarantInternshipViewSet",
+]

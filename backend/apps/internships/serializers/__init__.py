@@ -7,8 +7,8 @@ from apps.documents.models import Dokument
 from apps.documents.serializers import DocumentSerializer
 from apps.users.models import User
 from apps.companies.models import Firma
-from .document_requirements import missing_required_documents
-from .models import Prax, HistoriaStavovPraxe
+from services.internships.validation import missing_required_documents
+from ..models import Prax, HistoriaStavovPraxe
 
 
 class InternshipSerializer(serializers.ModelSerializer):

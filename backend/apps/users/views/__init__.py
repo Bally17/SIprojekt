@@ -7,15 +7,15 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .serializers import (
-    UserSerializer,
-    StudentProfileSerializer,
-    GarantProfileSerializer,
+from apps.users.models import GarantProfil, StudentProfil, User
+from apps.users.serializers import (
     GarantAccountSerializer,
+    GarantProfileSerializer,
+    StudentProfileSerializer,
+    UserSerializer,
 )
-from .models import User, StudentProfil, GarantProfil
-from apps.internships.permissions import IsGarantUser
-from apps.cache_utils import build_cache_key
+from common.cache import build_cache_key
+from common.permissions.rbac import IsGarantUser
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -25,9 +25,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsGarantUser]
 
     def get_queryset(self):
-        """
-        Garant vidí všetkých, bežný používateľ len svoje vlastné konto.
-        """
+        """Garant vidí všetkých, bežný používateľ len svoje vlastné konto."""
         user = getattr(self.request, "user", None)
         if not user or not user.is_authenticated:
             return User.objects.none()
@@ -43,9 +41,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """
-        Garant vidí všetky profily, študent len svoj.
-        """
+        """Garant vidí všetky profily, študent len svoj."""
         user = getattr(self.request, "user", None)
         if not user or not user.is_authenticated:
             return StudentProfil.objects.none()
@@ -63,14 +59,11 @@ class GarantProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsGarantUser]
 
     def get_queryset(self):
-        """
-        Garant vidí vlastný profil (a ostatných garantov ak sú v DB).
-        """
+        """Garant vidí vlastný profil (a ostatných garantov ak sú v DB)."""
         user = getattr(self.request, "user", None)
         if not user or not user.is_authenticated:
             return GarantProfil.objects.none()
         if getattr(user, "rola", "") == User.ROLE_GARANT:
-            # Ak máte viac garantov, umožní im vidieť aj ostatných garantov.
             return GarantProfil.objects.all()
         return GarantProfil.objects.none()
 
@@ -94,7 +87,6 @@ class GarantAccountViewSet(viewsets.ModelViewSet):
                 status=400,
             )
 
-        # Musí zostať aspoň jeden garant.
         active_garants = User.objects.filter(rola=User.ROLE_GARANT, aktivny=True)
         if active_garants.count() <= 1:
             return Response(
@@ -106,7 +98,7 @@ class GarantAccountViewSet(viewsets.ModelViewSet):
         return Response(status=204)
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def search_students(request):
     """Search students by name or email (garant-only)."""
@@ -122,7 +114,7 @@ def search_students(request):
     if cached is not None:
         return Response(cached)
 
-    query = (request.query_params.get('q') or "").strip()
+    query = (request.query_params.get("q") or "").strip()
     if len(query) < 2:
         payload = {"results": []}
         cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
@@ -140,3 +132,12 @@ def search_students(request):
     payload = {"results": StudentProfileSerializer(students, many=True).data}
     cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
     return Response(payload)
+
+
+__all__ = [
+    "UserViewSet",
+    "StudentProfileViewSet",
+    "GarantProfileViewSet",
+    "GarantAccountViewSet",
+    "search_students",
+]

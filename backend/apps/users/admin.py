@@ -5,7 +5,7 @@ from django.db import transaction
 from django.contrib.admin.models import LogEntry
 from .models import User, StudentProfil, GarantProfil
 from .forms import GarantCreateForm
-from .utils import generate_strong_password, send_garant_credentials_email
+from common.users.credentials import generate_strong_password, send_garant_credentials_email
 from django.contrib import admin
 from apps.users.forms import EmailAdminLoginForm
 
