@@ -6,10 +6,33 @@ const ACCESS_SS_KEY = "access_token_ss";
 
 let accessTokenMemory: string | null = null;
 
+const hasSessionStorage = () =>
+  typeof globalThis !== "undefined" && typeof sessionStorage !== "undefined";
+const hasLocalStorage = () =>
+  typeof globalThis !== "undefined" && typeof localStorage !== "undefined";
+
+const readSessionAccessToken = () => (hasSessionStorage() ? sessionStorage.getItem(ACCESS_SS_KEY) : null);
+const writeSessionAccessToken = (token: string) => {
+  if (!hasSessionStorage()) return;
+  sessionStorage.setItem(ACCESS_SS_KEY, token);
+};
+const removeSessionAccessToken = () => {
+  if (!hasSessionStorage()) return;
+  sessionStorage.removeItem(ACCESS_SS_KEY);
+};
+
+const readRefreshTokenFromStorage = () => (hasLocalStorage() ? localStorage.getItem(REFRESH_KEY) : null);
+const writeRefreshTokenToStorage = (token: string) => {
+  if (!hasLocalStorage()) return;
+  localStorage.setItem(REFRESH_KEY, token);
+};
+const removeRefreshTokenFromStorage = () => {
+  if (!hasLocalStorage()) return;
+  localStorage.removeItem(REFRESH_KEY);
+};
+
 function loadInitialTokens() {
-  if (typeof window === "undefined") return;
-  if (typeof sessionStorage === "undefined") return;
-  const access = sessionStorage.getItem(ACCESS_SS_KEY);
+  const access = readSessionAccessToken();
   if (access) accessTokenMemory = access;
 }
 loadInitialTokens();
@@ -17,29 +40,23 @@ loadInitialTokens();
 export function setAuthTokens(tokens: { access: string; refresh?: string }) {
   accessTokenMemory = tokens.access;
 
-  if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
-    sessionStorage.setItem(ACCESS_SS_KEY, tokens.access);
-    if (tokens.refresh) {
-      localStorage.setItem(REFRESH_KEY, tokens.refresh);
-    }
+  writeSessionAccessToken(tokens.access);
+  if (tokens.refresh) {
+    writeRefreshTokenToStorage(tokens.refresh);
   }
 }
 
 export function clearAuthTokens() {
   accessTokenMemory = null;
 
-  if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
-    sessionStorage.removeItem(ACCESS_SS_KEY);
-    localStorage.removeItem(REFRESH_KEY);
-  }
+  removeSessionAccessToken();
+  removeRefreshTokenFromStorage();
 }
 
 export const getAccessToken = () => accessTokenMemory;
 
 export function getRefreshToken() {
-  if (typeof window === "undefined") return null;
-  if (typeof localStorage === "undefined") return null;
-  return localStorage.getItem(REFRESH_KEY);
+  return readRefreshTokenFromStorage();
 }
 
 export async function request<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
