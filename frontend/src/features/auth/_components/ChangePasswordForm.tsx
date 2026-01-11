@@ -9,6 +9,7 @@ import { ChangePasswordPayload } from "@shared-types/auth";
 import { getErrorMessage } from "@utils/errorActions";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { useChangePasswordMutation } from "../hooks";
+import { getProfileMissingFields } from "../api";
 
 export default function ChangePasswordForm() {
   const { msgs } = useLocalization();
@@ -47,12 +48,24 @@ export default function ChangePasswordForm() {
       const effectiveUser = (res as any)?.user ?? user;
       const roleKey = String(effectiveUser?.rola || effectiveUser?.role || "").toLowerCase();
 
-      const redirect =
+      let redirect =
         roleKey === "firma"
           ? "/dashboard/company"
           : roleKey === "student"
             ? "/dashboard/student"
             : "/dashboard";
+
+      if (roleKey === "firma") {
+        try {
+          const missing = await getProfileMissingFields();
+          const missingFields = missing?.missing_required_fields ?? [];
+          if (missingFields.length > 0) {
+            redirect = "/auth/register/company/complete-info";
+          }
+        } catch {
+          // fallback: keep dashboard redirect if profile check fails
+        }
+      }
 
       notifySuccess({
         title: msgs.auth.succesResetPassword,
