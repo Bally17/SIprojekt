@@ -10,6 +10,8 @@ const STORAGE_KEYS = {
   googleState: "google_oauth_state",
   googleVerifier: "google_code_verifier",
   googleFlow: "google_oauth_flow",
+  githubState: "github_oauth_state",
+  githubFlow: "github_oauth_flow",
 } as const;
 
 function base64UrlEncode(buf: ArrayBuffer) {
@@ -61,10 +63,25 @@ const GoogleGithubActionBtns = () => {
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
-  const handleGithubLogin = () => {
-    window.location.href = `${BASE_URL}/auth/github/?next=${encodeURIComponent(
-      window.location.origin + "/auth/register/company",
-    )}`;
+  const handleGithubLogin = async () => {
+    const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+    if (!clientId) return;
+
+    const redirectUri = `${BASE_URL}/auth/github/callback/`;
+
+    const state = `company:${randomString(32)}`;
+    sessionStorage.setItem(STORAGE_KEYS.githubState, state);
+    sessionStorage.setItem(STORAGE_KEYS.githubFlow, "company");
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: "read:user user:email",
+      state,
+      prompt: "login",
+    });
+
+    window.location.href = `https://github.com/login/oauth/authorize?${params.toString()}`;
   };
   return (
     <div className="pt-2 space-y-2 text-center">

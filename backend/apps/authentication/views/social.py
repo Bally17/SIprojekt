@@ -1,7 +1,9 @@
 import logging
 import os
 import requests
+from urllib.parse import urlencode
 from django.conf import settings
+from django.shortcuts import redirect
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -155,13 +157,14 @@ def _fetch_github_user_data(access_token):
     }
 
 
-def _exchange_github_code_for_token(code, code_verifier=None):
+def _exchange_github_code_for_token(code, code_verifier=None, redirect_uri=None):
     try:
+        client_id = settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"]
+        client_secret = settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["secret"]
         token_data = {
-            "client_id": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"],
-            "client_secret": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["secret"],
+            "client_id": client_id,
+            "client_secret": client_secret,
             "code": code,
-            "redirect_uri": settings.GITHUB_REDIRECT_URI,
         }
 
         if code_verifier:
@@ -188,6 +191,15 @@ def _exchange_github_code_for_token(code, code_verifier=None):
         return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
     return access_token
+
+
+def _redirect_frontend_github(status_value, payload=None):
+    frontend_url = f"{getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')}/auth/github"
+    fragment = urlencode(payload or {})
+    target = f"{frontend_url}#status={status_value}"
+    if fragment:
+        target = f"{target}&{fragment}"
+    return redirect(target)
 
 
 def _register_company_from_oauth(request, email, first_name, last_name):
@@ -292,14 +304,13 @@ def handle_github_access_token(access_token):
         return Response({"error": "Failed to verify GitHub token"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def handle_github_code(code, code_verifier=None):
+def handle_github_code(code, code_verifier=None, redirect_uri=None):
     """Exchange GitHub code for access token (PKCE flow)"""
     try:
         token_data = {
             "client_id": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"],
             "client_secret": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["secret"],
             "code": code,
-            "redirect_uri": settings.GITHUB_REDIRECT_URI,
         }
 
         if code_verifier:
@@ -383,7 +394,8 @@ def github_auth(request):
     if "code" in request.data:
         code = request.data["code"]
         code_verifier = request.data.get("code_verifier")
-        return handle_github_code(code, code_verifier)
+        redirect_uri = request.data.get("redirect_uri")
+        return handle_github_code(code, code_verifier, redirect_uri)
 
     return Response({"error": 'Must provide either "code" or "access_token"'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -393,68 +405,58 @@ def github_auth(request):
 def github_callback(request):
     """GitHub OAuth callback handler"""
     code = request.GET.get("code")
+    state = request.GET.get("state", "")
+    is_company_flow = state.startswith("company:")
 
     if not code:
-        return Response({"error": "No code provided"}, status=status.HTTP_400_BAD_REQUEST)
+        return _redirect_frontend_github("error", {"message": "No code provided"})
 
     try:
-        token_response = requests.post(
-            "https://github.com/login/oauth/access_token",
-            headers={"Accept": "application/json"},
-            data={
-                "client_id": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["client_id"],
-                "client_secret": settings.SOCIALACCOUNT_PROVIDERS["github"]["APP"]["secret"],
-                "code": code,
-                "redirect_uri": settings.GITHUB_REDIRECT_URI,
-            },
-            timeout=10,
-        )
+        access_token = _exchange_github_code_for_token(code)
+        if isinstance(access_token, Response):
+            error_message = access_token.data.get("error", "Failed to get access token from GitHub")
+            return _redirect_frontend_github("error", {"message": error_message})
 
-        token_data = token_response.json()
-        access_token = token_data.get("access_token")
+        github_data = _fetch_github_user_data(access_token)
+        if isinstance(github_data, Response):
+            error_message = github_data.data.get("error", "Failed to get user info from GitHub")
+            return _redirect_frontend_github("error", {"message": error_message})
 
-        if not access_token:
-            return Response({"error": "Failed to get access token from GitHub"}, status=status.HTTP_400_BAD_REQUEST)
+        if is_company_flow:
+            company_response = _register_company_from_oauth(
+                request,
+                github_data["email"],
+                github_data.get("first_name", ""),
+                github_data.get("last_name", ""),
+            )
+            response_data = company_response.data
+        else:
+            user, created = create_or_update_oauth_user(
+                email=github_data["email"],
+                first_name=github_data.get("first_name", ""),
+                last_name=github_data.get("last_name", ""),
+                avatar=github_data.get("avatar"),
+                provider="github",
+            )
+            response_data = {
+                "status": "success",
+                "created": created,
+                "user": get_user_data(user),
+                "tokens": get_tokens_for_user(user),
+            }
 
-        user_response = requests.get(
-            "https://api.github.com/user", headers={"Authorization": f"Bearer {access_token}"}, timeout=10
-        )
-
-        user_data = user_response.json()
-
-        email_response = requests.get(
-            "https://api.github.com/user/emails", headers={"Authorization": f"Bearer {access_token}"}, timeout=10
-        )
-
-        emails = email_response.json()
-        primary_email = next((email["email"] for email in emails if email.get("primary")), None)
-
-        email = primary_email or user_data.get("email")
-        first_name = user_data.get("name", "").split(" ")[0] if user_data.get("name") else ""
-        last_name = " ".join(user_data.get("name", "").split(" ")[1:]) if user_data.get("name") else ""
-        avatar = user_data.get("avatar_url")
-
-        if not email:
-            return Response({"error": "Email not provided by GitHub"}, status=status.HTTP_400_BAD_REQUEST)
-
-        user, created = create_or_update_oauth_user(
-            email=email, first_name=first_name, last_name=last_name, avatar=avatar, provider="github"
-        )
-
-        tokens = get_tokens_for_user(user)
-        user_serialized = get_user_data(user)
-
-        response_data = {
-            "status": "success",
-            "created": created,
-            "user": user_serialized,
-            "tokens": tokens,
+        created = bool(response_data.get("created"))
+        tokens = response_data.get("tokens", {}) if isinstance(response_data, dict) else {}
+        status_value = "success" if created else "existing"
+        payload = {
+            "created": str(created).lower(),
+            "access": tokens.get("access", ""),
+            "refresh": tokens.get("refresh", ""),
         }
-
-        return Response(response_data, status=status.HTTP_200_OK)
+        return _redirect_frontend_github(status_value, payload)
 
     except requests.RequestException:
-        return Response({"error": "Failed to verify GitHub token"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return _redirect_frontend_github("error", {"message": "Failed to verify GitHub token"})
 
 
 @swagger_auto_schema(
@@ -544,7 +546,11 @@ def github_company_register(request):
     if "access_token" in request.data:
         access_token = request.data["access_token"]
     elif "code" in request.data:
-        access_token = _exchange_github_code_for_token(request.data["code"], request.data.get("code_verifier"))
+        access_token = _exchange_github_code_for_token(
+            request.data["code"],
+            request.data.get("code_verifier"),
+            request.data.get("redirect_uri"),
+        )
         if isinstance(access_token, Response):
             return access_token
     else:
