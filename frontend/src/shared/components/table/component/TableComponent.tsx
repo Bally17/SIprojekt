@@ -17,7 +17,7 @@ import {
   STAV_BADGE_CLASS,
   getStavLabel,
 } from "@shared-types/index";
-import { Internship, InternshipDocument } from "@shared-types/internship";
+import { Internship } from "@shared-types/internship";
 import { buildMediaUrl, getDocumentStatusInfo, getDocumentTypeLabel } from "@utils/documents";
 
 export const TableComponent = ({
@@ -70,9 +70,6 @@ export const TableComponent = ({
     }
   };
 
-  const hasFileUrl = (doc: InternshipDocument): doc is InternshipDocument & { subor_url: string } =>
-    typeof doc.subor_url === "string" && doc.subor_url.length > 0;
-
   const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!filters || !onFiltersChange) return;
     const { name, value } = e.target;
@@ -83,7 +80,7 @@ export const TableComponent = ({
   const colSpan = columnCountOverride ?? Math.max(1, columns.length + extraCols);
 
   const renderStavBadge = (value: string) => {
-    const normalized: Stav | null = isStav(value) ? (value as Stav) : null;
+    const normalized: Stav | null = isStav(value) ? value : null;
     const badgeClass = normalized ? STAV_BADGE_CLASS[normalized] : "bg-gray-100 text-gray-600";
     const label = normalized ? getStavLabel(normalized) : value;
     return (

@@ -9,7 +9,7 @@ type Props = {
   onRefresh: () => void;
 };
 
-export default function InternshipCard({ internship, onRefresh }: Props) {
+export default function InternshipCard({ internship, onRefresh }: Readonly<Props>) {
   return (
     <div className="rounded-xl border border-primary-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-center justify-between">

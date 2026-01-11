@@ -15,10 +15,9 @@ const STORAGE_KEYS = {
 } as const;
 
 function base64UrlEncode(buf: ArrayBuffer) {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
+  const binary = String.fromCodePoint(...new Uint8Array(buf));
+
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll(/=+$/g, "");
 }
 
 async function sha256(text: string) {
@@ -39,7 +38,7 @@ const GoogleGithubActionBtns = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) return;
 
-    const redirectUri = `${window.location.origin}/auth/google`;
+    const redirectUri = `${globalThis.location.origin}/auth/google`;
 
     const state = randomString(32);
     const codeVerifier = randomString(64);
@@ -60,7 +59,7 @@ const GoogleGithubActionBtns = () => {
       prompt: "consent",
     });
 
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    globalThis.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
   const handleGithubLogin = async () => {
@@ -81,7 +80,7 @@ const GoogleGithubActionBtns = () => {
       prompt: "login",
     });
 
-    window.location.href = `https://github.com/login/oauth/authorize?${params.toString()}`;
+    globalThis.location.href = `https://github.com/login/oauth/authorize?${params.toString()}`;
   };
   return (
     <div className="pt-2 space-y-2 text-center">

@@ -29,7 +29,11 @@ type Props = {
   onValidationError?: (msg: { title?: string; description: string }) => void;
 };
 
-export default function InternshipCreateForm({ onSubmit, creating, onValidationError }: Props) {
+export default function InternshipCreateForm({
+  onSubmit,
+  creating,
+  onValidationError,
+}: Readonly<Props>) {
   const { msgs } = useLocalization();
 
   const { control, register, handleSubmit, setValue, watch, setError, reset, clearErrors } =

@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { BASE_URL } from "@constants";
 import { setAuthTokens } from "@lib/ApiProvider";
 import { useLocalization } from "@i18n/client";
-
-type OAuthStatus = "pending" | "success" | "error" | "existing";
+import { OAuthStatus } from "@shared-types/index";
 
 const STORAGE_KEYS = {
   githubState: "github_oauth_state",
@@ -41,7 +40,7 @@ export default function GithubCallbackPage() {
       return;
     }
     hasExchanged.current = true;
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const hashParams = new URLSearchParams(globalThis.location.hash.replace(/^#/, ""));
     const hashStatus = hashParams.get("status");
     if (hashStatus) {
       const access = hashParams.get("access");
@@ -66,12 +65,12 @@ export default function GithubCallbackPage() {
         setMessage(errorMessage || githubLoginFailed);
       }
 
-      window.history.replaceState({}, document.title, "/auth/github");
+      globalThis.history.replaceState({}, document.title, "/auth/github");
       sessionStorage.removeItem(STORAGE_KEYS.githubState);
       sessionStorage.removeItem(STORAGE_KEYS.githubFlow);
       return;
     }
-    const url = new URL(window.location.href);
+    const url = new URL(globalThis.location.href);
     const code = url.searchParams.get("code");
     const returnedState = url.searchParams.get("state");
     const error = url.searchParams.get("error");
@@ -83,7 +82,7 @@ export default function GithubCallbackPage() {
       return;
     }
 
-    window.history.replaceState({}, document.title, "/auth/github");
+    globalThis.history.replaceState({}, document.title, "/auth/github");
 
     const finishError = (msg: string) => {
       setStatus("error");
@@ -117,7 +116,7 @@ export default function GithubCallbackPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             code,
-            redirect_uri: `${window.location.origin}/auth/github`,
+            redirect_uri: `${globalThis.location.origin}/auth/github`,
           }),
         });
 
@@ -152,7 +151,7 @@ export default function GithubCallbackPage() {
         setRedirectUrl(REDIRECT_AFTER_SUCCESS);
 
         if (AUTO_REDIRECT_MS > 0) {
-          window.setTimeout(() => router.replace(REDIRECT_AFTER_SUCCESS), AUTO_REDIRECT_MS);
+          globalThis.setTimeout(() => router.replace(REDIRECT_AFTER_SUCCESS), AUTO_REDIRECT_MS);
         }
       } catch {
         finishError(githubLoginFailed);

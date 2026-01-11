@@ -8,4 +8,3 @@ export type Nullable<T> = T | null;
 export type StringOrNull = string | null;
 export type StringOrNill = StringOrNull | undefined;
 export type Undefinable<T> = T | undefined;
-export type Unknownable<T> = T | unknown;
