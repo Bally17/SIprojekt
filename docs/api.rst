@@ -5,7 +5,7 @@ Core
 ----
 
 .. automodule:: core.urls
-.. automodule:: core.settings
+.. automodule:: core.settings.base
 
 Authentication
 --------------

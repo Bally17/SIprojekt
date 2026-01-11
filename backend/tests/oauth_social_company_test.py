@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.companies.models import Firma
 from apps.users.models import User
-from apps.authentication.views import social as social_views
+from infrastructure.external import github_oauth, google_oauth
 
 
 @pytest.mark.django_db
@@ -23,7 +23,7 @@ class TestCompanySocialRegistration:
                 "avatar": "https://example.com/avatar.png",
             }
 
-        monkeypatch.setattr(social_views, "_fetch_github_user_data", _fake_github_user_data)
+        monkeypatch.setattr(github_oauth, "fetch_github_user_data", lambda _token: {"ok": True, "data": _fake_github_user_data(_token)})
 
         register_url = reverse("company-github-registration")
         resp = self.client.post(register_url, {"access_token": "fake-token"}, format="json")
@@ -96,7 +96,7 @@ class TestCompanySocialRegistration:
                 "avatar": "https://example.com/avatar.png",
             }
 
-        monkeypatch.setattr(social_views, "_fetch_google_user_data", _fake_google_user_data)
+        monkeypatch.setattr(google_oauth, "fetch_google_user_data", lambda _token: {"ok": True, "data": _fake_google_user_data(_token)})
 
         register_url = reverse("company-google-registration")
         resp = self.client.post(register_url, {"access_token": "fake-token"}, format="json")

@@ -50,7 +50,7 @@ autodoc_mock_imports = [
     "requests",
 ]
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.dev")
 
 templates_path = ["_templates"]
 exclude_patterns: list[str] = ["_build"]
