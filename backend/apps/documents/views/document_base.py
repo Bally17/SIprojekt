@@ -2,11 +2,10 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from apps.internships.permissions import IsGarantOrRelatedDocument
-from apps.users.models import User
-
-from ..models import Dokument
-from ..serializers import DocumentSerializer
+from apps.documents.models import Dokument
+from apps.documents.serializers import DocumentSerializer
+from common.permissions.ownership import IsGarantOrRelatedDocument
+from services.documents.validation import filter_documents_for_user
 
 
 class DocumentBaseViewSet(viewsets.ModelViewSet):
@@ -20,17 +19,7 @@ class DocumentBaseViewSet(viewsets.ModelViewSet):
         """Filter documents to internships related to the current user role."""
         user = getattr(self.request, "user", None)
         qs = super().get_queryset().order_by("-vytvorene_at")
-        role = getattr(user, "rola", "") or ""
+        return filter_documents_for_user(user, qs)
 
-        if role == User.ROLE_GARANT:
-            return qs
-        if role == User.ROLE_STUDENT:
-            return qs.filter(prax__student_id=user.id).order_by("-vytvorene_at")
-        if role == User.ROLE_FIRMA:
-            firma_id = getattr(user, "firma_id", None)
-            return (
-                qs.filter(prax__firma_id=firma_id).order_by("-vytvorene_at")
-                if firma_id
-                else qs.none()
-            )
-        return qs.none()
+
+__all__ = ["DocumentBaseViewSet"]

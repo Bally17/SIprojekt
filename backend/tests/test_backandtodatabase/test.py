@@ -10,7 +10,7 @@ from django.utils import timezone
 sys.path.append('/apps')
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.test')
 django.setup()
 
 from apps.companies.models import Firma

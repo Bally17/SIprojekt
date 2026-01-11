@@ -2,7 +2,7 @@ import os
 import pytest
 from django.apps import apps
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings_test")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.test")
 
 @pytest.fixture(autouse=True, scope="session")
 def _make_unmanaged_models_managed():

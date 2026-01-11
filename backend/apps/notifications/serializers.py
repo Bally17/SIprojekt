@@ -6,6 +6,7 @@ from .models import Notifikacie
 
 class NotificationSerializer(serializers.ModelSerializer):
     """Serialize notification records for API responses."""
+
     class Meta:
         model = Notifikacie
-        fields = '__all__'
+        fields = "__all__"

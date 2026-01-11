@@ -1,14 +1,13 @@
 """Notification endpoints for authenticated users."""
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from rest_framework.permissions import IsAuthenticated
 
-from .models import Notifikacie
-from .serializers import NotificationSerializer
+from apps.notifications.models import Notifikacie
+from apps.notifications.serializers import NotificationSerializer
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
@@ -20,7 +19,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Return notifications for the authenticated user only."""
         # ⚙️ Swagger volá view ako AnonymousUser → vrátime prázdny queryset
-        if getattr(self, 'swagger_fake_view', False):
+        if getattr(self, "swagger_fake_view", False):
             return Notifikacie.objects.none()
 
         user = self.request.user
@@ -47,7 +46,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 type=openapi.TYPE_STRING
             )
         ],
-        responses={200: "Zoznam notifikácií prihláseného používateľa"}
+        responses={200: "Zoznam notifikácií prihláseného používateľa"},
     )
     @action(detail=False, methods=["get"], url_path="me")
     def my_notifications(self, request):
@@ -60,3 +59,6 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
         serializer = NotificationSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+
+__all__ = ["NotificationViewSet"]

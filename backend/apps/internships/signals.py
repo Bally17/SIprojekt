@@ -3,7 +3,7 @@ from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 from apps.internships.models import Prax, HistoriaStavovPraxe
 from apps.notifications.models import Notifikacie
-from apps.cache_utils import invalidate_prax_cache
+from common.cache import invalidate_prax_cache
 
 STATUS_TEMPLATE_PRACTICE = "prax_zmena_stavu"
 

@@ -1,21 +1,21 @@
 """Company-facing internship endpoints."""
 from django.conf import settings
 from django.core.cache import cache
-from django.db import transaction
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.cache_utils import build_cache_key
+from common.cache import build_cache_key
+from apps.internships.serializers import InternshipSerializer
 from apps.users.serializers import UserSerializer
-from apps.users.models import User
-
-from ..models import HistoriaStavovPraxe, Prax
-from ..serializers import InternshipSerializer
+from services.internships.access import get_company_internships
+from services.internships.workflow import (
+    company_confirm_internship as company_confirm_internship_service,
+    company_reject_internship as company_reject_internship_service,
+)
 
 
 @swagger_auto_schema(
@@ -34,49 +34,16 @@ from ..serializers import InternshipSerializer
 def company_my_internships(request):
     """Return all internships for the authenticated company."""
     user = request.user
-
-    if user.rola != User.ROLE_FIRMA:
-        return Response({"error": "Prístup povolený len pre firemných používateľov."}, status=status.HTTP_403_FORBIDDEN)
-
-    if not user.firma_id:
-        return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
+    result = get_company_internships(user, request.query_params, pending=False)
+    if not result["ok"]:
+        return Response(result["data"], status=result["status"])
 
     cache_key = build_cache_key("praxe:list:company", request.query_params, user=user)
     cached = cache.get(cache_key)
     if cached is not None:
         return Response(cached)
 
-    internships = (
-        Prax.objects.filter(firma_id=user.firma_id)
-        .select_related("student", "garant")
-        .order_by("-vytvorene_at")
-    )
-
-    rok = request.query_params.get("rok")
-    stav = request.query_params.get("stav")
-    semester = request.query_params.get("semester")
-
-    # Zakladna validacia filtrov z query parametrov
-    allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
-    allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
-
-    if rok:
-        try:
-            rok_value = int(rok)
-        except (TypeError, ValueError):
-            return Response({"error": "Neplatný rok."}, status=status.HTTP_400_BAD_REQUEST)
-        internships = internships.filter(rok=rok_value)
-    if stav:
-        stav_value = str(stav).lower()
-        if stav_value not in allowed_stav:
-            return Response({"error": "Neplatný stav."}, status=status.HTTP_400_BAD_REQUEST)
-        internships = internships.filter(stav__iexact=stav_value)
-    if semester:
-        semester_value = str(semester).lower()
-        if semester_value not in allowed_semester:
-            return Response({"error": "Neplatný semester."}, status=status.HTTP_400_BAD_REQUEST)
-        internships = internships.filter(semester__iexact=semester_value)
-
+    internships = result["queryset"]
     paginator = PageNumberPagination()
     paginator.page_size = 10
     result_page = paginator.paginate_queryset(internships, request)
@@ -102,24 +69,16 @@ def company_my_internships(request):
 def company_pending_internships(request):
     """Return company internships pending confirmation."""
     user = request.user
-
-    if user.rola != User.ROLE_FIRMA:
-        return Response({"error": "Prístup povolený len pre firemných používateľov."}, status=status.HTTP_403_FORBIDDEN)
-
-    if not user.firma_id:
-        return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
+    result = get_company_internships(user, request.query_params, pending=True)
+    if not result["ok"]:
+        return Response(result["data"], status=result["status"])
 
     cache_key = build_cache_key("praxe:list:company:pending", request.query_params, user=user)
     cached = cache.get(cache_key)
     if cached is not None:
         return Response(cached)
 
-    internships = (
-        Prax.objects.filter(firma_id=user.firma_id, stav__iexact=Prax.STAV_VYTVORENA)
-        .select_related("student", "garant")
-        .order_by("-vytvorene_at")
-    )
-
+    internships = result["queryset"]
     paginator = PageNumberPagination()
     paginator.page_size = 10
     result_page = paginator.paginate_queryset(internships, request)
@@ -149,35 +108,11 @@ def company_pending_internships(request):
 @permission_classes([IsAuthenticated])
 def company_confirm_internship(request, prax_id):
     """Confirm an internship as a company (status to potvrdena)."""
-    user = request.user
+    result = company_confirm_internship_service(request.user, prax_id)
+    if not result["ok"]:
+        return Response(result["data"], status=result["status"])
 
-    if user.rola != User.ROLE_FIRMA:
-        return Response({"error": "Len firma môže potvrdiť prax."}, status=status.HTTP_403_FORBIDDEN)
-
-    if not user.firma_id:
-        return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        prax = Prax.objects.get(id=prax_id, firma_id=user.firma_id)
-    except Prax.DoesNotExist:
-        return Response({"error": "Prax neexistuje alebo nepatrí tejto firme."}, status=status.HTTP_404_NOT_FOUND)
-
-    if prax.stav.lower() != Prax.STAV_VYTVORENA:
-        return Response({"error": "Prax už nie je v stave 'vytvorena'."}, status=status.HTTP_400_BAD_REQUEST)
-
-    with transaction.atomic():
-        prax.stav = Prax.STAV_POTVRDENA
-        prax.save()
-
-        HistoriaStavovPraxe.objects.create(
-            prax=prax,
-            stary_stav=Prax.STAV_VYTVORENA,
-            novy_stav=Prax.STAV_POTVRDENA,
-            zmenil_id=user.id,
-            poznamka="Prax bola potvrdená firmou.",
-        )
-
-    return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
+    return Response(InternshipSerializer(result["prax"]).data, status=result["status"])
 
 
 @swagger_auto_schema(
@@ -195,32 +130,16 @@ def company_confirm_internship(request, prax_id):
 @permission_classes([IsAuthenticated])
 def company_reject_internship(request, prax_id):
     """Reject an internship as a company (status to zamietnuta)."""
-    user = request.user
+    result = company_reject_internship_service(request.user, prax_id)
+    if not result["ok"]:
+        return Response(result["data"], status=result["status"])
 
-    if user.rola != User.ROLE_FIRMA:
-        return Response({"error": "Len firma môže zamietnuť prax."}, status=status.HTTP_403_FORBIDDEN)
+    return Response(InternshipSerializer(result["prax"]).data, status=result["status"])
 
-    if not user.firma_id:
-        return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        prax = Prax.objects.get(id=prax_id, firma_id=user.firma_id)
-    except Prax.DoesNotExist:
-        return Response({"error": "Prax neexistuje alebo nepatrí tejto firme."}, status=status.HTTP_404_NOT_FOUND)
-
-    if prax.stav.lower() != Prax.STAV_VYTVORENA:
-        return Response({"error": "Prax už nie je v stave 'vytvorena'."}, status=status.HTTP_400_BAD_REQUEST)
-
-    with transaction.atomic():
-        prax.stav = Prax.STAV_ZAMIETNUTA
-        prax.save()
-
-        HistoriaStavovPraxe.objects.create(
-            prax=prax,
-            stary_stav=Prax.STAV_VYTVORENA,
-            novy_stav=Prax.STAV_ZAMIETNUTA,
-            zmenil_id=user.id,
-            poznamka="Prax bola zamietnutá firmou.",
-        )
-
-    return Response(InternshipSerializer(prax).data, status=status.HTTP_200_OK)
+__all__ = [
+    "company_my_internships",
+    "company_pending_internships",
+    "company_confirm_internship",
+    "company_reject_internship",
+]

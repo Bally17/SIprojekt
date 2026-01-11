@@ -1,4 +1,4 @@
-from .helpers import get_tokens_for_user, get_user_data, password_reset_signer, signer
+from common.auth.context import get_tokens_for_user, get_user_data, password_reset_signer, signer
 from .login import (
     company_login_view,
     garant_login_view,

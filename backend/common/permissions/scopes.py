@@ -1,0 +1,1 @@
+"""Scope-based authorization helpers."""

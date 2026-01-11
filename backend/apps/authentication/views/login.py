@@ -1,30 +1,20 @@
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from ..serializers import LoginSerializer
-from ..utils import AllowInactiveJWTAuthentication
-from .helpers import get_tokens_for_user, get_user_data
+from apps.authentication.serializers import LoginSerializer
+from common.auth.jwt_auth import AllowInactiveJWTAuthentication
 from apps.users.models import User
-from apps.companies.models import Firma
-
-
-def _build_login_response(user):
-    """Build a standardized login payload with user info and JWT tokens."""
-    tokens = get_tokens_for_user(user)
-    user_data = get_user_data(user)
-    return {
-        "status": "success",
-        "created": False,
-        "user": user_data,
-        "tokens": tokens,
-    }
+from services.auth.login import (
+    login_user,
+    logout_refresh_token,
+    missing_profile_fields_payload,
+    profile_payload,
+)
 
 
 @api_view(["POST"])
@@ -33,25 +23,26 @@ def _build_login_response(user):
 def login_view(request):
     """Authenticate student accounts via email/password login."""
     serializer = LoginSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    if serializer.is_valid():
-        user = serializer.validated_data["user"]
-
-        if user.rola != User.ROLE_STUDENT:
-            return Response(
-                {
-                    "error": "invalid_role",
-                    "message": "Tento login je určený len pre študentov. Použite firemný login.",
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        if not user.is_active:
+    user = serializer.validated_data["user"]
+    result = login_user(
+        user,
+        User.ROLE_STUDENT,
+        "Tento login je určený len pre študentov. Použite firemný login.",
+    )
+    if not result["ok"]:
+        error = result["error"]
+        if error["code"] == "invalid_role":
+            return Response(error, status=status.HTTP_403_FORBIDDEN)
+        if error["code"] == "inactive_user":
             return Response({"error": "inactive_user"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "login_failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(_build_login_response(user), status=status.HTTP_200_OK)
+    return Response(result["data"], status=status.HTTP_200_OK)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 login_view.throttle_scope = "login"
 
 
@@ -61,25 +52,26 @@ login_view.throttle_scope = "login"
 def company_login_view(request):
     """Authenticate company accounts via email/password login."""
     serializer = LoginSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    if serializer.is_valid():
-        user = serializer.validated_data["user"]
-
-        if user.rola != User.ROLE_FIRMA:
-            return Response(
-                {
-                    "error": "invalid_role",
-                    "message": "Firemný login je určený len pre kontá firiem.",
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        if not user.is_active:
+    user = serializer.validated_data["user"]
+    result = login_user(
+        user,
+        User.ROLE_FIRMA,
+        "Firemný login je určený len pre kontá firiem.",
+    )
+    if not result["ok"]:
+        error = result["error"]
+        if error["code"] == "invalid_role":
+            return Response(error, status=status.HTTP_403_FORBIDDEN)
+        if error["code"] == "inactive_user":
             return Response({"error": "inactive_user"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "login_failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(_build_login_response(user), status=status.HTTP_200_OK)
+    return Response(result["data"], status=status.HTTP_200_OK)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 company_login_view.throttle_scope = "login"
 
 
@@ -89,25 +81,26 @@ company_login_view.throttle_scope = "login"
 def garant_login_view(request):
     """Authenticate garant accounts via email/password login."""
     serializer = LoginSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    if serializer.is_valid():
-        user = serializer.validated_data["user"]
-
-        if user.rola != User.ROLE_GARANT:
-            return Response(
-                {
-                    "error": "invalid_role",
-                    "message": "Garant login je určený len pre kontá garantov.",
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        if not user.is_active:
+    user = serializer.validated_data["user"]
+    result = login_user(
+        user,
+        User.ROLE_GARANT,
+        "Garant login je určený len pre kontá garantov.",
+    )
+    if not result["ok"]:
+        error = result["error"]
+        if error["code"] == "invalid_role":
+            return Response(error, status=status.HTTP_403_FORBIDDEN)
+        if error["code"] == "inactive_user":
             return Response({"error": "inactive_user"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "login_failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(_build_login_response(user), status=status.HTTP_200_OK)
+    return Response(result["data"], status=status.HTTP_200_OK)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 garant_login_view.throttle_scope = "login"
 
 
@@ -115,8 +108,7 @@ garant_login_view.throttle_scope = "login"
 @permission_classes([IsAuthenticated])
 def profile(request):
     """Return profile data for the authenticated user."""
-    user_data = get_user_data(request.user)
-    return Response({"user": user_data})
+    return Response(profile_payload(request.user))
 
 
 @swagger_auto_schema(
@@ -147,55 +139,12 @@ def profile(request):
 @permission_classes([IsAuthenticated])
 def profile_missing_fields(request):
     """Return profile data with missing required fields for completion flows."""
-    user = request.user
-    if user.rola == User.ROLE_FIRMA:
-        required_fields = [
-            "nazov",
-            "kontaktna_osoba_meno",
-            "kontaktna_osoba_email",
-            "kontaktna_osoba_telefon",
-            "adresa",
-        ]
-        firma = None
-        if user.firma_id:
-            firma = Firma.objects.filter(id=user.firma_id).first()
-
-        missing = []
-        if not (firma and firma.nazov):
-            missing.append("nazov")
-
-        kontaktne_meno = " ".join(part for part in [user.meno, user.priezvisko] if part).strip()
-        if not kontaktne_meno and not (firma and firma.kontakt_meno):
-            missing.append("kontaktna_osoba_meno")
-
-        if not (user.alternativny_email or (firma and firma.kontakt_email)):
-            missing.append("kontaktna_osoba_email")
-
-        if not (user.telefon or (firma and firma.kontakt_telefon)):
-            missing.append("kontaktna_osoba_telefon")
-
-        if not (user.adresa or (firma and firma.adresa)):
-            missing.append("adresa")
-
-        return Response({"user": get_user_data(user), "missing_required_fields": missing})
-
-    required_fields = ["meno", "priezvisko", "telefon", "adresa"]
-    missing = [field for field in required_fields if not getattr(user, field)]
-    return Response({"user": get_user_data(user), "missing_required_fields": missing})
+    return Response(missing_profile_fields_payload(request.user))
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def logout_view(request):
     """Invalidate a refresh token and return a logout confirmation."""
-    rt = request.data.get("refresh_token")
-    if rt:
-        try:
-            token = RefreshToken(rt)
-            token.blacklist()
-        except TokenError:
-            pass
-        except Exception:
-            pass
-    return Response({"status": "success", "detail": "logged out"}, status=status.HTTP_200_OK)
-"""Authentication views for email/password login and profile access."""
+    payload = logout_refresh_token(request.data.get("refresh_token"))
+    return Response(payload, status=status.HTTP_200_OK)

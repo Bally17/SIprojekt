@@ -5,7 +5,7 @@ import sys
 import requests
 
 sys.path.append('/app')
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.test')
 django.setup()
 
 def test_crud_simple():

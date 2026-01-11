@@ -1,23 +1,20 @@
 """Student-facing internship endpoints."""
 from django.conf import settings
 from django.core.cache import cache
-from django.db import IntegrityError, transaction
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.cache_utils import build_cache_key
-from apps.companies.models import Firma
+from common.cache import build_cache_key
 from apps.documents.models import Dokument
 from apps.documents.serializers import DocumentSerializer
-from apps.users.models import User
-from .garant import _pick_garant
-from ..models import HistoriaStavovPraxe, Prax
-from ..serializers import InternshipSerializer, StudentCreateInternshipSerializer
+from apps.internships.models import HistoriaStavovPraxe, Prax
+from apps.internships.serializers import InternshipSerializer, StudentCreateInternshipSerializer
+from services.internships.access import get_student_internships
+from services.internships.workflow import create_internship as create_internship_service
 
 
 @swagger_auto_schema(
@@ -59,24 +56,20 @@ def me_internships(request):
     """Return internships for the authenticated student with pagination."""
     user = request.user
 
-    if user.rola != User.ROLE_STUDENT:
-        return Response(
-            {"error": "Len študent môže pristupovať k tomuto endpointu."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
+    result = get_student_internships(user)
+    if not result["ok"]:
+        return Response(result["data"], status=result["status"])
 
     cache_key = build_cache_key("praxe:list:student", request.query_params, user=user)
     cached = cache.get(cache_key)
     if cached is not None:
         return Response(cached)
 
-    praxe = Prax.objects.filter(student=user).select_related("firma", "garant").order_by("-vytvorene_at")
+    if result.get("empty"):
+        cache.set(cache_key, result["data"], getattr(settings, "CACHE_TTL_LIST", 120))
+        return Response(result["data"], status=result["status"])
 
-    if not praxe.exists():
-        payload = {"message": "Študent zatiaľ nemá žiadne praxe."}
-        cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_LIST", 120))
-        return Response(payload, status=200)
-
+    praxe = result["queryset"]
     paginator = PageNumberPagination()
     paginator.page_size = 10
     result_page = paginator.paginate_queryset(praxe, request)
@@ -89,7 +82,7 @@ def me_internships(request):
         "studijny_program": getattr(user.studentprofil, "studijny_program", None),
     }
 
-    result = []
+    payload = []
     for p in result_page:
         historia = HistoriaStavovPraxe.objects.filter(prax=p).order_by("zmena_at").values(
             "stary_stav", "novy_stav", "poznamka", "zmena_at"
@@ -115,7 +108,7 @@ def me_internships(request):
                 "email": p.garant.email,
             }
 
-        result.append(
+        payload.append(
             {
                 "id": p.id,
                 "rok": p.rok,
@@ -133,7 +126,7 @@ def me_internships(request):
 
     response_data = {
         "student": student_data,
-        "internships": result,
+        "internships": payload,
     }
 
     response = paginator.get_paginated_response(response_data)
@@ -170,109 +163,14 @@ def me_internships(request):
 @permission_classes([IsAuthenticated])
 def create_internship(request):
     """Create a new internship for the authenticated student."""
-    user = request.user
-
-    if user.rola != User.ROLE_STUDENT:
-        return Response({"error": "Len študent môže vytvoriť prax."}, status=status.HTTP_403_FORBIDDEN)
-
     serializer = StudentCreateInternshipSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    firma_id = serializer.validated_data["firma_id"]
-    rok = serializer.validated_data["rok"]
-    semester = serializer.validated_data["semester"]
-    datum_zaciatku = serializer.validated_data["datum_zaciatku"]
-    datum_konca = serializer.validated_data["datum_konca"]
-    forma = serializer.validated_data.get("forma", Prax.FORMA_DOHODA)
 
-    firma = Firma.objects.get(id=firma_id)
+    result = create_internship_service(request.user, serializer.validated_data)
+    if not result["ok"]:
+        return Response(result["data"], status=result["status"])
 
-    with transaction.atomic():
-        garant = _pick_garant()
+    return Response(InternshipSerializer(result["prax"]).data, status=result["status"])
 
-        prax = Prax.objects.create(
-            student_id=user.id,
-            firma_id=firma.id,
-            garant=garant,
-            rok=rok,
-            semester=semester,
-            datum_zaciatku=datum_zaciatku,
-            datum_konca=datum_konca,
-            forma=forma,
-            stav=Prax.STAV_VYTVORENA,
-        )
 
-        HistoriaStavovPraxe.objects.create(
-            prax_id=prax.id,
-            stary_stav=None,
-            novy_stav=Prax.STAV_VYTVORENA,
-            zmenil_id=user.id,
-            poznamka="Prax bola vytvorená študentom.",
-        )
-
-        if forma == Prax.FORMA_ZAMESTNANIE:
-            Dokument.objects.get_or_create(
-                prax=prax,
-                typ_dokumentu=Dokument.TYP_ZAMESTNANIE,
-                defaults={
-                    "nahrane_pouzivatel": user,
-                    "subor_url": "",
-                    "stav_dokumentu": Dokument.STAV_NAHRANY,
-                },
-            )
-            try:
-                for _ in range(3):
-                    Dokument.objects.create(
-                        prax=prax,
-                        typ_dokumentu=Dokument.TYP_FAKTURA,
-                        nahrane_pouzivatel=user,
-                        subor_url="",
-                        stav_dokumentu=Dokument.STAV_NAHRANY,
-                    )
-            except IntegrityError:
-                Dokument.objects.get_or_create(
-                    prax=prax,
-                    typ_dokumentu=Dokument.TYP_FAKTURA,
-                    defaults={
-                        "nahrane_pouzivatel": user,
-                        "subor_url": "",
-                        "stav_dokumentu": Dokument.STAV_NAHRANY,
-                    },
-                )
-        else:
-            document, _ = Dokument.objects.get_or_create(
-                prax=prax,
-                typ_dokumentu=Dokument.TYP_DOHODA,
-                defaults={
-                    "nahrane_pouzivatel": user,
-                    "subor_url": "",
-                },
-            )
-
-            # Použijeme generate_dohoda_pdf z balíka views, aby ho vedeli patchnúť testy
-            from apps.internships import views as internships_views
-
-            pdf_buffer, relative_path = internships_views.generate_dohoda_pdf(prax)
-            document.subor_url = relative_path
-            document.stav_dokumentu = Dokument.STAV_POTVRDENY
-            document.save(update_fields=["subor_url", "stav_dokumentu"])
-
-            Dokument.objects.get_or_create(
-                prax=prax,
-                typ_dokumentu=Dokument.TYP_ZMLUVA,
-                defaults={
-                    "nahrane_pouzivatel": user,
-                    "subor_url": "",
-                    "stav_dokumentu": Dokument.STAV_NAHRANY,
-                },
-            )
-        Dokument.objects.get_or_create(
-            prax=prax,
-            typ_dokumentu=Dokument.TYP_VYKAZ,
-            defaults={
-                "nahrane_pouzivatel": user,
-                "subor_url": "",
-                "stav_dokumentu": Dokument.STAV_NAHRANY,
-            },
-        )
-
-    return Response(InternshipSerializer(prax).data, status=status.HTTP_201_CREATED)
+__all__ = ["me_internships", "create_internship"]
