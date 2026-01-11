@@ -3,11 +3,12 @@ from django.contrib import admin, messages
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 from django.contrib.admin.models import LogEntry
-from .models import User, StudentProfil, GarantProfil
+
+from .models import GarantProfil, StudentProfil, User
 from .forms import GarantCreateForm
 from common.users.credentials import generate_strong_password, send_garant_credentials_email
-from django.contrib import admin
 from apps.users.forms import EmailAdminLoginForm
+from services.users.token_cleanup import remove_user_tokens
 
 admin.site.login_form = EmailAdminLoginForm
 
@@ -89,8 +90,15 @@ class UserAdmin(admin.ModelAdmin):
                 self.message_user(request, "Nedá sa zmazať posledného garanta.", level=messages.ERROR)
                 # zmažeme všetko okrem garantov ak existujú iné v querysete
                 other = queryset.exclude(id__in=garant_qs.values("id"))
+                remove_user_tokens(other.values_list("id", flat=True))
                 return super().delete_queryset(request, other)
+        user_ids = list(queryset.values_list("id", flat=True))
+        remove_user_tokens(user_ids)
         return super().delete_queryset(request, queryset)
+
+    def delete_model(self, request, obj):
+        remove_user_tokens([obj.id])
+        super().delete_model(request, obj)
 
     @admin.display(boolean=True, description="Heslo bolo aktualizované")
     def heslo_bolo_aktualizovane(self, obj):
