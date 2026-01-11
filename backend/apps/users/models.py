@@ -180,3 +180,41 @@ class GarantProfil(models.Model):
     class Meta:
         db_table = 'garant_profil'
         managed = False
+
+
+class AktivacneTokeny(models.Model):
+    """Activation tokens emitted for firm accounts."""
+    id = models.BigAutoField(primary_key=True)
+    pouzivatel = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        db_column='pouzivatel_id',
+        related_name='aktivacne_tokeny',
+    )
+    token = models.UUIDField(unique=True)
+    vyprsi_at = models.DateTimeField()
+    pouzity = models.BooleanField(default=False)
+    vytvorene_at = models.DateTimeField()
+
+    class Meta:
+        db_table = 'aktivacne_tokeny'
+        managed = False
+
+
+class ResetHeslaTokeny(models.Model):
+    """Password reset tokens."""
+    id = models.BigAutoField(primary_key=True)
+    pouzivatel = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        db_column='pouzivatel_id',
+        related_name='reset_tokeny',
+    )
+    token = models.UUIDField(unique=True)
+    vyprsi_at = models.DateTimeField()
+    pouzity = models.BooleanField(default=False)
+    vytvorene_at = models.DateTimeField()
+
+    class Meta:
+        db_table = 'reset_hesla_tokeny'
+        managed = False
