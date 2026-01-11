@@ -7,7 +7,8 @@ const ACCESS_SS_KEY = "access_token_ss";
 let accessTokenMemory: string | null = null;
 
 function loadInitialTokens() {
-  if (typeof globalThis === "undefined") return;
+  if (typeof window === "undefined") return;
+  if (typeof sessionStorage === "undefined") return;
   const access = sessionStorage.getItem(ACCESS_SS_KEY);
   if (access) accessTokenMemory = access;
 }
@@ -16,7 +17,7 @@ loadInitialTokens();
 export function setAuthTokens(tokens: { access: string; refresh?: string }) {
   accessTokenMemory = tokens.access;
 
-  if (typeof globalThis !== "undefined") {
+  if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
     sessionStorage.setItem(ACCESS_SS_KEY, tokens.access);
     if (tokens.refresh) {
       localStorage.setItem(REFRESH_KEY, tokens.refresh);
@@ -27,7 +28,7 @@ export function setAuthTokens(tokens: { access: string; refresh?: string }) {
 export function clearAuthTokens() {
   accessTokenMemory = null;
 
-  if (typeof globalThis !== "undefined") {
+  if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
     sessionStorage.removeItem(ACCESS_SS_KEY);
     localStorage.removeItem(REFRESH_KEY);
   }
@@ -36,7 +37,8 @@ export function clearAuthTokens() {
 export const getAccessToken = () => accessTokenMemory;
 
 export function getRefreshToken() {
-  if (typeof globalThis === "undefined") return null;
+  if (typeof window === "undefined") return null;
+  if (typeof localStorage === "undefined") return null;
   return localStorage.getItem(REFRESH_KEY);
 }
 

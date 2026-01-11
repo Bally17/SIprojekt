@@ -7,6 +7,7 @@ import { SystemNotificationsProvider } from "@components/notifications";
 import { AuthProvider } from "./AuthProvider";
 import { Locale } from "@shared-types/core/common";
 import { loadMessagesClient } from "@i18n/loadMessagesClient";
+import { ChunkLoadRecovery } from "@lib/ChunkLoadRecovery";
 
 type Props = {
   children: ReactNode;
@@ -17,6 +18,7 @@ type Props = {
 export function AppProviders({ children, locale, messages }: Readonly<Props>) {
   return (
     <QueryProvider>
+      <ChunkLoadRecovery />
       <LocalizationProvider locale={locale} messages={messages} loadMessages={loadMessagesClient}>
         <SystemNotificationsProvider>
           <AuthProvider>{children}</AuthProvider>
