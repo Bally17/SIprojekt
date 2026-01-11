@@ -1,3 +1,4 @@
+"""Base viewset for document endpoints with role-based filtering."""
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -9,16 +10,14 @@ from ..serializers import DocumentSerializer
 
 
 class DocumentBaseViewSet(viewsets.ModelViewSet):
-    """
-    Zdieľaná základňa pre DocumentViewSet – drží nastavenia a základný queryset filter.
-    """
+    """Shared base viewset for document endpoints."""
 
     queryset = Dokument.objects.all()
     serializer_class = DocumentSerializer
     permission_classes = [IsAuthenticated, IsGarantOrRelatedDocument]
 
     def get_queryset(self):
-        """Limit dokumenty na príbuzné praxe podľa roly používateľa."""
+        """Filter documents to internships related to the current user role."""
         user = getattr(self.request, "user", None)
         qs = super().get_queryset().order_by("-vytvorene_at")
         role = getattr(user, "rola", "") or ""

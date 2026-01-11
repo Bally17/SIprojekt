@@ -1,12 +1,25 @@
-from .helpers import get_tokens_for_user, get_user_data, signer, password_reset_signer
-from .login import login_view, company_login_view, garant_login_view, profile, profile_missing_fields, logout_view
-from .oauth_server import oauth_authorize, oauth_token, oauth_userinfo, oauth_clients, oauth_client_detail
-from .password import password_reset_request, password_reset_confirm, change_password
+from .helpers import get_tokens_for_user, get_user_data, password_reset_signer, signer
+from .login import (
+    company_login_view,
+    garant_login_view,
+    login_view,
+    logout_view,
+    profile,
+    profile_missing_fields,
+)
+from .oauth_server import (
+    oauth_authorize,
+    oauth_client_detail,
+    oauth_clients,
+    oauth_token,
+    oauth_userinfo,
+)
+from .password import change_password, password_reset_confirm, password_reset_request
 from .registration import (
-    StudentRegistrationView,
     CompanyRegistrationView,
-    activate_account,
+    StudentRegistrationView,
     company_profile_complete,
+    activate_account,
 )
 from .social import (
     google_auth,

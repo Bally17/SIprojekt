@@ -1,12 +1,16 @@
-import csv
-
+"""Viewsets for internship records, history, and garant workflows."""
+from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Q
-from rest_framework import mixins, viewsets
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+import csv
 
 from ..models import HistoriaStavovPraxe, Prax
 from ..permissions import IsGarantOrRelatedInternship, IsGarantUser
@@ -16,9 +20,11 @@ from ..serializers import (
     InternshipSerializer,
 )
 from .garant import GARANT_LIST_FILTERS, init_csv_response
+from apps.cache_utils import build_cache_key
 
 
 class InternshipViewSet(viewsets.ModelViewSet):
+    """CRUD access for internships scoped by user role."""
     queryset = Prax.objects.select_related(
         "student", "student__studentprofil", "firma", "garant"
     ).order_by("-vytvorene_at")
@@ -42,6 +48,7 @@ class InternshipViewSet(viewsets.ModelViewSet):
 
 
 class InternshipHistoryViewSet(viewsets.ModelViewSet):
+    """Read-only access to internship status history by role."""
     queryset = HistoriaStavovPraxe.objects.all()
     serializer_class = InternshipHistorySerializer
     permission_classes = [IsAuthenticated, IsGarantOrRelatedInternship]
@@ -68,6 +75,7 @@ class GarantInternshipViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
+    """Garant-only endpoints for listing, updating, and exporting internships."""
     queryset = (
         Prax.objects.select_related("student", "student__studentprofil", "firma", "garant").all().order_by("-vytvorene_at")
     )
@@ -89,7 +97,22 @@ class GarantInternshipViewSet(
         },
     )
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        cache_key = build_cache_key("praxe:list:garant", request.query_params, user=request.user)
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+            return response
+
+        serializer = self.get_serializer(queryset, many=True)
+        cache.set(cache_key, serializer.data, getattr(settings, "CACHE_TTL_LIST", 120))
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Garant: Detail praxe",
@@ -99,7 +122,15 @@ class GarantInternshipViewSet(
         },
     )
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        cache_key = f"praxe:detail:{kwargs.get('pk')}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        response = super().retrieve(request, *args, **kwargs)
+        if response.status_code == 200:
+            cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_DETAIL", 300))
+        return response
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -115,16 +146,38 @@ class GarantInternshipViewSet(
         firma_text = params.get("firma")
         study_program = params.get("odbor") or params.get("study_program")
 
+        # Zakladna validacia filtrov z query parametrov (ochrana proti neplatnym hodnotam)
+        allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
+        allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
+
         if rok:
-            queryset = queryset.filter(rok=rok)
+            try:
+                rok_value = int(rok)
+            except (TypeError, ValueError):
+                raise ValidationError({"rok": "Neplatný rok."})
+            queryset = queryset.filter(rok=rok_value)
         if semester:
-            queryset = queryset.filter(semester__iexact=semester)
+            semester_value = str(semester).lower()
+            if semester_value not in allowed_semester:
+                raise ValidationError({"semester": "Neplatný semester."})
+            queryset = queryset.filter(semester__iexact=semester_value)
         if stav:
-            queryset = queryset.filter(stav__iexact=stav)
+            stav_value = str(stav).lower()
+            if stav_value not in allowed_stav:
+                raise ValidationError({"stav": "Neplatný stav."})
+            queryset = queryset.filter(stav__iexact=stav_value)
         if student_id:
-            queryset = queryset.filter(student_id=student_id)
+            try:
+                student_id_value = int(student_id)
+            except (TypeError, ValueError):
+                raise ValidationError({"student_id": "Neplatné ID študenta."})
+            queryset = queryset.filter(student_id=student_id_value)
         if firma_id:
-            queryset = queryset.filter(firma_id=firma_id)
+            try:
+                firma_id_value = int(firma_id)
+            except (TypeError, ValueError):
+                raise ValidationError({"firma_id": "Neplatné ID firmy."})
+            queryset = queryset.filter(firma_id=firma_id_value)
         if student_text:
             queryset = queryset.filter(
                 Q(student__email__icontains=student_text)

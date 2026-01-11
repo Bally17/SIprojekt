@@ -1,19 +1,23 @@
+"""Student-facing internship endpoints."""
+from django.conf import settings
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 
+from apps.cache_utils import build_cache_key
+from apps.companies.models import Firma
 from apps.documents.models import Dokument
 from apps.documents.serializers import DocumentSerializer
+from apps.users.models import User
+from .garant import _pick_garant
 from ..models import HistoriaStavovPraxe, Prax
 from ..serializers import InternshipSerializer, StudentCreateInternshipSerializer
-from apps.companies.models import Firma
-from .garant import _pick_garant
-from apps.users.models import User
 
 
 @swagger_auto_schema(
@@ -52,7 +56,7 @@ from apps.users.models import User
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def me_internships(request):
-    """🧑‍🎓 Vráti všetky praxe prihláseného študenta s detailnými informáciami a stránkovaním."""
+    """Return internships for the authenticated student with pagination."""
     user = request.user
 
     if user.rola != User.ROLE_STUDENT:
@@ -61,10 +65,17 @@ def me_internships(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
+    cache_key = build_cache_key("praxe:list:student", request.query_params, user=user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     praxe = Prax.objects.filter(student=user).select_related("firma", "garant").order_by("-vytvorene_at")
 
     if not praxe.exists():
-        return Response({"message": "Študent zatiaľ nemá žiadne praxe."}, status=200)
+        payload = {"message": "Študent zatiaľ nemá žiadne praxe."}
+        cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_LIST", 120))
+        return Response(payload, status=200)
 
     paginator = PageNumberPagination()
     paginator.page_size = 10
@@ -125,7 +136,9 @@ def me_internships(request):
         "internships": result,
     }
 
-    return paginator.get_paginated_response(response_data)
+    response = paginator.get_paginated_response(response_data)
+    cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+    return response
 
 
 @swagger_auto_schema(
@@ -156,6 +169,7 @@ def me_internships(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_internship(request):
+    """Create a new internship for the authenticated student."""
     user = request.user
 
     if user.rola != User.ROLE_STUDENT:

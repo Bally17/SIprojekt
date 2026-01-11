@@ -1,3 +1,4 @@
+"""PDF generation helpers for internship agreement documents."""
 import io
 import os
 from datetime import datetime, date
@@ -20,10 +21,7 @@ except ImportError:  # pragma: no cover - optional dependency in dev env
 
 
 def generate_dohoda_pdf(prax):
-    """
-    Vygeneruje PDF dohodu o odbornej praxi pre danú prax.
-    Automaticky konvertuje dátumy z reťazcov a ošetrí None hodnoty v textoch.
-    """
+    """Generate the internship agreement PDF and return (buffer, relative_path)."""
 
     if PdfReader is None or PdfWriter is None or canvas is None or A4 is None or mm is None:
         raise RuntimeError(
@@ -36,10 +34,12 @@ def generate_dohoda_pdf(prax):
 
     # 🔹 Pomocná funkcia – bezpečne vráti reťazec
     def safe_str(value):
+        """Return a safe string representation for optional values."""
         return str(value) if value is not None else ""
 
     # 🔹 Bezpečné spracovanie dátumov
     def to_date_safe(value):
+        """Parse supported date formats into a date object."""
         if isinstance(value, (datetime, date)):
             return value
         if isinstance(value, str):

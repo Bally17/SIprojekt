@@ -32,6 +32,7 @@ ENV/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+test_db.sqlite3
 media/
 
 # IDE
@@ -53,6 +54,7 @@ Thumbs.db
 .env
 .env.local
 .env.production
+txtenv.txt
 
 #server generated static files
 staticfiles/

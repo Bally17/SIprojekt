@@ -1,12 +1,14 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes  # 🔥 musí byť tu hore
+"""Company endpoints for CRUD, search, and internship overview."""
+from django.conf import settings
+from django.core.cache import cache
+from django.db.models import Q
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from django.db.models import Q
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 from .models import Firma
 from .serializers import CompanySerializer
@@ -14,17 +16,17 @@ from apps.internships.models import Prax
 from apps.users.serializers import StudentProfileSerializer
 from apps.internships.serializers import InternshipSerializer
 from apps.internships.permissions import IsGarantOrReadOnlyCompany
+from apps.cache_utils import build_cache_key
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
+    """CRUD for company records with role-aware access control."""
     queryset = Firma.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated, IsGarantOrReadOnlyCompany]
 
     def get_queryset(self):
-        """
-        Garant vidí všetky firmy, firemný používateľ len svoju firmu.
-        """
+        """Filter companies based on user role."""
         user = getattr(self.request, "user", None)
         if not user or not user.is_authenticated:
             return Firma.objects.none()
@@ -61,6 +63,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def company_internships_overview(request, company_id):
+    """Return company detail with filtered internships and pagination."""
     try:
         company = Firma.objects.get(id=company_id)
     except Firma.DoesNotExist:
@@ -78,6 +81,11 @@ def company_internships_overview(request, company_id):
         return Response({"error": "Prístup povolený len garantom alebo firme ku vlastným praxiam."},
                         status=status.HTTP_403_FORBIDDEN)
 
+    cache_key = build_cache_key("firma:overview", request.query_params, user=request.user, extra=company_id)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached, status=status.HTTP_200_OK)
+
     internships = Prax.objects.filter(firma=company).select_related('student').order_by("-vytvorene_at")
 
     # --- Filtrovanie ---
@@ -86,15 +94,36 @@ def company_internships_overview(request, company_id):
     search = request.query_params.get('search')
     ordering = request.query_params.get('ordering')
 
+    # Zakladna validacia query parametrov (ochrana proti neplatnym hodnotam a order_by)
     if rok:
-        internships = internships.filter(rok=rok)
+        try:
+            rok_value = int(rok)
+        except (TypeError, ValueError):
+            return Response({"error": "Neplatný rok."}, status=status.HTTP_400_BAD_REQUEST)
+        internships = internships.filter(rok=rok_value)
     if stav:
+        allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
+        if stav not in allowed_stav:
+            return Response({"error": "Neplatný stav."}, status=status.HTTP_400_BAD_REQUEST)
         internships = internships.filter(stav=stav)
     if search:
         internships = internships.filter(
             Q(student__meno__icontains=search) | Q(student__priezvisko__icontains=search)
         )
     if ordering:
+        allowed_ordering = {
+            "vytvorene_at",
+            "rok",
+            "semester",
+            "datum_zaciatku",
+            "datum_konca",
+            "stav",
+            "student__meno",
+            "student__priezvisko",
+        }
+        normalized = ordering.lstrip("-")
+        if normalized not in allowed_ordering:
+            return Response({"error": "Neplatné triedenie."}, status=status.HTTP_400_BAD_REQUEST)
         internships = internships.order_by(ordering)
 
     # --- Stránkovanie ---
@@ -110,22 +139,24 @@ def company_internships_overview(request, company_id):
         "next": paginator.get_next_link(),
         "previous": paginator.get_previous_link(),
         "results": [
-    {
-        "student": StudentProfileSerializer(getattr(i.student, "studentprofil", None)).data
-        if hasattr(i.student, "studentprofil")
-        else {
-            "id": i.student.id,
-            "meno": i.student.meno,
-            "priezvisko": i.student.priezvisko,
-            "email": i.student.email,
-        },
-        "internship": InternshipSerializer(i).data,
+            {
+                "student": (
+                    StudentProfileSerializer(getattr(i.student, "studentprofil", None)).data
+                    if hasattr(i.student, "studentprofil")
+                    else {
+                        "id": i.student.id,
+                        "meno": i.student.meno,
+                        "priezvisko": i.student.priezvisko,
+                        "email": i.student.email,
+                    }
+                ),
+                "internship": InternshipSerializer(i).data,
+            }
+            for i in result_page
+        ],
     }
-    for i in result_page
-],
 
-    }
-
+    cache.set(cache_key, data, getattr(settings, "CACHE_TTL_LIST", 120))
     return Response(data, status=status.HTTP_200_OK)
 
 
@@ -163,9 +194,7 @@ def company_internships_overview(request, company_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search_companies(request):
-    """
-    🔍 Vyhľadávanie firiem (čiastočné aj úplné, vhodné pre autocomplete).
-    """
+    """Search companies by name or contact fields for autocomplete."""
     user = request.user
     role = getattr(user, "rola", "") or ""
     # Vyhľadávanie firiem potrebujú aj študenti pri zakladaní praxe
@@ -173,9 +202,16 @@ def search_companies(request):
         return Response({"error": "Prístup povolený len prihláseným používateľom (študent/firma/garant)."},
                         status=status.HTTP_403_FORBIDDEN)
 
+    cache_key = build_cache_key("firma:search", request.query_params, user=request.user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     query = request.query_params.get('q', '').strip()
     if not query:
-        return Response({"results": []}, status=status.HTTP_200_OK)
+        payload = {"results": []}
+        cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
+        return Response(payload, status=status.HTTP_200_OK)
 
     firms = Firma.objects.filter(
         Q(nazov__icontains=query) |
@@ -184,4 +220,6 @@ def search_companies(request):
         Q(kontakt_email__icontains=query)
     )[:10]
 
-    return Response({"results": CompanySerializer(firms, many=True).data})
+    payload = {"results": CompanySerializer(firms, many=True).data}
+    cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
+    return Response(payload)

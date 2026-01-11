@@ -1,3 +1,4 @@
+"""Signal handlers for delivering notification emails."""
 import logging
 from smtplib import SMTPException
 
@@ -11,12 +12,13 @@ logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Notifikacie)
 def send_notification_email(sender, instance, created, **kwargs):
+    """Send email for newly created notification records."""
     if not created:
         return
     
     # ak nemá komu poslať, skonči
     if not instance.prijemca_email:
-        logger.info(f"🔕 Notifikácia {instance.id} vytvorená bez emailu – neodosiela sa.")
+        logger.info(f"Notifikácia {instance.id} vytvorená bez emailu – neodosiela sa.")
         return
 
     subject = instance.predmet
@@ -48,7 +50,7 @@ def send_notification_email(sender, instance, created, **kwargs):
             fail_silently=False,
         )
     except (SMTPException, Exception) as exc:
-        logger.warning(f"❌ Notifikácia {instance.id} sa nepodarila odoslať: {exc}")
+        logger.warning(f"Notifikácia {instance.id} sa nepodarila odoslať: {exc}")
         instance.stav = "zlyhalo"
         instance.save(update_fields=["stav"])
         return
@@ -57,4 +59,4 @@ def send_notification_email(sender, instance, created, **kwargs):
     instance.stav = "odoslane"
     instance.save(update_fields=["odoslane_at", "stav"])
 
-    logger.info(f"✅ Email notifikácia {instance.id} úspešne odoslaná na {instance.prijemca_email}")
+    logger.info(f"Email notifikácia {instance.id} úspešne odoslaná na {instance.prijemca_email}")

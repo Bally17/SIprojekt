@@ -1,10 +1,10 @@
-# backend/apps/authentication/rate_limiting.py
+"""Simple cache-based rate limiting helpers for OAuth endpoints."""
 from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework import status
 
 def custom_rate_limit(key, limit=10, window=60):
-    """Simple custom rate limiting using Django cache"""
+    """Return True if the key exceeded the limit within the window."""
     count = cache.get(key, 0)
     if count >= limit:
         return True
@@ -12,7 +12,7 @@ def custom_rate_limit(key, limit=10, window=60):
     return False
 
 def oauth_rate_limit_check(request, endpoint_type):
-    """Rate limiting check for OAuth endpoints"""
+    """Apply per-client and per-IP limits for OAuth authorize/token endpoints."""
     client_id = request.data.get('client_id') if request.method == 'POST' else request.GET.get('client_id')
     ip = request.META.get('REMOTE_ADDR', 'unknown')
     

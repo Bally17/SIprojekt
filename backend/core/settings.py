@@ -1,13 +1,15 @@
+"""Django settings for the core project."""
+from datetime import timedelta
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
-from datetime import timedelta
 
 load_dotenv()
 
 
 def env_bool(name: str, default: bool = False) -> bool:
-    """Helper for consistent boolean env parsing."""
+    """Parse boolean environment variables consistently."""
     value = os.getenv(name)
     if value is None:
         return default
@@ -87,8 +89,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'core.urls'
 
-import drf_yasg  # noqa
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -110,27 +110,44 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # -----------------------------------------------------------------------------
 # CACHE
 # -----------------------------------------------------------------------------
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+REDIS_URL = os.getenv('REDIS_URL')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': 'si_projekt',
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
+
+CACHE_TTL_DETAIL = int(os.getenv('CACHE_TTL_DETAIL', 300))
+CACHE_TTL_LIST = int(os.getenv('CACHE_TTL_LIST', 120))
+CACHE_TTL_SEARCH = int(os.getenv('CACHE_TTL_SEARCH', 180))
+CACHE_TTL_STATS = int(os.getenv('CACHE_TTL_STATS', 600))
 
 # -----------------------------------------------------------------------------
 # DATABÁZA
 # -----------------------------------------------------------------------------
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'praxy_db',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'db',  # názov služby v docker-compose
-        'PORT': '5432',
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', 'praxy_db'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+        'HOST': os.getenv('DB_HOST', 'db'),  # názov služby v docker-compose
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
-print("✅ Using Docker PostgreSQL")
 
 # -----------------------------------------------------------------------------
 # HESLÁ
@@ -347,18 +364,6 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     SESSION_COOKIE_SAMESITE = "Lax"
-
-# -----------------------------------------------------------------------------
-# OAuth Config DEBUG PRINT
-# -----------------------------------------------------------------------------
-GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID')
-GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET')
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-
-print(f"🔧 OAuth Config Loaded:")
-print(f"   GitHub Client ID: {'✅' if GITHUB_CLIENT_ID else '❌'}")
-print(f"   Google Client ID: {'✅' if GOOGLE_CLIENT_ID else '❌'}")
 
 # -----------------------------------------------------------------------------
 # DEFAULT GARANT (ENV)

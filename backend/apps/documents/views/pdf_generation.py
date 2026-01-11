@@ -1,3 +1,4 @@
+"""PDF generation mixin for internship documents."""
 from django.http import FileResponse
 from rest_framework import status
 from rest_framework.decorators import action
@@ -11,10 +12,11 @@ from ..utils.pdf_generator import generate_dohoda_pdf
 
 
 class PdfGenerationMixin:
+    """Provide PDF generation actions for document workflows."""
     # -----------------------  EXISTUJÚCE: PDF  -----------------------
     @action(detail=True, methods=["get"], url_path="generate_dohoda")
     def generate_dohoda(self, request, pk=None):
-        """Študent vygeneruje PDF dohodu pre prax v stave vytvorena/potvrdena."""
+        """Generate a PDF agreement for eligible student internships."""
         try:
             document = self.get_object()
             if not document.prax_id:

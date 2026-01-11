@@ -1,14 +1,16 @@
-# apps/users/models.py
-from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.contrib.auth.hashers import make_password, check_password
-from django.core.exceptions import ValidationError
+"""Custom user model and related profiles."""
+import secrets
 import re
 import string
-import secrets
+
+from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.core.exceptions import ValidationError
+from django.db import models
 
 
 def validate_student_email(value):
+    """Validate student email address and allowed domains."""
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(email_pattern, value):
         raise ValidationError('Neplatný formát emailu.')
@@ -23,13 +25,16 @@ def validate_student_email(value):
 #       USER MANAGER
 # ============================
 class CustomUserManager(BaseUserManager):
+    """User manager that enforces roles and password generation."""
     use_in_migrations = False
 
     def _generate_random_password(self, length=12):
+        """Generate a random password for new users."""
         chars = string.ascii_letters + string.digits + "!@#$%^&*()"
         return ''.join(secrets.choice(chars) for _ in range(length))
 
     def create_user(self, email, password=None, **extra_fields):
+        """Create a user with a normalized email and default role."""
         if not email:
             raise ValueError("Email musí byť zadaný")
         email = self.normalize_email(email)
@@ -41,6 +46,7 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
+        """Create a garant superuser with elevated flags."""
         # Garant = plné práva v admin rozhraní
         extra_fields.setdefault('rola', User.ROLE_GARANT)
         extra_fields.setdefault('aktivny', True)
@@ -53,6 +59,7 @@ class CustomUserManager(BaseUserManager):
 #         USER MODEL
 # ============================
 class User(AbstractBaseUser):
+    """Custom user model mapped to existing database columns."""
     # zneplatní DB mapovanie na neexistujúce stĺpce
     password = None
     last_login = None
@@ -105,9 +112,11 @@ class User(AbstractBaseUser):
 
     # --- aliasy/heslo ---
     def set_password(self, raw_password):
+        """Hash and store the password in the legacy column."""
         self.heslo_hash = make_password(raw_password)
 
     def check_password(self, raw_password):
+        """Verify a raw password against the stored hash."""
         return bool(self.heslo_hash) and check_password(raw_password, self.heslo_hash)
 
     @property
@@ -146,6 +155,7 @@ class User(AbstractBaseUser):
 #      STUDENT PROFIL
 # ============================
 class StudentProfil(models.Model):
+    """Student profile linked to a user record."""
     pouzivatel = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, db_column='pouzivatel_id')
     studijny_program = models.CharField(max_length=150)
 
@@ -158,6 +168,7 @@ class StudentProfil(models.Model):
 #      GARANT PROFIL
 # ============================
 class GarantProfil(models.Model):
+    """Garant profile linked to a user record."""
     pouzivatel = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, db_column='pouzivatel_id')
     titul_pred = models.CharField(max_length=50, blank=True, null=True)
     titul_za = models.CharField(max_length=50, blank=True, null=True)  # POZOR: oprav ak máš v DB max_length

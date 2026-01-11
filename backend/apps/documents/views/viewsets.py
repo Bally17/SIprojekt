@@ -1,3 +1,4 @@
+"""Viewset composition for document workflows."""
 from .company_review import CompanyReviewMixin
 from .document_base import DocumentBaseViewSet
 from .garant_review import GarantReviewMixin
@@ -12,8 +13,6 @@ class DocumentViewSet(
     PdfGenerationMixin,
     DocumentBaseViewSet,
 ):
-    """
-    Dokumenty a ich workflow (upload, schválenie, zamietnutie, stiahnutie, generovanie dohody).
-    """
+    """Document workflow endpoints (upload, review, download, PDF generation)."""
 
     pass

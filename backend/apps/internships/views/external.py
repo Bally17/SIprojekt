@@ -1,18 +1,20 @@
+"""External system endpoints for internship status updates and listing."""
+from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 
-from django.conf import settings
-
+from apps.cache_utils import build_cache_key
+from apps.users.models import User
 from ..models import Prax
 from ..serializers import ExternalDefenseSerializer, InternshipSerializer
-from apps.users.models import User
 
 
 @swagger_auto_schema(
@@ -33,7 +35,7 @@ from apps.users.models import User
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def external_mark_defended(request):
-    """Externý systém prepne prax zo stavu schvalena do stavu obhajena."""
+    """Mark an internship as defended for external integrations."""
     user = request.user
 
     if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
@@ -92,10 +94,15 @@ def external_mark_defended(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def external_list_internships(request):
-    """Externý integrátor alebo garant získa prehľad praxí."""
+    """List internships for external integrators or garants."""
     user = request.user
     if user.rola not in (User.ROLE_EXTERNY, User.ROLE_GARANT):
         return Response({"error": "Prístup povolený len pre externých integrátorov."}, status=status.HTTP_403_FORBIDDEN)
+
+    cache_key = build_cache_key("praxe:list:external", request.query_params, user=user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
 
     qs = (
         Prax.objects.select_related("student", "student__studentprofil", "firma", "garant")
@@ -104,8 +111,14 @@ def external_list_internships(request):
     )
 
     stav = request.query_params.get("stav")
+    # Zakladna validacia filtrov z query parametrov
+    allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
+    allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
     if stav:
-        qs = qs.filter(stav__iexact=stav)
+        stav_value = str(stav).lower()
+        if stav_value not in allowed_stav:
+            return Response({"error": "Neplatný stav."}, status=status.HTTP_400_BAD_REQUEST)
+        qs = qs.filter(stav__iexact=stav_value)
 
     rok = request.query_params.get("rok")
     if rok:
@@ -116,7 +129,10 @@ def external_list_internships(request):
 
     semester = request.query_params.get("semester")
     if semester:
-        qs = qs.filter(semester__iexact=semester)
+        semester_value = str(semester).lower()
+        if semester_value not in allowed_semester:
+            return Response({"error": "Neplatný semester."}, status=status.HTTP_400_BAD_REQUEST)
+        qs = qs.filter(semester__iexact=semester_value)
 
     search = request.query_params.get("search")
     if search:
@@ -131,4 +147,6 @@ def external_list_internships(request):
     paginator.page_size = getattr(settings, "REST_FRAMEWORK", {}).get("PAGE_SIZE", 20)
     page = paginator.paginate_queryset(qs, request)
     serializer = InternshipSerializer(page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+    response = paginator.get_paginated_response(serializer.data)
+    cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+    return response

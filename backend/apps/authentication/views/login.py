@@ -16,7 +16,7 @@ from apps.companies.models import Firma
 
 
 def _build_login_response(user):
-    """Generate unified login response for username/password flows."""
+    """Build a standardized login payload with user info and JWT tokens."""
     tokens = get_tokens_for_user(user)
     user_data = get_user_data(user)
     return {
@@ -31,7 +31,7 @@ def _build_login_response(user):
 @permission_classes([AllowAny])
 @throttle_classes([ScopedRateThrottle])
 def login_view(request):
-    """Normal email/password login for students"""
+    """Authenticate student accounts via email/password login."""
     serializer = LoginSerializer(data=request.data)
 
     if serializer.is_valid():
@@ -59,7 +59,7 @@ login_view.throttle_scope = "login"
 @permission_classes([AllowAny])
 @throttle_classes([ScopedRateThrottle])
 def company_login_view(request):
-    """Email/password login for companies"""
+    """Authenticate company accounts via email/password login."""
     serializer = LoginSerializer(data=request.data)
 
     if serializer.is_valid():
@@ -87,7 +87,7 @@ company_login_view.throttle_scope = "login"
 @permission_classes([AllowAny])
 @throttle_classes([ScopedRateThrottle])
 def garant_login_view(request):
-    """Email/password login for garants"""
+    """Authenticate garant accounts via email/password login."""
     serializer = LoginSerializer(data=request.data)
 
     if serializer.is_valid():
@@ -114,7 +114,7 @@ garant_login_view.throttle_scope = "login"
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def profile(request):
-    """Get user profile"""
+    """Return profile data for the authenticated user."""
     user_data = get_user_data(request.user)
     return Response({"user": user_data})
 
@@ -146,10 +146,7 @@ def profile(request):
 @authentication_classes([AllowInactiveJWTAuthentication])
 @permission_classes([IsAuthenticated])
 def profile_missing_fields(request):
-    """
-    Get user profile with info about missing required fields we need to collect.
-    Useful after OAuth (GitHub/Google) to prompt user to complete data.
-    """
+    """Return profile data with missing required fields for completion flows."""
     user = request.user
     if user.rola == User.ROLE_FIRMA:
         required_fields = [
@@ -190,11 +187,7 @@ def profile_missing_fields(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def logout_view(request):
-    """
-    Logout user:
-    - očakáva 'refresh_token' v body
-    - refresh token sa zneplatní (blacklist)
-    """
+    """Invalidate a refresh token and return a logout confirmation."""
     rt = request.data.get("refresh_token")
     if rt:
         try:
@@ -205,3 +198,4 @@ def logout_view(request):
         except Exception:
             pass
     return Response({"status": "success", "detail": "logged out"}, status=status.HTTP_200_OK)
+"""Authentication views for email/password login and profile access."""

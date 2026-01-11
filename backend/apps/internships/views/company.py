@@ -1,12 +1,16 @@
+"""Company-facing internship endpoints."""
+from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 
+from apps.cache_utils import build_cache_key
 from apps.users.serializers import UserSerializer
 from apps.users.models import User
 
@@ -28,7 +32,7 @@ from ..serializers import InternshipSerializer
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def company_my_internships(request):
-    """🔹 Firma získa prehľad o všetkých svojich praxiach."""
+    """Return all internships for the authenticated company."""
     user = request.user
 
     if user.rola != User.ROLE_FIRMA:
@@ -36,6 +40,11 @@ def company_my_internships(request):
 
     if not user.firma_id:
         return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
+
+    cache_key = build_cache_key("praxe:list:company", request.query_params, user=user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
 
     internships = (
         Prax.objects.filter(firma_id=user.firma_id)
@@ -47,12 +56,26 @@ def company_my_internships(request):
     stav = request.query_params.get("stav")
     semester = request.query_params.get("semester")
 
+    # Zakladna validacia filtrov z query parametrov
+    allowed_stav = {choice[0] for choice in Prax.STAV_CHOICES}
+    allowed_semester = {choice[0] for choice in Prax.SEMESTER_CHOICES}
+
     if rok:
-        internships = internships.filter(rok=rok)
+        try:
+            rok_value = int(rok)
+        except (TypeError, ValueError):
+            return Response({"error": "Neplatný rok."}, status=status.HTTP_400_BAD_REQUEST)
+        internships = internships.filter(rok=rok_value)
     if stav:
-        internships = internships.filter(stav__iexact=stav)
+        stav_value = str(stav).lower()
+        if stav_value not in allowed_stav:
+            return Response({"error": "Neplatný stav."}, status=status.HTTP_400_BAD_REQUEST)
+        internships = internships.filter(stav__iexact=stav_value)
     if semester:
-        internships = internships.filter(semester__iexact=semester)
+        semester_value = str(semester).lower()
+        if semester_value not in allowed_semester:
+            return Response({"error": "Neplatný semester."}, status=status.HTTP_400_BAD_REQUEST)
+        internships = internships.filter(semester__iexact=semester_value)
 
     paginator = PageNumberPagination()
     paginator.page_size = 10
@@ -63,7 +86,9 @@ def company_my_internships(request):
         "internships": InternshipSerializer(result_page, many=True).data,
     }
 
-    return paginator.get_paginated_response(data)
+    response = paginator.get_paginated_response(data)
+    cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+    return response
 
 
 @swagger_auto_schema(
@@ -75,7 +100,7 @@ def company_my_internships(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def company_pending_internships(request):
-    """🔹 Firma získa praxe, ktoré čakajú na potvrdenie (stav = 'vytvorena')."""
+    """Return company internships pending confirmation."""
     user = request.user
 
     if user.rola != User.ROLE_FIRMA:
@@ -83,6 +108,11 @@ def company_pending_internships(request):
 
     if not user.firma_id:
         return Response({"error": "Firma nemá priradené ID (firma_id)."}, status=status.HTTP_400_BAD_REQUEST)
+
+    cache_key = build_cache_key("praxe:list:company:pending", request.query_params, user=user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
 
     internships = (
         Prax.objects.filter(firma_id=user.firma_id, stav__iexact=Prax.STAV_VYTVORENA)
@@ -99,7 +129,9 @@ def company_pending_internships(request):
         "internships": InternshipSerializer(result_page, many=True).data,
     }
 
-    return paginator.get_paginated_response(data)
+    response = paginator.get_paginated_response(data)
+    cache.set(cache_key, response.data, getattr(settings, "CACHE_TTL_LIST", 120))
+    return response
 
 
 @swagger_auto_schema(
@@ -116,7 +148,7 @@ def company_pending_internships(request):
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
 def company_confirm_internship(request, prax_id):
-    """✅ Firma potvrdí prax (stav -> potvrdena)."""
+    """Confirm an internship as a company (status to potvrdena)."""
     user = request.user
 
     if user.rola != User.ROLE_FIRMA:
@@ -162,7 +194,7 @@ def company_confirm_internship(request, prax_id):
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
 def company_reject_internship(request, prax_id):
-    """❌ Firma zamietne prax (stav -> zamietnuta)."""
+    """Reject an internship as a company (status to zamietnuta)."""
     user = request.user
 
     if user.rola != User.ROLE_FIRMA:

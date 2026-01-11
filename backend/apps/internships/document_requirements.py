@@ -1,3 +1,4 @@
+"""Document requirement rules for internship status transitions."""
 from typing import Dict, List
 
 from apps.documents.models import Dokument
@@ -18,6 +19,7 @@ REQUIRED_DOCUMENTS_BY_STATE: Dict[str, List[Dict[str, str]]] = {
 
 
 def _state_key(value: str) -> str:
+    """Normalize target state for lookup."""
     return (value or "").lower()
 
 

@@ -1,7 +1,7 @@
-from django.urls import path
-from . import views
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-from .views import StudentRegistrationView, CompanyRegistrationView  # PRIDAŤ tieto importy
+from django.urls import path
+
+from . import views
 
 urlpatterns = [
     # GitHub OAuth
@@ -30,8 +30,8 @@ urlpatterns = [
     path('oauth/clients/<str:client_id>/', views.oauth_client_detail, name='oauth-client-detail'),
 
     # Student and Company registration
-    path('register/student/', StudentRegistrationView.as_view(), name='student-registration'),
-    path('register/company/', CompanyRegistrationView.as_view(), name='company-registration'),
+    path('register/student/', views.StudentRegistrationView.as_view(), name='student-registration'),
+    path('register/company/', views.CompanyRegistrationView.as_view(), name='company-registration'),
     path('register/company/complete/', views.company_profile_complete, name='company-profile-complete'),
     path('register/company/github/', views.github_company_register, name='company-github-registration'),
 

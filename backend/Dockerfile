@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     libpq-dev \
     netcat-openbsd \
+    texlive-latex-recommended \
+    texlive-fonts-recommended \
+    texlive-latex-extra \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

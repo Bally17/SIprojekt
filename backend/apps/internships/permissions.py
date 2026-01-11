@@ -1,9 +1,11 @@
+"""Permission classes for internship-related views."""
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import SAFE_METHODS
 from apps.users.models import User
 
 
 def _role(user) -> str:
+    """Return normalized role string for the given user."""
     return getattr(user, "rola", "") or ""
 
 
@@ -20,7 +22,7 @@ class IsGarantUser(BasePermission):
 
 
 class IsStudentUser(BasePermission):
-    """Allow only študent role."""
+    """Allow only student role."""
 
     message = "Prístup je povolený len používateľom s rolou študent."
 
@@ -30,7 +32,7 @@ class IsStudentUser(BasePermission):
 
 
 class IsCompanyUser(BasePermission):
-    """Allow only firemný účet."""
+    """Allow only company role."""
 
     message = "Prístup je povolený len používateľom s rolou firma."
 

@@ -1,3 +1,4 @@
+"""Upload/download mixin for document files and access checks."""
 import logging
 import os
 
@@ -21,13 +22,11 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentUploadDownloadMixin:
+    """Provide upload/download actions for document files."""
     # ----------------------  UPLOAD (študent)  ----------------------
     @action(detail=True, methods=["post"], url_path="upload")
     def upload(self, request, pk=None):
-        """
-        Študent alebo firma (len výkaz) nahrá PDF, uloží sa do B2 a aktualizuje dokument.
-        Stav novej verzie: 'nahrany'. Posiela sa notifikácia.
-        """
+        """Upload a PDF for allowed roles and update document state."""
         old_doc = self.get_object()
         user = request.user
 
@@ -102,7 +101,7 @@ class DocumentUploadDownloadMixin:
     # ---------------------------  DOWNLOAD  --------------------------
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, pk=None):
-        """Vráti presigned URL pre oprávnených (študent, firma, garant)."""
+        """Return a presigned URL or streamed file for authorized users."""
         document = self.get_object()
         prax = document.prax
         user = request.user

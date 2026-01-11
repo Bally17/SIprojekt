@@ -1,3 +1,4 @@
+"""App configuration for internships."""
 from django.apps import AppConfig
 
 class InternshipsConfig(AppConfig):

@@ -1,6 +1,8 @@
+"""Company database models."""
 from django.db import models
 
 class Firma(models.Model):
+    """Company record mapped to the existing 'firmy' table."""
     nazov = models.CharField(unique=True, max_length=255)
     adresa = models.TextField(blank=True, null=True)
     kontakt_meno = models.CharField(max_length=150, blank=True, null=True)

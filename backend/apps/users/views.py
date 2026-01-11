@@ -1,21 +1,25 @@
-# apps/users/views.py
+"""User and profile endpoints for admin and self-service access."""
+from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import User, StudentProfil, GarantProfil
 from .serializers import (
     UserSerializer,
     StudentProfileSerializer,
     GarantProfileSerializer,
     GarantAccountSerializer,
 )
+from .models import User, StudentProfil, GarantProfil
 from apps.internships.permissions import IsGarantUser
+from apps.cache_utils import build_cache_key
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """CRUD for users with garant-only access."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsGarantUser]
@@ -33,6 +37,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class StudentProfileViewSet(viewsets.ModelViewSet):
+    """CRUD for student profiles with role-based access."""
     queryset = StudentProfil.objects.all()
     serializer_class = StudentProfileSerializer
     permission_classes = [IsAuthenticated]
@@ -52,6 +57,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
 
 
 class GarantProfileViewSet(viewsets.ModelViewSet):
+    """CRUD for garant profiles."""
     queryset = GarantProfil.objects.all()
     serializer_class = GarantProfileSerializer
     permission_classes = [IsAuthenticated, IsGarantUser]
@@ -70,10 +76,7 @@ class GarantProfileViewSet(viewsets.ModelViewSet):
 
 
 class GarantAccountViewSet(viewsets.ModelViewSet):
-    """
-    CRUD nad garantmi (kontá). Len prihlásený garant; nemôže zmazať sám seba
-    a vždy musí zostať aspoň jeden garant v systéme.
-    """
+    """Manage garant accounts with safety checks."""
 
     queryset = User.objects.filter(rola=User.ROLE_GARANT)
     serializer_class = GarantAccountSerializer
@@ -106,9 +109,7 @@ class GarantAccountViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search_students(request):
-    """
-    Vyhľadá študentov podľa mena, priezviska alebo emailu.
-    """
+    """Search students by name or email (garant-only)."""
     user = request.user
     if getattr(user, "rola", "") != User.ROLE_GARANT:
         return Response(
@@ -116,9 +117,16 @@ def search_students(request):
             status=403,
         )
 
+    cache_key = build_cache_key("student:search", request.query_params, user=request.user)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
     query = (request.query_params.get('q') or "").strip()
     if len(query) < 2:
-        return Response({"results": []})
+        payload = {"results": []}
+        cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
+        return Response(payload)
 
     students = (
         StudentProfil.objects.select_related("pouzivatel")
@@ -129,4 +137,6 @@ def search_students(request):
         )[:10]
     )
 
-    return Response({"results": StudentProfileSerializer(students, many=True).data})
+    payload = {"results": StudentProfileSerializer(students, many=True).data}
+    cache.set(cache_key, payload, getattr(settings, "CACHE_TTL_SEARCH", 180))
+    return Response(payload)
