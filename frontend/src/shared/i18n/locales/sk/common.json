@@ -124,7 +124,9 @@
     "show": "Pozrite si čakajúce žiadosti, potvrďte alebo zamietnite praxe a filtrujte ich podľa roka, semestra a stavu.",
     "my": "Moje praxe",
     "manage": "Spravuj svoje praxe, vytváraj nové a sťahuj dohody o odbornej praxi.",
-    "new": "Nová prax"
+    "new": "Nová prax",
+    "create": "Vytvoriť prax",
+    "saving": "Ukladám..."
   },
 
   "date": {

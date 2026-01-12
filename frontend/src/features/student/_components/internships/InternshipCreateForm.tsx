@@ -226,7 +226,7 @@ export default function InternshipCreateForm({
         loading={creating}
       >
         {!creating && <Icon name="building-2" size={18} />}
-        {creating ? "Ukladám..." : "Vytvoriť prax"}
+        {creating ? msgs.common.internships.saving : msgs.common.internships.create}
       </Button>
     </form>
   );
