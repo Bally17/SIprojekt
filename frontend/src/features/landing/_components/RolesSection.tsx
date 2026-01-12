@@ -2,15 +2,16 @@
 import Image from "next/image";
 import { useState } from "react";
 import "@utils/idUsing";
-import { rolePreviewImages } from "@data/roleSectionDatas";
+import { rolePreviewImagesByLocale } from "@data/roleSectionDatas";
 import { useLocalization } from "@i18n/client";
 import Icon from "@icons/index";
 import type IconName from "@icons/iconName";
 import { RoleType } from "@shared-types/core/common";
 
 export default function RolesSection() {
-  const { msgs } = useLocalization();
+  const { msgs, locale } = useLocalization();
   const [tab, setTab] = useState<RoleType>("student");
+  const roleImages = rolePreviewImagesByLocale[locale] ?? rolePreviewImagesByLocale.sk;
 
   // vyberáme preklady jednotlivých oprávnení každý kľúč samostatne kvôli i18n
   const studentPerms: string[] = [
@@ -102,7 +103,7 @@ export default function RolesSection() {
                 <div className="rounded-xl border border-primary-200 bg-white p-4">
                   {/* Náhľad dashboardu podľa vybratej roly cesty sú v roleSectionDatas */}
                   <Image
-                    src={rolePreviewImages[tab]}
+                    src={roleImages[tab]}
                     alt={`${tabs.find((t) => t.key === tab)?.label} dashboard preview`}
                     width={960}
                     height={600}

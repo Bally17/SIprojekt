@@ -1,7 +1,14 @@
-import { RoleType } from "@shared-types/core/common";
+import { RoleType, Locale } from "@shared-types/core/common";
 
-export const rolePreviewImages: Record<RoleType, string> = {
-  student: "/images/student_dashboard.png",
-  company: "/images/firma_dashboard.png",
-  garant: "/images/garant_dashboard.png",
+export const rolePreviewImagesByLocale: Record<Locale, Record<RoleType, string>> = {
+  sk: {
+    student: "/images/roleSection/sk/student_dashboard.png",
+    company: "/images/roleSection/sk/firma_dashboard.png",
+    garant: "/images/roleSection/sk/garant_dashboard.png",
+  },
+  en: {
+    student: "/images/roleSection/en/...",
+    company: "/images/roleSection/en/...",
+    garant: "/images/roleSection/en/...",
+  },
 };
