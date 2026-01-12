@@ -70,6 +70,8 @@ def upload_document_file(document: Dokument, user: User, file_obj) -> dict:
     if is_student and document.typ_dokumentu == Dokument.TYP_ZMLUVA and not is_employment:
         if getattr(prax, "stav", "").lower() != Prax.STAV_SCHVALENA:
             return _fail("Zmluvu môžeš nahrať až po schválení praxe.", 403)
+    if getattr(prax, "stav", "").lower() != Prax.STAV_SCHVALENA and document.typ_dokumentu == Dokument.TYP_VYKAZ:
+        return _fail("Výkaz možno nahrať až po schválení praxe.", 403)
 
     if file_obj is None:
         return _fail("Chýba súbor 'file' v requeste.", 400)
