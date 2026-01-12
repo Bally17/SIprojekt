@@ -1,6 +1,7 @@
 import Icon from "@icons/index";
-import { SEMESTER_LABEL, STAV_BADGE_CLASS, STAV_LABEL, StringOrNull } from "@shared-types/index";
+import { SEMESTER_LABEL, STAV_BADGE_CLASS, StringOrNull } from "@shared-types/index";
 import { Internship } from "@shared-types/internship";
+import { getInternshipStatusLabel } from "@utils/internshipStatus";
 
 interface GarantInternshipsTableSectionProps {
   internships: Internship[];
@@ -72,7 +73,7 @@ export function GarantInternshipsTableSection({
                   i.stav ? STAV_BADGE_CLASS[i.stav] : "bg-gray-100 text-gray-600"
                 }`}
               >
-                {i.stav ? STAV_LABEL[i.stav] : i.stav}
+                {getInternshipStatusLabel(i.stav, msgs)}
               </span>
             </td>
 

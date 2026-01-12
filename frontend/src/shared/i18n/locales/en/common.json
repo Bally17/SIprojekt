@@ -126,7 +126,15 @@
     "manage": "Manage your internships, create new ones, and download internship agreements.",
     "new": "New internship",
     "create": "Create internship",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "statusLabels": {
+      "vytvorena": "Created",
+      "potvrdena": "Confirmed",
+      "zamietnuta": "Rejected",
+      "schvalena": "Approved",
+      "obhajena": "Defended",
+      "neobhajena": "Not defended"
+    }
   },
 
   "date": {
