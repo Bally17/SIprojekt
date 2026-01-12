@@ -7,8 +7,8 @@ export const rolePreviewImagesByLocale: Record<Locale, Record<RoleType, string>>
     garant: "/images/roleSection/sk/garant_dashboard.png",
   },
   en: {
-    student: "/images/roleSection/en/...",
-    company: "/images/roleSection/en/...",
-    garant: "/images/roleSection/en/...",
+    student: "/images/roleSection/en/student_dashboard.png",
+    company: "/images/roleSection/en/company_dashboard.png",
+    garant: "/images/roleSection/en/supervisor_dashboard.png",
   },
 };
