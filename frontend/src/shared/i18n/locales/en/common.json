@@ -124,7 +124,9 @@
     "show": "View pending requests, approve or reject internships, and filter them by year, semester, and status.",
     "my": "My internships",
     "manage": "Manage your internships, create new ones, and download internship agreements.",
-    "new": "New internship"
+    "new": "New internship",
+    "create": "Create internship",
+    "saving": "Saving..."
   },
 
   "date": {
