@@ -19,6 +19,10 @@ import {
 import { Internship } from "@shared-types/internship";
 import { buildMediaUrl, getDocumentStatusInfo, getDocumentTypeLabel } from "@utils/documents";
 import { getInternshipStatusLabel, getInternshipStatusOptions } from "@utils/internshipStatus";
+import {
+  getInternshipSemesterLabel,
+  getInternshipSemesterOptions,
+} from "@utils/internshipSemester";
 
 export const TableComponent = ({
   data,
@@ -52,9 +56,14 @@ export const TableComponent = ({
 
   const stavValue: Stav | "" = isStav(String(filters?.stav)) ? (filters!.stav as Stav) : "";
 
-  const semesterOpts = (
-    semesterOptions?.length ? semesterOptions.filter((o) => isSemester(o.value)) : SEMESTER_OPTIONS
-  ) as readonly { value: Semester; label: string }[];
+  const fallbackSemesterValues = SEMESTER_OPTIONS.map((o) => o.value).filter(
+    (value): value is Semester => isSemester(value),
+  );
+  const rawSemesterValues = (semesterOptions?.length ? semesterOptions : SEMESTER_OPTIONS)
+    .map((o) => o.value)
+    .filter((value): value is Semester => isSemester(value));
+  const semesterValues = rawSemesterValues.length ? rawSemesterValues : fallbackSemesterValues;
+  const semesterOpts = getInternshipSemesterOptions(msgs, semesterValues);
 
   const fallbackStavValues = STAV_OPTIONS.map((o) => o.value).filter((value): value is Stav =>
     isStav(value),
@@ -181,7 +190,9 @@ export const TableComponent = ({
           <td className="px-4 py-3 font-medium">#{item.id}</td>
           <td className="px-4 py-3">{item.student}</td>
           <td className="px-4 py-3">{item.rok}</td>
-          <td className="px-4 py-3 capitalize">{item.semester}</td>
+          <td className="px-4 py-3 capitalize">
+            {getInternshipSemesterLabel(item.semester, msgs)}
+          </td>
           <td className="px-4 py-3">{item.datum_zaciatku}</td>
           <td className="px-4 py-3">{item.datum_konca}</td>
 
@@ -330,7 +341,7 @@ export const TableComponent = ({
                   {docPreview.student_full_name || `#${docPreview.student}`}
                 </h4>
                 <p className="text-xs text-gray-500">
-                  {docPreview.rok} • {docPreview.semester}
+                  {docPreview.rok} • {getInternshipSemesterLabel(docPreview.semester, msgs)}
                 </p>
               </div>
               <button

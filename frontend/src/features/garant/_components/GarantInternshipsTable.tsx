@@ -1,7 +1,8 @@
 import Icon from "@icons/index";
-import { SEMESTER_LABEL, STAV_BADGE_CLASS, StringOrNull } from "@shared-types/index";
+import { STAV_BADGE_CLASS, StringOrNull } from "@shared-types/index";
 import { Internship } from "@shared-types/internship";
 import { getInternshipStatusLabel } from "@utils/internshipStatus";
+import { getInternshipSemesterLabel } from "@utils/internshipSemester";
 
 interface GarantInternshipsTableSectionProps {
   internships: Internship[];
@@ -60,7 +61,7 @@ export function GarantInternshipsTableSection({
 
             <td className="px-4 py-4 text-sm text-ink-900">
               <div>
-                {i.rok} - {SEMESTER_LABEL[i.semester] ?? i.semester}
+                {i.rok} - {getInternshipSemesterLabel(i.semester, msgs)}
               </div>
               <div className="text-xs text-ink-400">
                 {i.datum_zaciatku} - {i.datum_konca}

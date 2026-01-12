@@ -9,7 +9,8 @@ import { Select } from "@components/select";
 import Icon from "@icons/index";
 import { useLocalization } from "@i18n/client";
 import { Company } from "@shared-types/company";
-import { Semester, SEMESTER_OPTIONS } from "@shared-types/core/internshipState";
+import { Semester } from "@shared-types/core/internshipState";
+import { getInternshipSemesterOptions } from "@utils/internshipSemester";
 import { useCompanySearchMutation } from "../../hooks";
 import { getFirstErrorMessage } from "@student/utils/getFirstErrorMessage";
 import type { CreateInternshipPayload } from "@shared-types/index";
@@ -202,7 +203,7 @@ export default function InternshipCreateForm({
               <Select<Semester>
                 name="semester"
                 value={field.value}
-                options={SEMESTER_OPTIONS}
+                options={getInternshipSemesterOptions(msgs)}
                 onChangeValue={(value) => value && field.onChange(value)}
               />
             )}
