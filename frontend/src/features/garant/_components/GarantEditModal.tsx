@@ -24,6 +24,7 @@ const DEFAULT_VALUES: GarantInternshipUpdate = {
   datum_konca: "",
   stav: "vytvorena",
   status_note: "",
+  force: true,
 };
 
 export default function GarantEditModal({
@@ -61,6 +62,7 @@ export default function GarantEditModal({
       student_id: internship.student ? String(internship.student) : "",
       firma_id: internship.firma?.id ? String(internship.firma.id) : "",
       status_note: "",
+      force: true,
     });
 
     setStudentQuery(
