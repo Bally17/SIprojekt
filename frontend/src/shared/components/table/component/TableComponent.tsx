@@ -15,10 +15,10 @@ import {
   SEMESTER_OPTIONS,
   STAV_OPTIONS,
   STAV_BADGE_CLASS,
-  getStavLabel,
 } from "@shared-types/index";
 import { Internship } from "@shared-types/internship";
 import { buildMediaUrl, getDocumentStatusInfo, getDocumentTypeLabel } from "@utils/documents";
+import { getInternshipStatusLabel, getInternshipStatusOptions } from "@utils/internshipStatus";
 
 export const TableComponent = ({
   data,
@@ -56,9 +56,14 @@ export const TableComponent = ({
     semesterOptions?.length ? semesterOptions.filter((o) => isSemester(o.value)) : SEMESTER_OPTIONS
   ) as readonly { value: Semester; label: string }[];
 
-  const stavOpts = (
-    stavOptions?.length ? stavOptions.filter((o) => isStav(o.value)) : STAV_OPTIONS
-  ) as readonly { value: Stav; label: string }[];
+  const fallbackStavValues = STAV_OPTIONS.map((o) => o.value).filter((value): value is Stav =>
+    isStav(value),
+  );
+  const rawStavValues = (stavOptions?.length ? stavOptions : STAV_OPTIONS)
+    .map((o) => o.value)
+    .filter((value): value is Stav => isStav(value));
+  const stavValues = rawStavValues.length ? rawStavValues : fallbackStavValues;
+  const stavOpts = getInternshipStatusOptions(msgs, stavValues);
 
   const runAction = async (id: number, action: Action) => {
     if (!onAction) return;
@@ -82,7 +87,7 @@ export const TableComponent = ({
   const renderStavBadge = (value: string) => {
     const normalized: Stav | null = isStav(value) ? value : null;
     const badgeClass = normalized ? STAV_BADGE_CLASS[normalized] : "bg-gray-100 text-gray-600";
-    const label = normalized ? getStavLabel(normalized) : value;
+    const label = normalized ? getInternshipStatusLabel(normalized, msgs) : value;
     return (
       <span
         className={`inline-flex min-w-[150px] items-center justify-center rounded-full px-3 py-1 text-center text-xs font-semibold leading-tight ${badgeClass}`}

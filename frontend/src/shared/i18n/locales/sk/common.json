@@ -126,7 +126,15 @@
     "manage": "Spravuj svoje praxe, vytváraj nové a sťahuj dohody o odbornej praxi.",
     "new": "Nová prax",
     "create": "Vytvoriť prax",
-    "saving": "Ukladám..."
+    "saving": "Ukladám...",
+    "statusLabels": {
+      "vytvorena": "Vytvorená",
+      "potvrdena": "Potvrdená",
+      "zamietnuta": "Zamietnutá",
+      "schvalena": "Schválená",
+      "obhajena": "Obhájená",
+      "neobhajena": "Neobhájená"
+    }
   },
 
   "date": {

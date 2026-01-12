@@ -1,7 +1,9 @@
 "use client";
 
-import { STAV_BADGE_CLASS } from "@shared-types/core/internshipState";
+import { useLocalization } from "@i18n/client";
+import { STAV_BADGE_CLASS, isStav } from "@shared-types/core/internshipState";
 import type { Internship } from "@shared-types/internship";
+import { getInternshipStatusLabel } from "@utils/internshipStatus";
 import DocumentUploadCard from "../DocumentUploadCard";
 
 type Props = {
@@ -10,6 +12,13 @@ type Props = {
 };
 
 export default function InternshipCard({ internship, onRefresh }: Readonly<Props>) {
+  const { msgs } = useLocalization();
+  const statusLabel = getInternshipStatusLabel(internship.stav, msgs);
+  const badgeClass =
+    internship.stav && isStav(internship.stav)
+      ? STAV_BADGE_CLASS[internship.stav]
+      : "bg-gray-100 text-gray-600";
+
   return (
     <div className="rounded-xl border border-primary-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-center justify-between">
@@ -17,13 +26,7 @@ export default function InternshipCard({ internship, onRefresh }: Readonly<Props
           {internship.firma?.nazov || "Neznama firma"}
         </h3>
 
-        <span
-          className={`rounded px-2 py-1 text-sm font-medium ${
-            internship.stav ? STAV_BADGE_CLASS[internship.stav] : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          {internship.stav}
-        </span>
+        <span className={`rounded px-2 py-1 text-sm font-medium ${badgeClass}`}>{statusLabel}</span>
       </div>
 
       <p className="mt-1 text-sm text-gray-600">

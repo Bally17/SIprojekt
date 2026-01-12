@@ -2,7 +2,8 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import Icon from "@icons/index";
-import { STAV_OPTIONS, STAV_LABEL, StringOrNull, Stav } from "@shared-types/index";
+import { StringOrNull, Stav } from "@shared-types/index";
+import { getInternshipStatusOptions } from "@utils/internshipStatus";
 import { Internship, GarantInternshipUpdate } from "@shared-types/internship";
 import { DatePicker } from "@components/datePicker";
 import { useCompanySearchQuery, useStudentSearchQuery } from "../hooks";
@@ -226,9 +227,9 @@ export default function GarantEditModal({
               {...register("stav")}
               className="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
-              {STAV_OPTIONS.map((o) => (
+              {getInternshipStatusOptions(msgs).map((o) => (
                 <option key={o.value} value={o.value}>
-                  {STAV_LABEL[o.value]}
+                  {o.label}
                 </option>
               ))}
             </select>

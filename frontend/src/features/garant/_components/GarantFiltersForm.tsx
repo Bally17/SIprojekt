@@ -1,5 +1,5 @@
-import { STAV_OPTIONS, STAV_LABEL } from "@shared-types/index";
 import type { UseFormRegister } from "react-hook-form";
+import { getInternshipStatusOptions } from "@utils/internshipStatus";
 
 type Filters = {
   rok: string;
@@ -91,9 +91,9 @@ export default function GarantFiltersForm({
             className="mt-1 w-full rounded-md border border-primary-200 bg-white/90 px-3 py-2 text-sm transition hover:border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">{msgs.common.guarant.filters.statePlaceholder}</option>
-            {STAV_OPTIONS.map((o) => (
+            {getInternshipStatusOptions(msgs).map((o) => (
               <option key={o.value} value={o.value}>
-                {STAV_LABEL[o.value]}
+                {o.label}
               </option>
             ))}
           </select>
