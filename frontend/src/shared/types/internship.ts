@@ -51,6 +51,7 @@ export interface GarantInternshipUpdate {
   datum_konca: string;
   stav: Stav;
   status_note: string;
+  force?: boolean;
 }
 
 export type InternshipWithRelations = Internship & {
