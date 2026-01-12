@@ -69,14 +69,11 @@ Notifications
 .. automodule:: apps.notifications.views
 .. automodule:: apps.notifications.service
 .. automodule:: apps.notifications.signals
-.. automodule:: apps.notifications.utils
 
 Services
 --------
 
-.. automodule:: services.storage
+.. automodule:: services.documents.storage
 
 Shared Utilities
 ----------------
-
-.. automodule:: apps.cache_utils
