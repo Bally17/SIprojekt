@@ -165,7 +165,7 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
     status_note = serializers.CharField(
         required=False, allow_blank=True, write_only=True, max_length=500
     )
-    force = serializers.BooleanField(required=False, default=False, write_only=True)
+    force = serializers.BooleanField(required=False, default=True, write_only=True)
 
     class Meta:
         model = Prax
@@ -202,8 +202,30 @@ class GarantInternshipUpdateSerializer(serializers.ModelSerializer):
                 {"datum_konca": "Dátum ukončenia nemôže byť pred dátumom začiatku."}
             )
 
-        # ⚠️ Bypasujeme povinné dokumenty – garant môže schváliť aj bez potvrdenej zmluvy.
-        # Ak chceš obnoviť striktne požiadavky, zapni späť missing_required_documents check.
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request else None
+        force_override = attrs.get("force", False)
+        new_state = attrs.get("stav")
+        prev_state = getattr(self.instance, "stav", None)
+
+        if (
+            user
+            and getattr(user, "rola", "") == User.ROLE_GARANT
+            and new_state
+            and self.instance
+            and new_state != prev_state
+            and not force_override
+        ):
+            missing_documents = missing_required_documents(self.instance, new_state)
+            if missing_documents:
+                raise serializers.ValidationError(
+                    {
+                        "missing_documents": (
+                            "Chýbajú povinné dokumenty: "
+                            + ", ".join(missing_documents)
+                        )
+                    }
+                )
 
         return attrs
 
