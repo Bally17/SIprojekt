@@ -134,6 +134,10 @@
       "schvalena": "Schválená",
       "obhajena": "Obhájená",
       "neobhajena": "Neobhájená"
+    },
+    "semesterLabels": {
+      "zimny": "Zimný",
+      "letny": "Letný"
     }
   },
 

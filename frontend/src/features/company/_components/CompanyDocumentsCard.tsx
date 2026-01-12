@@ -7,6 +7,7 @@ import Icon from "@icons/index";
 import { Internship } from "@shared-types/internship";
 import { getErrorMessage } from "@utils/errorActions";
 import { buildMediaUrl, getDocumentStatusInfo } from "@utils/documents";
+import { getInternshipSemesterLabel } from "@utils/internshipSemester";
 import {
   useUploadDocumentFileMutation,
   useApproveCompanyDocumentMutation,
@@ -21,6 +22,7 @@ type Props = {
 export default function CompanyDocumentsCard({ internship, onChange }: Readonly<Props>) {
   const { msgs } = useLocalization();
   const { success: notifySuccess, warning: notifyWarning } = useSystemNotifications();
+  const semesterLabel = getInternshipSemesterLabel(internship.semester, msgs);
 
   const [actionsOpen, setActionsOpen] = useState(false);
 
@@ -146,7 +148,7 @@ export default function CompanyDocumentsCard({ internship, onChange }: Readonly<
       <td className="px-4 py-4 align-top">
         <div className="text-sm text-gray-700">
           <p className="font-medium">
-            {internship.rok} - {internship.semester}
+            {internship.rok} - {semesterLabel}
           </p>
           <p className="text-xs text-gray-500">
             {internship.datum_zaciatku} - {internship.datum_konca}
@@ -213,7 +215,7 @@ export default function CompanyDocumentsCard({ internship, onChange }: Readonly<
                       {internship.student_full_name || `#${internship.student}`}
                     </h4>
                     <p className="text-xs text-gray-500">
-                      {msgs.common.companyDocs.termLabel}: {internship.rok} - {internship.semester}
+                      {msgs.common.companyDocs.termLabel}: {internship.rok} - {semesterLabel}
                     </p>
                   </div>
                   <button

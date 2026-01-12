@@ -134,6 +134,10 @@
       "schvalena": "Approved",
       "obhajena": "Defended",
       "neobhajena": "Not defended"
+    },
+    "semesterLabels": {
+      "zimny": "Winter",
+      "letny": "Summer"
     }
   },
 
