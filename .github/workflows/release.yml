@@ -3,7 +3,7 @@ name: Release pipeline
 on:
   push:
     branches:
-      - 'release/**'
+      - 'release-*'
 
 permissions:
   contents: read
@@ -14,9 +14,31 @@ env:
   FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/siprojekt-frontend
   IMAGE_TAG: release-${{ github.run_number }}
 
+  DB_HOST: localhost
+  DB_PORT: 5432
+  DB_NAME: postgres
+  DB_USER: postgres
+  DB_PASSWORD: postgres
+
 jobs:
   release:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,6 +55,7 @@ jobs:
 
       - name: Run backend test suite
         run: pytest
+        working-directory: backend
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

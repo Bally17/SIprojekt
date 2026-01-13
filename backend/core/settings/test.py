@@ -1,28 +1,23 @@
 """Test settings overrides for Django."""
 import os
 
-from dotenv import load_dotenv
-
-load_dotenv()
-os.environ.setdefault('DJANGO_ENV', 'test')
-
 from .base import *  # noqa: F401,F403
 
-# Pouzi PostgreSQL test DB klonovanu zo skutocnej DB.
+os.environ.setdefault("DJANGO_ENV", "test")
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "praxy_db"),
-        "USER": os.getenv("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
-        "HOST": os.getenv("POSTGRES_HOST", "db"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
         "TEST": {
-            "NAME": os.getenv("POSTGRES_TEST_DB", "test_praxy_db"),
+            "NAME": os.getenv("DB_TEST_NAME", "test_db"),
             "MIGRATE": False,
         },
     }
 }
 
-# Neposielat realne emaily pocas testov.
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
